@@ -1,4 +1,4 @@
-package it.uninsubria.labB717304.clientIP;
+package uninsubria.client.gui;
 
 import java.io.IOException;
 import javafx.fxml.FXML;

@@ -1,4 +1,4 @@
-package it.uninsubria.labB717304.clientIP;
+package uninsubria.client.gui;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
