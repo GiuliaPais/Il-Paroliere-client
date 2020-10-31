@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXPasswordField?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Rectangle?>
+<?import org.controlsfx.glyphfont.Glyph?>
+
+
+<AnchorPane fx:id="rootContainer" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uninsubria.client.guicontrollers.RegistrationController">
+   <children>
+      <StackPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" styleClass="scene-with-bg" stylesheets="@../css/night_sky.css">
+         <children>
+            <Rectangle id="menu-bg" fx:id="rect" arcHeight="5.0" arcWidth="5.0" fill="DODGERBLUE" height="450.0" stroke="BLACK" strokeType="INSIDE" width="320.0" />
+            <VBox fx:id="vbox" alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="450.0" prefWidth="320.0" spacing="25.0" StackPane.alignment="CENTER">
+               <children>
+                  <Glyph fx:id="icon" alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="50.0" prefWidth="50.0" />
+                  <JFXTextField id="lighter_font" fx:id="name_field" labelFloat="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="250.0" promptText="\%prompt_name" unFocusColor="WHITE" />
+                  <JFXTextField id="lighter_font" fx:id="lastName_field" labelFloat="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="250.0" promptText="\%prompt_lastName" unFocusColor="WHITE" />
+                  <JFXTextField id="lighter_font" fx:id="userID_field" labelFloat="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="250.0" promptText="UserID" unFocusColor="WHITE" />
+                  <JFXTextField id="lighter_font" fx:id="email_field" labelFloat="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="250.0" promptText="Email" unFocusColor="WHITE" />
+                  <JFXPasswordField id="lighter_font" fx:id="pw_field" labelFloat="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="250.0" promptText="Password" />
+                  <HBox fx:id="btn_box" alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="40.0" prefWidth="250.0" spacing="14.0">
+                     <children>
+                        <JFXButton fx:id="back_btn" alignment="CENTER" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onAction="#back" prefHeight="40.0" prefWidth="118.0" HBox.hgrow="ALWAYS" />
+                        <JFXButton fx:id="register_btn" alignment="CENTER" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="40.0" prefWidth="118.0" text="\%register_btn" HBox.hgrow="ALWAYS" />
+                     </children>
+                  </HBox>
+               </children>
+               <StackPane.margin>
+                  <Insets />
+               </StackPane.margin>
+               <opaqueInsets>
+                  <Insets />
+               </opaqueInsets>
+               <padding>
+                  <Insets top="20.0" />
+               </padding>
+            </VBox>
+         </children>
+      </StackPane>
+   </children>
+</AnchorPane>

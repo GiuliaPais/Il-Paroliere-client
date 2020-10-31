@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+
+<GridPane fx:id="grid" hgap="40.0" prefHeight="555.0" prefWidth="980.0" styleClass="options-bg" stylesheets="@../css/night_sky.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
+   <columnConstraints>
+      <ColumnConstraints fx:id="labels_col" hgrow="ALWAYS" minWidth="0.0" percentWidth="50.0" />
+      <ColumnConstraints fx:id="val_col" hgrow="ALWAYS" minWidth="0.0" percentWidth="50.0" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints maxHeight="395.0" minHeight="10.0" prefHeight="96.0" vgrow="ALWAYS" />
+      <RowConstraints maxHeight="304.0" minHeight="10.0" prefHeight="106.0" vgrow="ALWAYS" />
+      <RowConstraints maxHeight="404.0" minHeight="10.0" prefHeight="100.0" vgrow="ALWAYS" />
+   </rowConstraints>
+   <children>
+      <Label fx:id="int_language_lbl" text="\%int_lang_label" GridPane.halignment="RIGHT" GridPane.valignment="BOTTOM">
+         <GridPane.margin>
+            <Insets bottom="5.0" />
+         </GridPane.margin>
+      </Label>
+      <ChoiceBox fx:id="choice_box" prefHeight="26.0" prefWidth="192.0" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS" GridPane.valignment="BOTTOM" GridPane.vgrow="ALWAYS">
+         <GridPane.margin>
+            <Insets />
+         </GridPane.margin>
+      </ChoiceBox>
+   </children>
+</GridPane>

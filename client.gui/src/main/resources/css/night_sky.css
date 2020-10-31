@@ -1,0 +1,217 @@
+/**** CSS Theme Dark 1 ****/
+
+/*** DEFAULTS ***/
+.root{
+	/*## Color palette ##*/
+	main-text-color: #ffffff;
+	btn-hover-text-color: #000000;
+	disabled-text-color: derive(main-text-color, -60%);
+	darkest: #2F0F35;
+	dark1: #2E1753;
+	dark2: #49277C;
+	mid1: #0A6DB9;
+	light1: #00B9E2;
+	light2: #765FD8;
+	light3: #82F5FF;
+	lightest: #FFFFFF;
+	/* Default properties */
+	-fx-font-family: "Arial Black";
+	/*-fx-font-size: 14px;*/
+}
+
+/* LOGO */
+#logo{
+	-fx-image: url(../logo/logo_il_paroliere.png);
+}
+
+#logo-v2{
+	-fx-image: url(../logo/logo_il_paroliere_v2.png);
+}
+
+/* Rectangle under main menu buttons*/
+#menu-bg{
+	-fx-fill: rgba(0,0,0,0.4);
+	-fx-stroke: rgba(255,255,255, 1);
+	-fx-stroke-type: outside;
+	-fx-arc-width: 15px;
+	-fx-arc-height: 15px;
+}
+
+/* Main scene background */
+.scene-with-bg{
+	-fx-background-image: url(../backgrounds/night_mountain_stars.png);
+	-fx-background-repeat: no-repeat no-repeat;
+	-fx-background-size: stretch;
+	-fx-background-position: center center;
+}
+
+#lighter_font{
+	-fx-font-family: "Arial";
+}
+
+/*Options background*/
+.options-bg{
+	-fx-background-color: darkest;
+}
+
+
+/* BUTTONS */
+.button,
+.jfx-button{
+	-fx-background-color: transparent;
+	-fx-background-radius: 35px;
+	-fx-border-color: main-text-color;
+	-fx-border-style: solid;
+	-fx-border-width: 2px;
+	-fx-border-radius: 35px;
+	-fx-text-fill: main-text-color;
+	-fx-fill: main-text-color;
+	-fx-label-padding: 4px;
+	-jfx-disable-visual-focus: true;
+}
+
+.button:hover{
+	-fx-background-color: main-text-color;
+	-fx-text-fill: btn-hover-text-color;
+	-fx-fill: btn-hover-text-color;
+}
+
+.button:hover .glyph-font{
+	-fx-text-fill: btn-hover-text-color;
+}
+
+.button:disabled,
+.jfx-button:disabled{
+	-fx-text-fill: disabled-text-color;
+	-fx-border-color: disabled-text-color;
+	-fx-opacity: 0.7;
+}
+
+.menu-bar > .container > .menu-button{
+	-fx-background-color: transparent;
+	-fx-padding: 10px;
+}
+
+.menu-bar > .container > .menu-button:hover{
+	-fx-border-color: main-text-color;
+	-fx-border-width: 0px 0px 2px 0px;
+	-fx-border-style: solid;
+}
+
+.menu-bar > .container > .menu-button > .label{
+	-fx-text-fill: main-text-color;
+	-fx-font-size: 14px;
+}
+
+.menu-bar > .container > .menu-button:disabled > .label{
+	-fx-text-fill: disabled-text-color;
+	-fx-font-size: 14px;
+}
+
+#sidebar_opt_btn{
+	-fx-background-color: transparent;
+	-fx-border-color: main-text-color;
+	-fx-border-style: solid;
+	-fx-text-fill: main-text-color;
+	-fx-border-width: 0px 0px 0px 0px;
+	-fx-border-radius: 0px;
+	-fx-background-radius: 0px;
+}
+
+#sidebar_opt_btn:hover{
+	-fx-border-width: 0px 0px 0px 3px;
+	-fx-background-color: linear-gradient(to bottom, rgba(249,249,249,0.2) 0%,rgba(130,245,255,0.2) 10%,rgba(118,95,216,0.2) 50%,rgba(73,39,124,0.2) 51%,rgba(130,245,255,0.2) 100%);
+}
+
+#sidebar_opt_btn:selected{
+	-fx-border-width: 0px 0px 0px 3px;
+	-fx-background-color: darkest;
+}
+
+.choice-box{
+	-fx-background-color: derive(darkest, -20%);
+	-fx-text-fill: main-text-color;
+	-fx-border-color: light2;
+	-fx-border-width: 0 0 1 0;
+}
+
+.choice-box > .open-button > .arrow{
+	-fx-background-color: main-text-color;
+}
+
+.jfx-toggle-button{
+	-fx-padding: 0;
+	-jfx-toggle-color: mid1;
+	-jfx-toggle-line-color: light1;
+	-jfx-untoggle-color: main-text-color;
+	-jfx-untoggle-line-color: #999999;
+}
+
+/* MENUS */
+.menu {
+	-fx-background-color: transparent;
+}
+
+.menu-bar {
+	-fx-background-color: transparent;
+}
+
+.choice-box .context-menu,
+.choice-box .context-menu > .menu-item, 
+.choice-box .context-menu > .menu-item > .left-container,
+.choice-box .context-menu > .menu-item > .right-container,
+.choice-box .context-menu > .menu-item > .graphic-container,
+.choice-box .menu-item{
+	-fx-background-color: derive(darkest, -20%);
+}
+
+/* Containers */
+.split-pane{
+	-fx-background-color: transparent;
+}
+
+.split-pane > .split-pane-divider {
+    -fx-padding: 0;
+	-fx-background-color: lightest;
+	-fx-background-insets: 0;
+}
+
+.tool-bar{
+	-fx-background-color: linear-gradient(to top, rgba(47,15,53,1) 0%, rgba(10,109,185,1) 45%, rgba(118,95,216,1) 100%);
+	-fx-padding: 0px;
+	-fx-spacing: 0px;
+}
+
+#opt_btn_bar {
+	-fx-background-color: darkest;
+	-fx-padding: 15px;
+}
+
+#opt_title{
+	-fx-background-color: darkest;
+	-fx-border-color: light2;
+	-fx-border-style: solid;
+	-fx-border-width: 0 0 1 0;
+}
+
+/* Labels */
+.label{
+	-fx-text-fill: main-text-color;
+}
+
+
+/* Glyphs fontawsomefx */
+.glyph-font{
+	-fx-text-fill: main-text-color;
+	-fx-fill: main-text-color;
+}
+
+/* Text fields */
+.jfx-text-field, .jfx-password-field{
+	-jfx-focus-color: light2;
+	-jfx-unfocus-color: main-text-color;
+	-jfx-label-float: true;
+	-jfx-disable-animation:true;
+	-fx-text-fill: main-text-color;
+	-fx-prompt-text-fill: derive(main-text-color, -40%);
+}

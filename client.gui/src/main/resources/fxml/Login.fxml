@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXPasswordField?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Rectangle?>
+<?import org.controlsfx.glyphfont.Glyph?>
+
+
+<AnchorPane fx:id="rootContainer" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uninsubria.client.guicontrollers.LoginController">
+   <children>
+      <StackPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" styleClass="scene-with-bg" stylesheets="@../css/night_sky.css">
+         <children>
+            <Rectangle id="menu-bg" fx:id="rect" arcHeight="5.0" arcWidth="5.0" fill="DODGERBLUE" height="450.0" stroke="BLACK" strokeType="INSIDE" width="320.0" />
+            <VBox fx:id="vbox" alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="450.0" prefWidth="320.0" spacing="50.0" StackPane.alignment="CENTER">
+               <children>
+                  <Glyph fx:id="icon" alignment="CENTER" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="95.0" prefWidth="95.0" />
+                  <JFXTextField id="lighter_font" fx:id="userid_field" labelFloat="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="250.0" promptText="Email or UserID" unFocusColor="WHITE" />
+                  <JFXPasswordField id="lighter_font" fx:id="pw_field" labelFloat="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="250.0" promptText="Password" />
+                  <HBox fx:id="btn_box" alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="40.0" prefWidth="250.0" spacing="14.0">
+                     <children>
+                        <JFXButton fx:id="back_btn" alignment="CENTER" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onAction="#back" prefHeight="40.0" prefWidth="118.0" HBox.hgrow="ALWAYS" />
+                        <JFXButton fx:id="login_btn" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="40.0" prefWidth="118.0" text="Log in" HBox.hgrow="ALWAYS" />
+                     </children>
+                  </HBox>
+               </children>
+               <StackPane.margin>
+                  <Insets />
+               </StackPane.margin>
+               <opaqueInsets>
+                  <Insets />
+               </opaqueInsets>
+               <padding>
+                  <Insets top="50.0" />
+               </padding>
+            </VBox>
+         </children>
+      </StackPane>
+   </children>
+</AnchorPane>

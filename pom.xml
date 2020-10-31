@@ -26,6 +26,7 @@
     </plugins>
 	 </build>
   <modules>
+    <module>client.core</module>
     <module>client.gui</module>
   </modules>
 </project>
