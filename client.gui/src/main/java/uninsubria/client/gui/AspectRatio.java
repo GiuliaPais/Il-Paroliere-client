@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  * Should cover 90-95% of common resolutions for monitors.
  * 
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  */
 public enum AspectRatio {
 	/*---Enum constants---*/
@@ -44,6 +44,9 @@ public enum AspectRatio {
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_CBOX_W", 170.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_CBOX_H", 30.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_TOGGLE_DIM", 50.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_LIST_W", 300.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_TXTFIELD_W", 180.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_TXTFIELD_H", 30.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_TXT_FIELD_W", 250.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_TXT_FIELD_H", 30.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_SPACING", 50.0),
@@ -53,10 +56,15 @@ public enum AspectRatio {
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_BTN_H", 40.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_BTN_SPACING", 14.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_BTN_ARROW_SIZE", 20.0),
-						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_ICON_DIM", 50.0),
-						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_ICON_SIZE", 40.0),
-						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_SPACING", 25.0),
-						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_PADDING_TOP", 20.0))
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_RECT_H", 550.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_RECT_W", 450.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_ICON_DIM", 40.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_ICON_SIZE", 40.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_SPACING", 40.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_PADDING_TOP", 15.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_TXT_FIELD_W", 350.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_TXT_FIELD_H", 25.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_BTN_SPACING", 10.0))
 				  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))), 
 	RATIO_16_9(16.0 / 9.0, 
 				Arrays.asList(new Double[] {1280.0, 1920.0}),
@@ -81,6 +89,9 @@ public enum AspectRatio {
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_CBOX_W", 170.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_CBOX_H", 30.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_TOGGLE_DIM", 50.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_LIST_W", 300.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_TXTFIELD_W", 200.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_TXTFIELD_H", 30.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_TXT_FIELD_W", 250.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_TXT_FIELD_H", 30.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_SPACING", 50.0),
@@ -90,10 +101,15 @@ public enum AspectRatio {
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_BTN_H", 40.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_BTN_SPACING", 14.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_BTN_ARROW_SIZE", 20.0),
-						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_ICON_DIM", 50.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_RECT_H", 550.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_RECT_W", 450.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_ICON_DIM", 40.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_ICON_SIZE", 40.0),
-						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_SPACING", 25.0),
-						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_PADDING_TOP", 20.0))
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_SPACING", 40.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_PADDING_TOP", 15.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_TXT_FIELD_W", 350.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_TXT_FIELD_H", 25.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_BTN_SPACING", 10.0))
 				  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))), 
 	RATIO_16_10(16.0 / 10.0, 
 				Arrays.asList(new Double[] {1440.0, 1680.0, 1920.0}), 
@@ -118,6 +134,9 @@ public enum AspectRatio {
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_CBOX_W", 170.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_CBOX_H", 30.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_TOGGLE_DIM", 50.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_LIST_W", 300.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_TXTFIELD_W", 200.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("OPT_TXTFIELD_H", 30.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_TXT_FIELD_W", 250.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_TXT_FIELD_H", 30.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_SPACING", 50.0),
@@ -127,10 +146,15 @@ public enum AspectRatio {
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_BTN_H", 40.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_BTN_SPACING", 14.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("LOG_BTN_ARROW_SIZE", 20.0),
-						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_ICON_DIM", 50.0),
-						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_ICON_SIZE", 40.0),
-						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_SPACING", 25.0),
-						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_PADDING_TOP", 20.0))
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_RECT_H", 550.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_RECT_W", 450.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_ICON_DIM", 40.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_ICON_SIZE", 40.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_SPACING", 40.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_PADDING_TOP", 15.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_TXT_FIELD_W", 350.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_TXT_FIELD_H", 25.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_BTN_SPACING", 10.0))
 				  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 	
 	/*---Fields---*/

@@ -9,7 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.input.KeyCombination;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import uninsubria.client.centralmangment.CentralManager;
+import uninsubria.client.centralmanagement.CentralManager;
 
 /**
  * The entry point of the application. Initializes the GUI.

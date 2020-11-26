@@ -6,6 +6,9 @@ package uninsubria.client.guicontrollers;
 import java.io.IOException;
 import java.util.ResourceBundle;
 
+import com.jfoenix.validation.RequiredFieldValidator;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.controlsfx.glyphfont.Glyph;
 
@@ -30,7 +33,7 @@ import uninsubria.client.gui.Launcher;
 /**
  * Controller class for the login screen.
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  *
  */
 public class LoginController extends AbstractMainController {
@@ -46,6 +49,8 @@ public class LoginController extends AbstractMainController {
 	private Glyph back_arrow;
 	private BooleanBinding fields_not_empty;
 
+	private StringProperty required_valid_error;
+
 	/*---Constructors---*/
 	
 	/**
@@ -54,6 +59,7 @@ public class LoginController extends AbstractMainController {
 	public LoginController() {
 		super();
 		back_arrow = new Glyph("FontAwesome", FontAwesome.Glyph.ARROW_LEFT);
+		this.required_valid_error = new SimpleStringProperty();
 	}
 
 	/*---Methods---*/
@@ -77,10 +83,29 @@ public class LoginController extends AbstractMainController {
 			}
 			
 		});
+		setValidators();
+		required_valid_error.addListener(new ChangeListener<String>() {
+			@Override
+			public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
+				userid_field.resetValidation();
+				pw_field.resetValidation();
+			}
+		});
+		userid_field.focusedProperty().addListener((o, oldVal, newVal) -> {
+			if (!newVal) {
+				userid_field.validate();
+			}
+		});
+		pw_field.focusedProperty().addListener((o, oldVal, newVal) -> {
+			if (!newVal) {
+				pw_field.validate();
+			}
+		});
 	}
 	
 	@Override
 	public void setTextResources(ResourceBundle resBundle) {
+		required_valid_error.set(resBundle.getString("required_err_label"));
 	}
 
 	@Override
@@ -105,10 +130,10 @@ public class LoginController extends AbstractMainController {
 	/* ---- Private internal methods for rescaling ---- */
 	private void rescaleRect(double after) {
 		double widthAfter = (after*ref.getReferences().get("RECT_WIDTH")) / ref.getReferences().get("REF_RESOLUTION");
-		double heigthAfter = (after*ref.getReferences().get("RECT_HEIGHT")) / ref.getReferences().get("REF_RESOLUTION");
+		double heightAfter = (after*ref.getReferences().get("RECT_HEIGHT")) / ref.getReferences().get("REF_RESOLUTION");
 		rect.setWidth(widthAfter); 
-		rect.setHeight(heigthAfter);
-		vbox.setPrefSize(widthAfter, heigthAfter);
+		rect.setHeight(heightAfter);
+		vbox.setPrefSize(widthAfter, heightAfter);
 		double newPadding = after*ref.getReferences().get("LOG_PADDING_TOP") / ref.getReferences().get("REF_RESOLUTION");
 		vbox.setPadding(new Insets(newPadding, 0, 0, 0));
 		double newSpacing = after*ref.getReferences().get("LOG_SPACING") / ref.getReferences().get("REF_RESOLUTION");
@@ -139,5 +164,12 @@ public class LoginController extends AbstractMainController {
 		DoubleBinding btnWidth = (btn_box.prefWidthProperty().subtract(btn_box.spacingProperty())).divide(2.0);
 		login_btn.prefWidthProperty().bind(btnWidth);
 		back_btn.prefWidthProperty().bind(btnWidth);
+	}
+
+	private void setValidators() {
+		RequiredFieldValidator validator = new RequiredFieldValidator();
+		validator.messageProperty().bind(required_valid_error);
+		userid_field.setValidators(validator);
+		pw_field.setValidators(validator);
 	}
 }

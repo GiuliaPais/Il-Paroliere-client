@@ -27,7 +27,7 @@ import uninsubria.utils.languages.LanguageManager;
 /**
  * Central class for coordinating GUI controllers.
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  *
  */
 public class ControllerManager {
@@ -81,8 +81,11 @@ public class ControllerManager {
 	 */
 	public ControllerManager() {
 		Preferences pref = Launcher.manager.getPreferences();
-		this.settings = new AppSettings(pref, pref.getBoolean("FULLSCREEN", true), pref.getDouble("ASPECT_RATIO", 16.0 / 9.0), 
-				pref.getDouble("WIDTH", 1280.0), pref.getDouble("HEIGHT", 720.0), pref.get("THEME", "NIGHT_SKY"), pref.get("LANGUAGE", "ITALIAN"));
+		this.settings = new AppSettings(pref, pref.getBoolean("FULLSCREEN", true),
+				pref.getDouble("ASPECT_RATIO", 16.0 / 9.0),
+				pref.getDouble("WIDTH", 1280.0),
+				pref.getDouble("HEIGHT", 720.0), pref.get("THEME", "NIGHT_SKY"),
+				pref.get("LANGUAGE", "ITALIAN"), Launcher.manager.getAddressList());
 		this.langManager = new LanguageManager(Language.valueOf(settings.getLanguage()));
 		this.bundle = new SimpleObjectProperty<ResourceBundle>(langManager.getResourcesBundle());
 		this.chosen_resolution = new SimpleObjectProperty<Resolution>(new Resolution(settings.getAspectRatio(), settings.getWidth()));
@@ -137,9 +140,9 @@ public class ControllerManager {
 	public Parent loadMainMenu() throws IOException {
 		FXMLLoader loader = new FXMLLoader(getClass().getResource(FXML_PATH + ControllerType.MAIN_MENU.getFile()), bundle.get());
 		Parent root = loader.load();
-		Theme theme = Theme.valueOf(settings.getTheme());
+		String theme = getAppTheme();
 		root.getStylesheets().clear();
-		root.getStylesheets().add(getClass().getResource(theme.getFilePath()).toExternalForm());
+		root.getStylesheets().add(theme);
 		return root;
 	}
 	
@@ -152,9 +155,9 @@ public class ControllerManager {
 	public Parent loadParent(String path) throws IOException {
 		FXMLLoader loader = new FXMLLoader(getClass().getResource(FXML_PATH + path), bundle.get());
 		Parent root = loader.load();
-		Theme theme = Theme.valueOf(settings.getTheme());
+		String theme = getAppTheme();
 		root.getStylesheets().clear();
-		root.getStylesheets().add(getClass().getResource(theme.getFilePath()).toExternalForm());
+		root.getStylesheets().add(theme);
 		return root;
 	}
 	
@@ -169,6 +172,9 @@ public class ControllerManager {
 		FXMLLoader loader = new FXMLLoader(getClass().getResource(FXML_PATH + path), bundle.get());
 		loader.setController(controller);
 		Parent root = loader.load();
+		String theme = getAppTheme();
+		root.getStylesheets().clear();
+		root.getStylesheets().add(theme);
 		return root;
 	}
 	
@@ -282,6 +288,11 @@ public class ControllerManager {
 	 */
 	public final void setChosenResolution(Resolution chosen_resolution) {
 		this.chosenResolutionProperty().set(chosen_resolution);
+	}
+
+	public String getAppTheme() {
+		Theme theme = Theme.valueOf(settings.getTheme());
+		return getClass().getResource(theme.getFilePath()).toExternalForm();
 	}
 	
 }

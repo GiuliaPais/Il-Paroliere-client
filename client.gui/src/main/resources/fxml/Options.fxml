@@ -9,45 +9,50 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import org.controlsfx.glyphfont.Glyph?>
 
-
-<AnchorPane fx:id="rootContainer" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uninsubria.client.guicontrollers.OptionsController">
+<AnchorPane fx:id="rootContainer" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" stylesheets="@../css/night_sky.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uninsubria.client.guicontrollers.OptionsController">
    <children>
-      <BorderPane fx:id="root" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" stylesheets="@../css/night_sky.css">
-         <center>
-          <AnchorPane fx:id="central_view" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="555.0" prefWidth="980.0" />
-         </center>
-         <left>
-            <ToolBar fx:id="toolbar" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="555.0" prefWidth="300.0" BorderPane.alignment="CENTER">
-               <items>
-                  <ToggleButton id="sidebar_opt_btn" fx:id="lang_toggle" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#loadLanguagePanel" prefHeight="80.0" prefWidth="300.0" text="\%lang_toggle" />
-                  <ToggleButton id="sidebar_opt_btn" fx:id="graphics_toggle" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#loadGraphicsPanel" prefHeight="80.0" prefWidth="300.0" text="\%graph_toggle" />
-                  <ToggleButton id="sidebar_opt_btn" fx:id="aspect_toggle" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#loadAspectPanel" prefHeight="80.0" prefWidth="300.0" text="\%aspect_toggle" />
-               </items>
-            </ToolBar>
-         </left>
-         <bottom>
-            <ButtonBar id="opt_btn_bar" fx:id="btn_bar" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="90.0" prefWidth="1280.0" BorderPane.alignment="CENTER">
-              <buttons>
-                <Button fx:id="default_btn" mnemonicParsing="false" onAction="#defaultSettings" prefHeight="60.0" prefWidth="170.0" text="\%default_opt_btn" />
-                  <Button fx:id="undo_btn" mnemonicParsing="false" onAction="#undo" prefHeight="60.0" prefWidth="170.0" text="\%undo_opt_btn" />
-                  <Button fx:id="save_btn" mnemonicParsing="false" onAction="#saveOptions" prefHeight="60.0" prefWidth="170.0" text="\%save_opt_btn" wrapText="true" />
-              </buttons>
-            </ButtonBar>
-         </bottom>
-         <top>
-            <HBox id="opt_title" fx:id="title_bar" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="75.0" prefWidth="1280.0" BorderPane.alignment="CENTER_LEFT">
-               <children>
-                  <Glyph fx:id="icon" alignment="CENTER" contentDisplay="CENTER" graphicTextGap="0.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="75.0" prefWidth="75.0" HBox.hgrow="ALWAYS">
-                     <HBox.margin>
-                        <Insets />
-                     </HBox.margin>
-                  </Glyph>
-                  <Label fx:id="title_label" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="75.0" prefWidth="1192.0" text="\%opts_title" />
-               </children>
-            </HBox>
-         </top>
-      </BorderPane>
+      <StackPane fx:id="stackPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <BorderPane fx:id="root" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0">
+               <center>
+                <AnchorPane fx:id="central_view" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="555.0" prefWidth="980.0" />
+               </center>
+               <left>
+                  <ToolBar fx:id="toolbar" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="555.0" prefWidth="300.0" BorderPane.alignment="CENTER">
+                     <items>
+                        <ToggleButton id="sidebar_opt_btn" fx:id="lang_toggle" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#loadLanguagePanel" prefHeight="80.0" prefWidth="300.0" text="\%lang_toggle" />
+                        <ToggleButton id="sidebar_opt_btn" fx:id="graphics_toggle" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#loadGraphicsPanel" prefHeight="80.0" prefWidth="300.0" text="\%graph_toggle" />
+                        <ToggleButton id="sidebar_opt_btn" fx:id="aspect_toggle" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#loadAspectPanel" prefHeight="80.0" prefWidth="300.0" text="\%aspect_toggle" />
+                        <ToggleButton id="sidebar_opt_btn" fx:id="server_toggle" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#loadServerPanel" prefHeight="80.0" prefWidth="300.0" text="Server" />
+                     </items>
+                  </ToolBar>
+               </left>
+               <bottom>
+                  <ButtonBar id="opt_btn_bar" fx:id="btn_bar" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="90.0" prefWidth="1280.0" BorderPane.alignment="CENTER">
+                    <buttons>
+                      <Button fx:id="default_btn" mnemonicParsing="false" onAction="#defaultSettings" prefHeight="60.0" prefWidth="170.0" text="\%default_opt_btn" />
+                        <Button fx:id="undo_btn" mnemonicParsing="false" onAction="#undo" prefHeight="60.0" prefWidth="170.0" text="\%undo_opt_btn" />
+                        <Button fx:id="save_btn" mnemonicParsing="false" onAction="#saveOptions" prefHeight="60.0" prefWidth="170.0" text="\%save_opt_btn" wrapText="true" />
+                    </buttons>
+                  </ButtonBar>
+               </bottom>
+               <top>
+                  <HBox id="opt_title" fx:id="title_bar" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="75.0" prefWidth="1280.0" BorderPane.alignment="CENTER_LEFT">
+                     <children>
+                        <Glyph fx:id="icon" alignment="CENTER" contentDisplay="CENTER" graphicTextGap="0.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="75.0" prefWidth="75.0" HBox.hgrow="ALWAYS">
+                           <HBox.margin>
+                              <Insets />
+                           </HBox.margin>
+                        </Glyph>
+                        <Label fx:id="title_label" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="75.0" prefWidth="1192.0" text="\%opts_title" />
+                     </children>
+                  </HBox>
+               </top>
+            </BorderPane>
+         </children>
+      </StackPane>
    </children>
 </AnchorPane>

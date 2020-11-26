@@ -5,6 +5,7 @@ import java.util.ResourceBundle;
 
 import com.jfoenix.controls.JFXButton;
 
+import com.jfoenix.controls.JFXDialog;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.binding.DoubleBinding;
@@ -17,11 +18,12 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
+import uninsubria.client.gui.Launcher;
 
 /**
  * Controller class for the main menu screen.
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  *
  */
 public class MainMenuController extends AbstractMainController{
@@ -60,6 +62,10 @@ public class MainMenuController extends AbstractMainController{
 		opt_btn.textProperty().bind(opt_btn_label);
 		exit_btn.textProperty().bind(exit_btn_label);
 		bindButtons();
+		if (!Launcher.manager.isConnected()) {
+			JFXDialog servAlert = serverAlert(root, menu_bg.getWidth());
+			servAlert.show();
+		}
 	}
 	
 	@Override

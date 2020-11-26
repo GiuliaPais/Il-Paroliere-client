@@ -7,6 +7,10 @@ import java.io.IOException;
 import java.util.ResourceBundle;
 import java.util.prefs.BackingStoreException;
 
+import com.jfoenix.controls.JFXDialog;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.layout.StackPane;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.controlsfx.glyphfont.Glyph;
 
@@ -35,7 +39,7 @@ import uninsubria.client.settings.SettingDefaults;
 /**
  * Controller class for the options menu screen.
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  *
  */
 public class OptionsController extends AbstractMainController {
@@ -43,20 +47,22 @@ public class OptionsController extends AbstractMainController {
 	@FXML Glyph icon;
 	@FXML AnchorPane central_view;
 	@FXML ToolBar toolbar;
-	@FXML ToggleButton lang_toggle, graphics_toggle, aspect_toggle;
+	@FXML ToggleButton lang_toggle, graphics_toggle, aspect_toggle, server_toggle;
 	@FXML ButtonBar btn_bar;
 	@FXML Button save_btn, default_btn, undo_btn;
 	@FXML Label title_label;
 	@FXML HBox title_bar;
+	@FXML StackPane stackPane;
 	
 	private ToggleGroup tgroup;
 	private StringProperty opt_title_lbl, lt_lbl, gt_lbl, at_lbl, def_btn_lbl, undo_btn_lbl, save_btn_lbl;
 	
-	private Parent languages, graphics, aspect;
+	private Parent languages, graphics, aspect, server;
 	
 	private DoubleProperty titleSize;
 	
 	private AppSettings before;
+	private ObservableList<String> addresses_before;
 	
 	/*---Constructors---*/
 	/**
@@ -74,6 +80,7 @@ public class OptionsController extends AbstractMainController {
 		save_btn_lbl = new SimpleStringProperty();
 		before = new AppSettings(Launcher.contrManager.getSettings());
 		titleSize = new SimpleDoubleProperty(ref.getReferences().get("FONT_SIZE_TITLE"));
+		addresses_before = FXCollections.observableArrayList(before.getConnectionPrefs().getServer_addresses());
 	}
 
 	/*---Methods---*/
@@ -94,6 +101,7 @@ public class OptionsController extends AbstractMainController {
 		tgroup.getToggles().add(lang_toggle);
 		tgroup.getToggles().add(graphics_toggle);
 		tgroup.getToggles().add(aspect_toggle);
+		tgroup.getToggles().add(server_toggle);
 		tgroup.selectToggle(lang_toggle);
 		bindLbls();
 		try {
@@ -158,6 +166,23 @@ public class OptionsController extends AbstractMainController {
 		central_view.getChildren().add(aspect);
 		setCentralAnchors(aspect);
 	}
+
+	@FXML
+	void loadServerPanel() {
+		if (server == null) {
+			try {
+				OptionServerController serverContr = new OptionServerController();
+				serverContr.setMainOptionsController(this);
+				server = requestParent(ControllerType.OPTIONS_SERVER, serverContr);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		central_view.getChildren().clear();
+		central_view.getChildren().add(server);
+		setCentralAnchors(server);
+	}
 	
 	/**
 	 * Action performed when the "Save" button is pressed. Saves the current preferences (options saved 
@@ -179,6 +204,7 @@ public class OptionsController extends AbstractMainController {
 	 */
 	@FXML
 	void undo() throws IOException {
+		before.getConnectionPrefs().setServer_addresses(addresses_before);
 		Launcher.contrManager.setSettings(before);
 		Parent mainMenu = requestParent(ControllerType.MAIN_MENU);
 		Timeline anim = sceneTransitionAnimation(mainMenu, SlideDirection.TO_BOTTOM);
@@ -191,7 +217,7 @@ public class OptionsController extends AbstractMainController {
 	 */
 	@FXML
 	void defaultSettings() {
-		AppSettings def = new SettingDefaults(Launcher.contrManager.getSettings().getPrefs());
+		AppSettings def = new SettingDefaults(before);
 		Launcher.contrManager.setSettings(def);
 	}
 	
@@ -205,7 +231,17 @@ public class OptionsController extends AbstractMainController {
 		undo_btn_lbl.set(resBundle.getString("undo_opt_btn"));
 		save_btn_lbl.set(resBundle.getString("save_opt_btn"));
 	}
-	
+
+	public void displayServerAlert() {
+		JFXDialog dialog = serverAlert(stackPane, central_view.getPrefWidth());
+		dialog.show();
+	}
+
+	public void displayServerConnectedAlert(String address_conn) {
+		JFXDialog dialog = serverConnectedAlert(stackPane, central_view.getPrefWidth(), address_conn);
+		dialog.show();
+	}
+
 	/* ---- Private internal methods for scaling and init ---- */
 	
 	private void bindLbls() {
@@ -244,12 +280,14 @@ public class OptionsController extends AbstractMainController {
 		lang_toggle.setPrefHeight(toggle_h);
 		graphics_toggle.setPrefHeight(toggle_h);
 		aspect_toggle.setPrefHeight(toggle_h);
+		server_toggle.setPrefHeight(toggle_h);
 	}
 	
 	private void bindToggleWidth() {
 		lang_toggle.prefWidthProperty().bind(toolbar.prefWidthProperty());
 		graphics_toggle.prefWidthProperty().bind(toolbar.prefWidthProperty());
 		aspect_toggle.prefWidthProperty().bind(toolbar.prefWidthProperty());
+		server_toggle.prefWidthProperty().bind(toolbar.prefWidthProperty());
 	}
 	
 	private void rescaleBtnBar(double after) {

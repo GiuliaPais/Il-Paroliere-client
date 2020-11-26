@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXListView?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<GridPane fx:id="grid" hgap="40.0" prefHeight="555.0" prefWidth="980.0" styleClass="options-bg" stylesheets="@../css/night_sky.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
+   <columnConstraints>
+      <ColumnConstraints fx:id="labels_col" hgrow="ALWAYS" minWidth="0.0" percentWidth="50.0" />
+      <ColumnConstraints fx:id="val_col" hgrow="ALWAYS" minWidth="0.0" percentWidth="50.0" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints maxHeight="395.0" minHeight="10.0" percentHeight="25.0" prefHeight="96.0" vgrow="ALWAYS" />
+      <RowConstraints maxHeight="395.0" minHeight="10.0" percentHeight="25.0" prefHeight="96.0" vgrow="ALWAYS" />
+      <RowConstraints maxHeight="304.0" minHeight="10.0" percentHeight="25.0" prefHeight="106.0" vgrow="ALWAYS" />
+      <RowConstraints maxHeight="404.0" minHeight="10.0" percentHeight="25.0" prefHeight="100.0" vgrow="ALWAYS" />
+   </rowConstraints>
+   <children>
+      <JFXListView fx:id="listView" maxWidth="-Infinity" minWidth="-Infinity" prefHeight="356.0" prefWidth="300.0" styleClass="serverlistview" GridPane.halignment="RIGHT" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.rowSpan="2" GridPane.valignment="CENTER" GridPane.vgrow="ALWAYS">
+         <GridPane.margin>
+            <Insets />
+         </GridPane.margin>
+      </JFXListView>
+      <StackPane fx:id="stackPane" prefHeight="150.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.rowSpan="2" GridPane.valignment="CENTER" GridPane.vgrow="ALWAYS">
+         <children>
+            <VBox fx:id="vBox" alignment="CENTER" spacing="50.0" StackPane.alignment="TOP_CENTER">
+               <children>
+                  <Label fx:id="add_ip_label" alignment="CENTER" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" text="\%add_ip_lbl" />
+                  <HBox fx:id="hBox" alignment="CENTER" spacing="20.0">
+                     <children>
+                        <JFXTextField id="lighter_font" fx:id="textField" labelFloat="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="200.0" />
+                        <JFXButton fx:id="add_btn" onAction="#addAddress" text="\%add_btn" />
+                     </children>
+                  </HBox>
+                  <JFXButton fx:id="serverBtn" onAction="#connectToServer" text="\%connect_btn" />
+               </children>
+            </VBox>
+         </children>
+      </StackPane>
+   </children>
+</GridPane>
