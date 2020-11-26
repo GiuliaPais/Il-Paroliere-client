@@ -3,20 +3,15 @@
  */
 package uninsubria.client.settings;
 
+import javafx.beans.property.*;
+
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
-
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 
 /**
  * Represents a predefined set of user preferences for the application.
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  *
  */
 public class AppSettings {
@@ -28,6 +23,7 @@ public class AppSettings {
 	private DoubleProperty height;
 	private StringProperty theme;
 	private StringProperty language;
+	private ConnectionPrefs connectionPrefs;
 
 	/*---Constructors---*/
 	/**
@@ -39,8 +35,10 @@ public class AppSettings {
 	 * @param height height of the screen
 	 * @param theme the name of the application graphical theme 
 	 * @param language the preferred language
+	 * @param server_addresses a list of known server ip addresses as strings
 	 */
-	public AppSettings(Preferences prefs, boolean fullscreen, double aspectRatio, double width, double height, String theme, String language) {
+	public AppSettings(Preferences prefs, boolean fullscreen, double aspectRatio, double width, double height,
+					   String theme, String language, String server_addresses) {
 		this.prefs = prefs;
 		this.fullscreen = new SimpleBooleanProperty(fullscreen);
 		this.aspectRatio = new SimpleDoubleProperty(aspectRatio);
@@ -48,8 +46,32 @@ public class AppSettings {
 		this.height = new SimpleDoubleProperty(height);
 		this.theme = new SimpleStringProperty(theme);
 		this.language = new SimpleStringProperty(language);
+		this.connectionPrefs = new ConnectionPrefs(server_addresses);
 	}
-	
+
+	/**
+	 * Builds an object of type AppSettings
+	 * @param prefs The preferences node to associate
+	 * @param fullscreen boolean value to set fullscreen mode
+	 * @param aspectRatio aspect ratio of the screen
+	 * @param width width of the screen
+	 * @param height height of the screen
+	 * @param theme the name of the application graphical theme
+	 * @param language the preferred language
+	 * @param server_addresses a ConnectionPrefs object
+	 */
+	public AppSettings(Preferences prefs, boolean fullscreen, double aspectRatio, double width, double height,
+					   String theme, String language, ConnectionPrefs server_addresses) {
+		this.prefs = prefs;
+		this.fullscreen = new SimpleBooleanProperty(fullscreen);
+		this.aspectRatio = new SimpleDoubleProperty(aspectRatio);
+		this.width = new SimpleDoubleProperty(width);
+		this.height = new SimpleDoubleProperty(height);
+		this.theme = new SimpleStringProperty(theme);
+		this.language = new SimpleStringProperty(language);
+		this.connectionPrefs = server_addresses;
+	}
+
 	/**
 	 * Builds an object of type AppSettings
 	 * @param prefs The preferences node to associate
@@ -62,6 +84,7 @@ public class AppSettings {
 		this.height = new SimpleDoubleProperty();
 		this.theme = new SimpleStringProperty();
 		this.language = new SimpleStringProperty();
+		this.connectionPrefs = new ConnectionPrefs("localhost");
 	}
 	
 	/**
@@ -76,6 +99,7 @@ public class AppSettings {
 		this.height = new SimpleDoubleProperty(settings.getHeight());
 		this.theme = new SimpleStringProperty(settings.getTheme());
 		this.language = new SimpleStringProperty(settings.getLanguage());
+		this.connectionPrefs = settings.getConnectionPrefs();
 	}
 	
 	/*---Methods---*/
@@ -158,7 +182,15 @@ public class AppSettings {
 	public void setPrefs(Preferences prefs) {
 		this.prefs = prefs;
 	}
-	
+
+	public ConnectionPrefs getConnectionPrefs() {
+		return connectionPrefs;
+	}
+
+	public void setConnectionPrefs(ConnectionPrefs connectionPrefs) {
+		this.connectionPrefs = connectionPrefs;
+	}
+
 	/**
 	 * Writes the preferences to the storage
 	 * @throws BackingStoreException
@@ -170,6 +202,7 @@ public class AppSettings {
 		prefs.putDouble("HEIGHT", this.height.get());
 		prefs.put("THEME", this.theme.get());
 		prefs.put("LANGUAGE", this.language.get());
+		prefs.put("SERVER_ADDRESSES", this.connectionPrefs.addressesAsString());
 		prefs.flush();
 	}
 

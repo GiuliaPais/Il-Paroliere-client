@@ -3,21 +3,28 @@
  */
 package uninsubria.client.guicontrollers;
 
-import java.io.IOException;
-import java.util.ResourceBundle;
-
+import com.jfoenix.controls.JFXButton;
+import com.jfoenix.controls.JFXDialog;
+import com.jfoenix.controls.JFXDialogLayout;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.Parent;
+import javafx.scene.control.Label;
+import javafx.scene.layout.StackPane;
 import uninsubria.client.gui.AspectRatio;
 import uninsubria.client.gui.Controller;
 import uninsubria.client.gui.Launcher;
 import uninsubria.client.gui.Resolution;
 
+import java.io.IOException;
+import java.util.ResourceBundle;
+
 /**
  * Abstract implementation of Controller interface.
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  *
  */
 abstract class AbstractController implements Controller {
@@ -26,6 +33,7 @@ abstract class AbstractController implements Controller {
 	 * AspectRatio object used for references upon rescaling of GUI components.
 	 */
 	protected AspectRatio ref;
+	protected DoubleProperty currentFontSize;
 
 	/*---Constructors---*/
 	/**
@@ -33,6 +41,7 @@ abstract class AbstractController implements Controller {
 	 */
 	public AbstractController() {
 		this.ref = AspectRatio.getByRatio(Launcher.contrManager.getCurrentresolution().getAspectRatio());
+		this.currentFontSize = new SimpleDoubleProperty();
 	}
 
 	/*---Methods---*/
@@ -97,5 +106,47 @@ abstract class AbstractController implements Controller {
 	 * @param after The width to use for rescaling
 	 */
 	abstract protected void scaleFontSize(double after);
+
+	protected JFXDialog serverAlert(StackPane stackPane, double maxWidth) {
+		String heading_content = Launcher.contrManager.getBundleValue().getString("alert_heading");
+		String body_content = Launcher.contrManager.getBundleValue().getString("alert_body");
+		Label heading = new Label(heading_content);
+		double heading_font_size = currentFontSize.get() + 4;
+		heading.setStyle("-fx-font-size: "+ heading_font_size +";");
+		Label body = new Label(body_content);
+		body.setStyle("-fx-font-size: "+currentFontSize.get()+";");
+		JFXDialogLayout content = new JFXDialogLayout();
+		content.getStylesheets().add(Launcher.contrManager.getAppTheme());
+		content.setMaxWidth(maxWidth);
+		content.setHeading(heading);
+		content.setBody(body);
+		JFXButton ok_button = new JFXButton("OK");
+		ok_button.setStyle("-fx-font-size: "+currentFontSize.get()+";");
+		JFXDialog dialog = new JFXDialog(stackPane, content, JFXDialog.DialogTransition.CENTER);
+		ok_button.setOnAction((actionEvent -> {dialog.close();}));
+		content.setActions(ok_button);
+		return dialog;
+	}
+
+	protected JFXDialog serverConnectedAlert(StackPane stackPane, double maxWidth, String address) {
+		String heading_content = Launcher.contrManager.getBundleValue().getString("alert_connected_heading");
+		String body_content = Launcher.contrManager.getBundleValue().getString("alert_connected_body");
+		Label heading = new Label(heading_content);
+		double heading_font_size = currentFontSize.get() + 4;
+		heading.setStyle("-fx-font-size: "+ heading_font_size +";");
+		Label body = new Label(body_content + " " + address);
+		body.setStyle("-fx-font-size: "+currentFontSize.get()+";");
+		JFXDialogLayout content = new JFXDialogLayout();
+		content.getStylesheets().add(Launcher.contrManager.getAppTheme());
+		content.setMaxWidth(maxWidth);
+		content.setHeading(heading);
+		content.setBody(body);
+		JFXButton ok_button = new JFXButton("OK");
+		ok_button.setStyle("-fx-font-size: "+currentFontSize.get()+";");
+		JFXDialog dialog = new JFXDialog(stackPane, content, JFXDialog.DialogTransition.CENTER);
+		ok_button.setOnAction((actionEvent -> {dialog.close();}));
+		content.setActions(ok_button);
+		return dialog;
+	}
 	
 }

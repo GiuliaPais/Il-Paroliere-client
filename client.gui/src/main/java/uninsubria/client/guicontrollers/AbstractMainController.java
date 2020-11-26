@@ -56,6 +56,7 @@ public abstract class AbstractMainController extends AbstractController {
 		super.initialize();
 		setUndecoratedMovable(!Launcher.contrManager.getSettings().isFullscreen());
 		root.setPrefSize(Launcher.contrManager.getCurrentresolution().getWidthHeight()[0], Launcher.contrManager.getCurrentresolution().getWidthHeight()[1]);
+		rootContainer.setPrefSize(Launcher.contrManager.getCurrentresolution().getWidthHeight()[0], Launcher.contrManager.getCurrentresolution().getWidthHeight()[1]);
 		Launcher.contrManager.getSettings().fullscreenProperty().addListener(new ChangeListener<Boolean>() {
 
 			@Override
@@ -70,6 +71,7 @@ public abstract class AbstractMainController extends AbstractController {
 			public void changed(ObservableValue<? extends Resolution> observable, Resolution oldValue,
 					Resolution newValue) {
 				root.setPrefSize(newValue.getWidthHeight()[0], newValue.getWidthHeight()[1]);
+				rootContainer.setPrefSize(newValue.getWidthHeight()[0], newValue.getWidthHeight()[1]);
 			}
 			
 		});
@@ -83,8 +85,8 @@ public abstract class AbstractMainController extends AbstractController {
 	
 	@Override
 	protected void scaleFontSize(double after) {
-		double newFontSize = (after*ref.getReferences().get("FONT_SIZE")) / ref.getReferences().get("REF_RESOLUTION");
-		root.setStyle("-fx-font-size: "+ newFontSize + "px;");
+		this.currentFontSize.set(after*ref.getReferences().get("FONT_SIZE") / ref.getReferences().get("REF_RESOLUTION"));
+		root.setStyle("-fx-font-size: "+ currentFontSize.get() + "px;");
 	}
 	
 	private void setUndecoratedMovable(boolean movable) {

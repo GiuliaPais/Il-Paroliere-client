@@ -4,14 +4,23 @@
 package uninsubria.client.guicontrollers;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import com.jfoenix.controls.*;
+import com.jfoenix.validation.RegexValidator;
+import com.jfoenix.validation.RequiredFieldValidator;
+import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.concurrent.Task;
+import javafx.scene.control.Label;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.controlsfx.glyphfont.Glyph;
-
-import com.jfoenix.controls.JFXButton;
-import com.jfoenix.controls.JFXPasswordField;
-import com.jfoenix.controls.JFXTextField;
 
 import javafx.animation.Timeline;
 import javafx.beans.binding.DoubleBinding;
@@ -21,15 +30,13 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 import uninsubria.client.gui.Launcher;
 
 /**
  * Controller class for the registration screen.
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  *
  */
 public class RegistrationController extends AbstractMainController {
@@ -38,12 +45,15 @@ public class RegistrationController extends AbstractMainController {
 	@FXML VBox vbox;
 	@FXML Glyph icon;
 	@FXML JFXTextField name_field, lastName_field, userID_field, email_field;
-	@FXML JFXPasswordField pw_field;
+	@FXML JFXPasswordField pw_field, pw_field_confirm;
 	@FXML HBox btn_box;
-	@FXML JFXButton back_btn, register_btn;
+	@FXML JFXButton back_btn, register_btn, code_btn;
 	
-	private StringProperty name_txt, lastName_txt, reg_btn_txt;
+	private StringProperty name_txt, lastName_txt, confirmPw_text, reg_btn_txt, code_btn_txt,
+			required_valid_error, mail_valid_error, pw_length_valid_error, alert_pw_ver_heading, alert_pw_ver_body;
 	private Glyph back_arrow;
+	private List<JFXTextField> validatableTextFields;
+	private List<JFXPasswordField> validatablePwFields;
 
 	/*---Constructors---*/
 	/**
@@ -54,6 +64,13 @@ public class RegistrationController extends AbstractMainController {
 		this.name_txt = new SimpleStringProperty();
 		this.lastName_txt = new SimpleStringProperty();
 		this.reg_btn_txt = new SimpleStringProperty();
+		this.confirmPw_text = new SimpleStringProperty();
+		this.required_valid_error = new SimpleStringProperty();
+		this.mail_valid_error = new SimpleStringProperty();
+		this.code_btn_txt = new SimpleStringProperty();
+		this.alert_pw_ver_body = new SimpleStringProperty();
+		this.alert_pw_ver_heading = new SimpleStringProperty();
+		this.pw_length_valid_error = new SimpleStringProperty();
 		back_arrow = new Glyph("FontAwesome", FontAwesome.Glyph.ARROW_LEFT);
 	}
 
@@ -61,6 +78,8 @@ public class RegistrationController extends AbstractMainController {
 	@Override
 	public void initialize() {
 		super.initialize();
+		this.validatableTextFields = new ArrayList<JFXTextField>(List.of(name_field, lastName_field, userID_field, email_field));
+		this.validatablePwFields = new ArrayList<JFXPasswordField>(List.of(pw_field, pw_field_confirm));
 		icon.setFontFamily("FontAwesome");
 		icon.setIcon(FontAwesome.Glyph.USER);
 		back_arrow.setAlignment(Pos.CENTER);
@@ -68,6 +87,48 @@ public class RegistrationController extends AbstractMainController {
 		bindText();
 		bindButtons();
 		rescaleAll(Launcher.contrManager.getCurrentresolution().getWidthHeight()[0]);
+		setValidators();
+		required_valid_error.addListener(new ChangeListener<String>() {
+			@Override
+			public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
+				name_field.resetValidation();
+				lastName_field.resetValidation();
+				email_field.resetValidation();
+				userID_field.resetValidation();
+				pw_field.resetValidation();
+				pw_field_confirm.resetValidation();
+			}
+		});
+		name_field.focusedProperty().addListener((o, oldVal, newVal) -> {
+			if (!newVal) {
+				name_field.validate();
+			}
+		});
+		lastName_field.focusedProperty().addListener((o, oldVal, newVal) -> {
+			if (!newVal) {
+				lastName_field.validate();
+			}
+		});
+		userID_field.focusedProperty().addListener((o, oldVal, newVal) -> {
+			if (!newVal) {
+				userID_field.validate();
+			}
+		});
+		email_field.focusedProperty().addListener((o, oldVal, newVal) -> {
+			if (!newVal) {
+				email_field.validate();
+			}
+		});
+		pw_field.focusedProperty().addListener((o, oldVal, newVal) -> {
+			if (!newVal) {
+				pw_field.validate();
+			}
+		});
+		pw_field_confirm.focusedProperty().addListener((o, oldVal, newVal) -> {
+			if (!newVal) {
+				pw_field_confirm.validate();
+			}
+		});
 	}
 	
 	/**
@@ -80,12 +141,85 @@ public class RegistrationController extends AbstractMainController {
 		Timeline anim = sceneTransitionAnimation(mainMenu, SlideDirection.TO_RIGHT);
 		anim.play();
 	}
+
+	@FXML
+	void register() throws InterruptedException {
+		if (!Launcher.manager.isConnected()) {
+			serverAlert((StackPane) root, rect.getWidth()).show();
+			return;
+		}
+		if (!allValid()) {
+			return;
+		}
+		if (!verifyPassword()) {
+			return;
+		}
+		//lancia un task e chiedi al server il codice, mentre aspetti lancia l'animazione
+		LoadingAnimationOverlay animation = new LoadingAnimationOverlay(root);
+		Task<Void> task = new Task<Void>() {
+			@Override
+			protected Void call() throws Exception {
+				List<String> errMsgs = Launcher.manager.requestActivationCode(name_field.getText(),
+						lastName_field.getText(), userID_field.getText(), email_field.getText(), pw_field.getText());
+				System.out.println(errMsgs);
+				List<Text> localized = new ArrayList<>();
+				if (errMsgs.isEmpty()) {
+					Platform.runLater(() -> {
+						animation.stopAnimation();
+						System.out.println("OK");
+					});
+				}
+				for (String err : errMsgs) {
+					String localMsg = Launcher.contrManager.getBundleValue().getString(err);
+					Text text = new Text(localMsg + "\n");
+					text.setFill(Color.RED);
+					localized.add(text);
+				}
+				Platform.runLater(() -> {
+					animation.stopAnimation();
+					JFXDialogLayout dialogLayout = new JFXDialogLayout();
+					JFXDialog dialog = new JFXDialog((StackPane) root, dialogLayout, JFXDialog.DialogTransition.CENTER);
+					JFXButton okBtn = new JFXButton("OK");
+					okBtn.setOnAction(e -> dialog.close());
+					dialogLayout.setHeading(new Label("Error"));
+					dialogLayout.setActions(okBtn);
+					for (Text t: localized) {
+						dialogLayout.getBody().add(t);
+					}
+					dialog.show();
+				});
+				return null;
+			}
+
+			@Override
+			protected void scheduled() {
+				super.scheduled();
+				Platform.runLater(() -> animation.playAnimation());
+			}
+		};
+		Thread thread = new Thread(task);
+		thread.setDaemon(true);
+		thread.start();
+	}
+
+	@FXML
+	void confirmCode() throws IOException {
+		JFXDialog dialog = activationCodeDialog();
+		dialog.show();
+	}
 	
 	@Override
 	public void setTextResources(ResourceBundle resBundle) {
 		name_txt.set(resBundle.getString("prompt_name"));
 		lastName_txt.set(resBundle.getString("prompt_lastName"));
+		confirmPw_text.set(resBundle.getString("prompt_confirmpw"));
 		reg_btn_txt.set(resBundle.getString("register_reg_btn"));
+		required_valid_error.set(resBundle.getString("required_err_label"));
+		mail_valid_error.set(resBundle.getString("invalid_email_error"));
+		code_btn_txt.set(resBundle.getString("insert_code"));
+		alert_pw_ver_heading.set(resBundle.getString("alert_pw_ver_failed_heading"));
+		alert_pw_ver_body.set(resBundle.getString("alert_pw_ver_failed_body"));
+		pw_length_valid_error.set(resBundle.getString("invalid_pw_length_error"));
 	}
 	
 	@Override
@@ -96,16 +230,18 @@ public class RegistrationController extends AbstractMainController {
 		rescaleIcon(after);
 	}
 	
-	/* ---- Private internal methods for rescaling ---- */
+	/* ---- Private internal methods for rescaling and other logic ---- */
 	private void bindText() {
 		name_field.promptTextProperty().bind(name_txt);
 		lastName_field.promptTextProperty().bind(lastName_txt);
+		pw_field_confirm.promptTextProperty().bind(confirmPw_text);
 		register_btn.textProperty().bind(reg_btn_txt);
+		code_btn.textProperty().bind(code_btn_txt);
 	}
 	
 	private void rescaleRect(double after) {
-		double widthAfter = (after*ref.getReferences().get("RECT_WIDTH")) / ref.getReferences().get("REF_RESOLUTION");
-		double heigthAfter = (after*ref.getReferences().get("RECT_HEIGHT")) / ref.getReferences().get("REF_RESOLUTION");
+		double widthAfter = (after*ref.getReferences().get("REG_RECT_W")) / ref.getReferences().get("REF_RESOLUTION");
+		double heigthAfter = (after*ref.getReferences().get("REG_RECT_H")) / ref.getReferences().get("REF_RESOLUTION");
 		rect.setWidth(widthAfter); 
 		rect.setHeight(heigthAfter);
 		vbox.setPrefSize(widthAfter, heigthAfter);
@@ -116,15 +252,23 @@ public class RegistrationController extends AbstractMainController {
 	}
 	
 	private void rescaleFields(double after) {
-		double widthAfter = after*ref.getReferences().get("LOG_TXT_FIELD_W") / ref.getReferences().get("REF_RESOLUTION");
-		double heightAfter = after*ref.getReferences().get("LOG_TXT_FIELD_H") / ref.getReferences().get("REF_RESOLUTION");
+		double widthAfter = after*ref.getReferences().get("REG_TXT_FIELD_W") / ref.getReferences().get("REF_RESOLUTION");
+		double heightAfter = after*(ref.getReferences().get("REG_TXT_FIELD_H")) / ref.getReferences().get("REF_RESOLUTION");
+		double fontsize_adj = currentFontSize.get()-2;
 		userID_field.setPrefSize(widthAfter, heightAfter);
+		userID_field.setStyle("-fx-font-size: "+ fontsize_adj +";");
 		name_field.setPrefSize(widthAfter, heightAfter);
+		name_field.setStyle("-fx-font-size: "+ fontsize_adj +";");
 		lastName_field.setPrefSize(widthAfter, heightAfter);
+		lastName_field.setStyle("-fx-font-size: "+ fontsize_adj +";");
 		email_field.setPrefSize(widthAfter, heightAfter);
+		email_field.setStyle("-fx-font-size: "+ fontsize_adj +";");
 		pw_field.setPrefSize(widthAfter, heightAfter);
+		pw_field.setStyle("-fx-font-size: "+ fontsize_adj +";");
+		pw_field_confirm.setPrefSize(widthAfter, heightAfter);
+		pw_field_confirm.setStyle("-fx-font-size: "+ fontsize_adj +";");
 		btn_box.setPrefSize(widthAfter, after*ref.getReferences().get("LOG_BTN_H") / ref.getReferences().get("REF_RESOLUTION"));
-		btn_box.setSpacing(after*ref.getReferences().get("LOG_BTN_SPACING") / ref.getReferences().get("REF_RESOLUTION"));
+		btn_box.setSpacing(after*ref.getReferences().get("REG_BTN_SPACING") / ref.getReferences().get("REF_RESOLUTION"));
 		double iconSizeAfter = after*ref.getReferences().get("LOG_BTN_ARROW_SIZE") / ref.getReferences().get("REF_RESOLUTION");
 		back_arrow.setFontSize(iconSizeAfter);
 	}
@@ -135,12 +279,73 @@ public class RegistrationController extends AbstractMainController {
 		icon.setPrefSize(dimAfter, dimAfter);
 		icon.setFontSize(sizeAfter);
 	}
-	
+
 	private void bindButtons() {
 		register_btn.prefHeightProperty().bind(btn_box.prefHeightProperty());
 		back_btn.prefHeightProperty().bind(btn_box.prefHeightProperty());
-		DoubleBinding btnWidth = (btn_box.prefWidthProperty().subtract(btn_box.spacingProperty())).divide(2.0);
+		code_btn.prefHeightProperty().bind(btn_box.prefHeightProperty());
+		DoubleBinding btnWidth = (btn_box.prefWidthProperty().subtract(btn_box.spacingProperty())).divide(3.0);
 		register_btn.prefWidthProperty().bind(btnWidth);
 		back_btn.prefWidthProperty().bind(btnWidth);
+		code_btn.prefWidthProperty().bind(btnWidth);
+	}
+
+	private void setValidators() {
+		RequiredFieldValidator validator = new RequiredFieldValidator();
+		validator.messageProperty().bind(required_valid_error);
+		RegexValidator emailValidator = new RegexValidator();
+		emailValidator.setRegexPattern("^[\\w-_\\.+]*[\\w-_\\.]\\@([\\w]+\\.)+[\\w]+[\\w]$");
+		emailValidator.messageProperty().bind(mail_valid_error);
+		RegexValidator pwLengthValidator = new RegexValidator();
+		pwLengthValidator.setRegexPattern(".{5,}");
+		pwLengthValidator.messageProperty().bind(pw_length_valid_error);
+		name_field.setValidators(validator);
+		lastName_field.setValidators(validator);
+		userID_field.setValidators(validator);
+		email_field.setValidators(validator, emailValidator);
+		pw_field.setValidators(validator, pwLengthValidator);
+		pw_field_confirm.setValidators(validator);
+	}
+
+	private boolean allValid() {
+		boolean valid = true;
+		for (JFXTextField field : validatableTextFields) {
+			field.validate();
+			valid = valid & field.getValidators().stream()
+					.noneMatch(validator -> validator.getHasErrors());
+			if (!valid) {
+				return false;
+			}
+		}
+		for (JFXPasswordField pwfield : validatablePwFields) {
+			pwfield.validate();
+			valid = valid & pwfield.getValidators().stream()
+					.noneMatch(validator -> validator.getHasErrors());
+			if (!valid) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private boolean verifyPassword() {
+		if (!pw_field.getText().equals(pw_field_confirm.getText())) {
+			JFXDialogLayout dialogLayout = new JFXDialogLayout();
+			dialogLayout.setHeading(new Label(alert_pw_ver_heading.get()));
+			dialogLayout.setBody(new Label(alert_pw_ver_body.get()));
+			JFXButton ok_btn = new JFXButton("OK");
+			JFXDialog dialog = new JFXDialog((StackPane) root, dialogLayout, JFXDialog.DialogTransition.BOTTOM);
+			dialogLayout.setActions(ok_btn);
+			ok_btn.setOnAction((event) -> dialog.close());
+			dialog.show();
+			return false;
+		}
+		return true;
+	}
+
+	private JFXDialog activationCodeDialog() throws IOException {
+		Parent parent = requestParent(ControllerType.ACTIVATION_CODE);
+		JFXDialog dialog = new JFXDialog((StackPane) root, (Region) parent, JFXDialog.DialogTransition.TOP);
+		return dialog;
 	}
 }

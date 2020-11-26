@@ -14,6 +14,7 @@
 	light2: #765FD8;
 	light3: #82F5FF;
 	lightest: #FFFFFF;
+	dark-transparent-1: rgba(0,0,0,0.4);
 	/* Default properties */
 	-fx-font-family: "Arial Black";
 	/*-fx-font-size: 14px;*/
@@ -30,7 +31,7 @@
 
 /* Rectangle under main menu buttons*/
 #menu-bg{
-	-fx-fill: rgba(0,0,0,0.4);
+	-fx-fill: dark-transparent-1;
 	-fx-stroke: rgba(255,255,255, 1);
 	-fx-stroke-type: outside;
 	-fx-arc-width: 15px;
@@ -147,6 +148,18 @@
 	-jfx-untoggle-line-color: #999999;
 }
 
+#activationAlert .jfx-button{
+	-fx-background-color: dark1;
+	-jfx-button-type: RAISED;
+	-fx-background-radius: 15px;
+	-fx-border-width: 0px;
+	-fx-border-radius: 0px;
+	-fx-text-fill: main-text-color;
+	-fx-label-padding: 4px;
+	-jfx-disable-visual-focus: true;
+	-fx-font-weight: bold;
+}
+
 /* MENUS */
 .menu {
 	-fx-background-color: transparent;
@@ -194,9 +207,29 @@
 	-fx-border-width: 0 0 1 0;
 }
 
+#bg-loading{
+	-fx-background-color: rgba(255, 255, 255, 0.3);
+}
+
+.jfx-spinner .arc {
+	-fx-stroke-width: 7.0;
+}
+
+
+#activationAlert {
+	-fx-font-size:13px;
+	-fx-font-family: "Arial";
+}
+
 /* Labels */
 .label{
 	-fx-text-fill: main-text-color;
+}
+
+#activationAlert .label {
+	-fx-text-fill: black;
+	-fx-font-size: 18px;
+	-fx-font-family: "Arial Black";
 }
 
 
@@ -204,6 +237,8 @@
 .glyph-font{
 	-fx-text-fill: main-text-color;
 	-fx-fill: main-text-color;
+	-fx-alignment: center;
+	-fx-text-alignment: center;
 }
 
 /* Text fields */
@@ -211,7 +246,144 @@
 	-jfx-focus-color: light2;
 	-jfx-unfocus-color: main-text-color;
 	-jfx-label-float: true;
-	-jfx-disable-animation:true;
+	-jfx-disable-animation: false;
 	-fx-text-fill: main-text-color;
 	-fx-prompt-text-fill: derive(main-text-color, -40%);
+}
+
+#activationAlert .jfx-text-field, .jfx-password-field{
+	-jfx-focus-color: light2;
+	-jfx-unfocus-color: grey;
+	-jfx-label-float: true;
+	-jfx-disable-animation: false;
+	-fx-text-fill: black;
+	-fx-prompt-text-fill: derive(main-text-color, -40%);
+}
+
+
+.jfx-text-field:error,
+.jfx-password-field:error,
+#activationAlert .jfx-text-field:error, .jfx-password-field:error{
+    -jfx-focus-color: red;
+    -jfx-unfocus-color: red;
+}
+
+.jfx-text-field .error-label,
+.jfx-password-field .error-label,
+#activationAlert .jfx-text-field .error-label, .jfx-password-field .error-label {
+    -fx-text-fill: red;
+	-fx-padding: 5 0 0 0;
+	-fx-font-family: "Arial";
+}
+
+#activationAlert .jfx-text-field .error-label, .jfx-password-field .error-label {
+    -fx-font-size: 12px;
+}
+
+.jfx-text-field .error-icon {
+    -fx-text-fill: red;
+}
+
+
+.jfx-text-field:error .error-tooltip,
+.jfx-password-field:error .error-tooltip,
+#activationAlert .jfx-text-field:error .error-tooltip, .jfx-password-field:error .error-tooltip {
+	-fx-background-color: red;
+}
+
+/* Alerts and dialogs */
+.jfx-dialog-layout{
+	-fx-background-color: lightest;
+	-fx-padding: 10 20 10 20;
+}
+
+.jfx-dialog-layout > .jfx-layout-heading {
+    -fx-alignment: center-left;
+    -fx-font-weight: BOLD;
+	-fx-padding: 14 14 20 14;
+	-fx-text-fill: dark1;
+	-fx-border-width: 0 0 1 0;
+	-fx-border-style: solid;
+	-fx-border-color: black;
+}
+
+.jfx-dialog-layout > .jfx-layout-heading .label,
+.jfx-dialog-layout > .jfx-layout-heading .title{
+	-fx-text-fill: dark1;
+}
+
+.jfx-dialog-layout > .jfx-layout-actions {
+    -fx-alignment: center-right;
+    -fx-hgap: 8;
+    -fx-padding: 8 8 8 8;
+}
+
+.jfx-dialog-layout > .jfx-layout-actions .jfx-button {
+	-fx-background-color: dark1;
+	-jfx-button-type: RAISED;
+	-fx-background-radius: 15px;
+	-fx-border-width: 0px;
+	-fx-border-radius: 0px;
+	-fx-text-fill: main-text-color;
+	-fx-label-padding: 4px;
+	-jfx-disable-visual-focus: true;
+}
+
+.jfx-dialog-layout > .jfx-layout-actions .jfx-button:hover {
+	-fx-background-color: mid1;
+}
+
+.jfx-dialog-layout > .jfx-layout-body {
+    -fx-alignment: center-left;
+    -fx-padding: 14 14 10 14;
+	-fx-font-family: "Arial";
+}
+
+.jfx-dialog-layout > .jfx-layout-body .label {
+    -fx-wrap-text: true;
+	-fx-text-fill: black;
+}
+
+/* ListView */
+.serverlistview {
+	-fx-background-color: dark-transparent-1;
+	-fx-font-family: "Arial";
+}
+
+.serverlistview .cell {
+	-fx-content-display: graphic-only;
+	-fx-background-color: transparent;
+	-fx-text-fill: main-text-color;
+}
+
+.serverlistview .cell:selected{
+	-fx-background-color: light2;
+}
+
+.serverlistview .cell:filled{
+	-fx-border-color: light2;
+	-fx-border-width: 0 0 1 0;
+}
+
+.serverlistview .cell .jfx-button,
+.serverlistview .cell .jfx-button:hover {
+	-fx-background-color: transparent;
+	-fx-border-width: 0;
+	-fx-background-radius: 0;
+	-fx-border-radius: 0;
+	-fx-content-display: graphic-only;
+	-fx-alignment: center;
+	-fx-text-alignment: center;
+}
+
+.serverlistview .cell .label {
+	-fx-padding: 0 0 0 10;
+}
+
+.serverlistview .cell .jfx-button:hover .glyph-font{
+	-fx-text-fill: dark2;
+}
+
+.serverlistview .jfx-rippler{
+	-jfx-rippler-fill: light1;
 }
