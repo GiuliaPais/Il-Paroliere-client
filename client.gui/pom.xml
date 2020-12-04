@@ -27,6 +27,11 @@
 		</dependency>
 		<dependency>
 			<groupId>it.uninsubria.labB717304</groupId>
+			<artifactId>utils.business</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>it.uninsubria.labB717304</groupId>
 			<artifactId>client.core</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
@@ -64,10 +69,22 @@
 					<options>
 						<option>--add-opens java.base/java.lang.reflect=com.jfoenix</option>
 						<option>--add-exports javafx.graphics/com.sun.javafx.scene=com.jfoenix</option>
+						<option>--add-opens javafx.controls/com.sun.javafx.scene.control.behavior=com.jfoenix</option>
+						<option>--add-opens javafx.controls/com.sun.javafx.scene.control=com.jfoenix</option>
 					</options>
 					<launcher>Il_Paroliere</launcher>
 					<mainClass>uninsubria.client.gui.Launcher</mainClass>
+					<jlinkImageName>Il_Paroliere</jlinkImageName>
+					<jlinkZipName>Il_Paroliere</jlinkZipName>
 				</configuration>
+				<executions>
+					<execution>
+						<phase>install</phase>
+						<goals>
+							<goal>jlink</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

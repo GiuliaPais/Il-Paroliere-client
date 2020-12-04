@@ -4,15 +4,15 @@
 <?import com.jfoenix.controls.JFXTextField?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.TextFlow?>
 
-
-<AnchorPane id="activationAlert" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" stylesheets="@../css/night_sky.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uninsubria.client.guicontrollers.ActivationCodeAlertController">
+<AnchorPane id="activationAlert" fx:id="rootAlert" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" stylesheets="@../css/night_sky.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <VBox alignment="TOP_CENTER" layoutX="20.0" layoutY="24.0" prefHeight="352.0" prefWidth="330.0" spacing="15.0" AnchorPane.bottomAnchor="24.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="24.0">
+      <VBox fx:id="vbox" alignment="TOP_CENTER" layoutX="20.0" layoutY="24.0" prefHeight="352.0" prefWidth="330.0" spacing="15.0" AnchorPane.bottomAnchor="24.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="24.0">
          <children>
             <Label alignment="CENTER" contentDisplay="CENTER" prefHeight="38.0" prefWidth="560.0" text="%alert.activ.header">
                <VBox.margin>
@@ -29,12 +29,16 @@
                   <Insets bottom="30.0" />
                </VBox.margin>
             </JFXTextField>
-            <TextFlow fx:id="message_area" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="86.0" prefWidth="500.0" textAlignment="CENTER" />
+            <ScrollPane fitToHeight="true" fitToWidth="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="86.0" prefWidth="500.0">
+               <content>
+                  <TextFlow fx:id="message_area" prefHeight="86.0" prefWidth="500.0" textAlignment="CENTER" />
+               </content>
+            </ScrollPane>
             <HBox alignment="CENTER" spacing="15.0">
                <children>
                   <JFXButton fx:id="back_btn" prefHeight="40.0" prefWidth="130.0" text="%back_btn" />
-                  <JFXButton fx:id="sendCode_btn" prefHeight="40.0" prefWidth="130.0" text="%send_code_btn" />
-                  <JFXButton fx:id="resend_btn" prefHeight="40.0" prefWidth="130.0" text="%resend_email" />
+                  <JFXButton fx:id="sendCode_btn" onAction="#sendCode" prefHeight="40.0" prefWidth="130.0" text="%send_code_btn" />
+                  <JFXButton fx:id="resend_btn" onAction="#resend" prefHeight="40.0" prefWidth="130.0" text="%resend_email" />
                </children>
             </HBox>
          </children>
