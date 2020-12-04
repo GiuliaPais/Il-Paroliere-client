@@ -9,6 +9,7 @@ module uninsubria.client.gui {
 	requires java.base;
 	requires org.controlsfx.controls;
 	requires com.jfoenix;
+	requires utils.business;
 
     opens uninsubria.client.gui to javafx.fxml;
     opens uninsubria.client.guicontrollers to javafx.fxml;

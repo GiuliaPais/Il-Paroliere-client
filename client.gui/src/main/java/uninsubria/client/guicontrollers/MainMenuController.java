@@ -1,16 +1,13 @@
 package uninsubria.client.guicontrollers;
 
-import java.io.IOException;
-import java.util.ResourceBundle;
-
 import com.jfoenix.controls.JFXButton;
-
 import com.jfoenix.controls.JFXDialog;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
@@ -18,12 +15,16 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 import uninsubria.client.gui.Launcher;
+
+import java.io.IOException;
+import java.util.ResourceBundle;
 
 /**
  * Controller class for the main menu screen.
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  *
  */
 public class MainMenuController extends AbstractMainController{
@@ -35,10 +36,7 @@ public class MainMenuController extends AbstractMainController{
 	@FXML private VBox btn_vbox;
 	@FXML private JFXButton login_btn, register_btn, opt_btn, exit_btn;
 	
-	private StringProperty login_btn_label;
-	private StringProperty reg_btn_label;
-	private StringProperty opt_btn_label;
-	private StringProperty exit_btn_label;
+	private StringProperty login_btn_label, reg_btn_label, opt_btn_label, exit_btn_label, server_connected_lbl;
 
 
 	/*---Constructors---*/
@@ -51,6 +49,7 @@ public class MainMenuController extends AbstractMainController{
 		this.reg_btn_label = new SimpleStringProperty();
 		this.opt_btn_label = new SimpleStringProperty();
 		this.exit_btn_label = new SimpleStringProperty();
+		this.server_connected_lbl = new SimpleStringProperty();
 	}
 
 	/*---Methods---*/
@@ -63,8 +62,26 @@ public class MainMenuController extends AbstractMainController{
 		exit_btn.textProperty().bind(exit_btn_label);
 		bindButtons();
 		if (!Launcher.manager.isConnected()) {
-			JFXDialog servAlert = serverAlert(root, menu_bg.getWidth());
-			servAlert.show();
+			Task<Void> task = new Task<Void>() {
+				@Override
+				protected Void call() throws Exception {
+					String ip = Launcher.manager.tryConnectServer();
+					if (ip == null) {
+						JFXDialog servAlert = serverAlert(root, menu_bg.getWidth());
+						Platform.runLater(() -> {
+							servAlert.show();
+						});
+						return null;
+					}
+					Platform.runLater(() -> {
+						notification(server_connected_lbl.get(), new Duration(5000));
+					});
+					return null;
+				}
+			};
+			Thread thread = new Thread(task);
+			thread.setDaemon(true);
+			thread.start();
 		}
 	}
 	
@@ -74,6 +91,7 @@ public class MainMenuController extends AbstractMainController{
 		reg_btn_label.set(resBundle.getString("register_btn"));
 		opt_btn_label.set(resBundle.getString("opt_btn"));
 		exit_btn_label.set(resBundle.getString("exit_btn"));
+		server_connected_lbl.set(resBundle.getString("server_connected_notif"));
 	}
 	
 	/**
@@ -91,7 +109,9 @@ public class MainMenuController extends AbstractMainController{
 	 */
 	@FXML
 	public void options() throws IOException {
-		Parent p = requestParent(ControllerType.OPTIONS_MAIN);
+		OptionsController controller = new OptionsController();
+		controller.setRequestOrigin(this);
+		Parent p = requestParent(ControllerType.OPTIONS_MAIN, controller);
 		Timeline anim = sceneTransitionAnimation(p, SlideDirection.TO_TOP);
 		anim.play();
 	}

@@ -1,8 +1,7 @@
-/**
- * 
- */
 package uninsubria.client.guicontrollers;
 
+import com.jfoenix.controls.JFXSnackbar;
+import com.jfoenix.controls.JFXSnackbarLayout;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -23,7 +22,7 @@ import uninsubria.client.gui.Resolution;
 /**
  * Abstract implementation of a controller that refers to the main scene.
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  *
  */
 public abstract class AbstractMainController extends AbstractController {
@@ -32,6 +31,7 @@ public abstract class AbstractMainController extends AbstractController {
 	@FXML Pane root;
 	private double xOffset = 0;
     private double yOffset = 0;
+    protected JFXSnackbar notificationPane;
 	
     /**
      * Internal enum class for sliding transition direction.
@@ -55,7 +55,9 @@ public abstract class AbstractMainController extends AbstractController {
 	public void initialize() {
 		super.initialize();
 		setUndecoratedMovable(!Launcher.contrManager.getSettings().isFullscreen());
+		notificationPane = new JFXSnackbar(root);
 		root.setPrefSize(Launcher.contrManager.getCurrentresolution().getWidthHeight()[0], Launcher.contrManager.getCurrentresolution().getWidthHeight()[1]);
+		notificationPane.setPrefWidth(root.getPrefWidth()/3);
 		rootContainer.setPrefSize(Launcher.contrManager.getCurrentresolution().getWidthHeight()[0], Launcher.contrManager.getCurrentresolution().getWidthHeight()[1]);
 		Launcher.contrManager.getSettings().fullscreenProperty().addListener(new ChangeListener<Boolean>() {
 
@@ -71,6 +73,7 @@ public abstract class AbstractMainController extends AbstractController {
 			public void changed(ObservableValue<? extends Resolution> observable, Resolution oldValue,
 					Resolution newValue) {
 				root.setPrefSize(newValue.getWidthHeight()[0], newValue.getWidthHeight()[1]);
+				notificationPane.setPrefWidth(root.getPrefWidth()/3);
 				rootContainer.setPrefSize(newValue.getWidthHeight()[0], newValue.getWidthHeight()[1]);
 			}
 			
@@ -166,5 +169,11 @@ public abstract class AbstractMainController extends AbstractController {
 			break;
 		}
 		return animation;
+	}
+
+	protected void notification(String message, Duration duration) {
+		JFXSnackbarLayout layout = new JFXSnackbarLayout(message);
+		JFXSnackbar.SnackbarEvent event = new JFXSnackbar.SnackbarEvent(layout, duration);
+		notificationPane.enqueue(event);
 	}
 }

@@ -1,6 +1,3 @@
-/**
- * 
- */
 package uninsubria.client.guicontrollers;
 
 import java.io.IOException;
@@ -39,7 +36,7 @@ import uninsubria.client.settings.SettingDefaults;
 /**
  * Controller class for the options menu screen.
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  *
  */
 public class OptionsController extends AbstractMainController {
@@ -53,7 +50,9 @@ public class OptionsController extends AbstractMainController {
 	@FXML Label title_label;
 	@FXML HBox title_bar;
 	@FXML StackPane stackPane;
-	
+
+	private AbstractMainController requestOrigin;
+
 	private ToggleGroup tgroup;
 	private StringProperty opt_title_lbl, lt_lbl, gt_lbl, at_lbl, def_btn_lbl, undo_btn_lbl, save_btn_lbl;
 	
@@ -193,9 +192,19 @@ public class OptionsController extends AbstractMainController {
 	@FXML
 	void saveOptions() throws BackingStoreException, IOException {
 		Launcher.contrManager.writePrefs();
-		Parent mainMenu = requestParent(ControllerType.MAIN_MENU);
-		Timeline anim = sceneTransitionAnimation(mainMenu, SlideDirection.TO_BOTTOM);
-		anim.play();
+		Parent applicant;
+		if (requestOrigin instanceof MainMenuController) {
+			applicant = requestParent(ControllerType.MAIN_MENU);
+			Timeline anim = sceneTransitionAnimation(applicant, SlideDirection.TO_BOTTOM);
+			anim.play();
+			return;
+		}
+		if (requestOrigin instanceof HomeController) {
+			applicant = requestParent(ControllerType.HOME_VIEW);
+			Timeline anim = sceneTransitionAnimation(applicant, SlideDirection.TO_BOTTOM);
+			anim.play();
+			return;
+		}
 	}
 	
 	/**
@@ -206,9 +215,19 @@ public class OptionsController extends AbstractMainController {
 	void undo() throws IOException {
 		before.getConnectionPrefs().setServer_addresses(addresses_before);
 		Launcher.contrManager.setSettings(before);
-		Parent mainMenu = requestParent(ControllerType.MAIN_MENU);
-		Timeline anim = sceneTransitionAnimation(mainMenu, SlideDirection.TO_BOTTOM);
-		anim.play();
+		Parent applicant;
+		if (requestOrigin instanceof MainMenuController) {
+			applicant = requestParent(ControllerType.MAIN_MENU);
+			Timeline anim = sceneTransitionAnimation(applicant, SlideDirection.TO_BOTTOM);
+			anim.play();
+			return;
+		}
+		if (requestOrigin instanceof HomeController) {
+			applicant = requestParent(ControllerType.HOME_VIEW);
+			Timeline anim = sceneTransitionAnimation(applicant, SlideDirection.TO_BOTTOM);
+			anim.play();
+			return;
+		}
 	}
 	
 	/**
@@ -240,6 +259,14 @@ public class OptionsController extends AbstractMainController {
 	public void displayServerConnectedAlert(String address_conn) {
 		JFXDialog dialog = serverConnectedAlert(stackPane, central_view.getPrefWidth(), address_conn);
 		dialog.show();
+	}
+
+	public AbstractMainController getRequestOrigin() {
+		return requestOrigin;
+	}
+
+	public void setRequestOrigin(AbstractMainController requestOrigin) {
+		this.requestOrigin = requestOrigin;
 	}
 
 	/* ---- Private internal methods for scaling and init ---- */

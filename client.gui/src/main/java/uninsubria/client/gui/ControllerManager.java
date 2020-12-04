@@ -1,6 +1,3 @@
-/**
- * 
- */
 package uninsubria.client.gui;
 
 import java.io.IOException;
@@ -27,7 +24,7 @@ import uninsubria.utils.languages.LanguageManager;
 /**
  * Central class for coordinating GUI controllers.
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  *
  */
 public class ControllerManager {
@@ -85,7 +82,8 @@ public class ControllerManager {
 				pref.getDouble("ASPECT_RATIO", 16.0 / 9.0),
 				pref.getDouble("WIDTH", 1280.0),
 				pref.getDouble("HEIGHT", 720.0), pref.get("THEME", "NIGHT_SKY"),
-				pref.get("LANGUAGE", "ITALIAN"), Launcher.manager.getAddressList());
+				pref.get("LANGUAGE", "ITALIAN"),
+				Launcher.manager.getAddressList());
 		this.langManager = new LanguageManager(Language.valueOf(settings.getLanguage()));
 		this.bundle = new SimpleObjectProperty<ResourceBundle>(langManager.getResourcesBundle());
 		this.chosen_resolution = new SimpleObjectProperty<Resolution>(new Resolution(settings.getAspectRatio(), settings.getWidth()));
@@ -162,13 +160,14 @@ public class ControllerManager {
 	}
 	
 	/**
-	 * Loads the fxml file for the internal pane of the options menu. This method is meant to be called by controllers.
+	 * Loads the requested fxml file and sets the specified controller. Useful for controllers
+	 * that have parameters that needs to be set before being loaded.
 	 * @param path The path to the file to load
-	 * @param controller The main option view controller
+	 * @param controller The controller
 	 * @return A Parent object (can be set as root for a Scene)
 	 * @throws IOException If loading of the fxml file fails 
 	 */
-	public Parent loadParentOptionPane(String path, Controller controller) throws IOException {
+	public Parent loadParentWithController(String path, Controller controller) throws IOException {
 		FXMLLoader loader = new FXMLLoader(getClass().getResource(FXML_PATH + path), bundle.get());
 		loader.setController(controller);
 		Parent root = loader.load();
