@@ -1,11 +1,11 @@
-/**
- * 
- */
 package uninsubria.client.centralmanagement;
 
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import uninsubria.client.comm.ProxyServer;
 import uninsubria.client.settings.ConnectionPrefs;
 import uninsubria.client.settings.SettingDefaults;
+import uninsubria.utils.business.Player;
 import uninsubria.utils.security.PasswordEncryptor;
 import uninsubria.utils.serviceResults.ErrorMsgType;
 import uninsubria.utils.serviceResults.Result;
@@ -21,13 +21,14 @@ import java.util.prefs.Preferences;
 /**
  * Class responsible for central communication between client and server. Also manages preferences at start up.
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  */
 public class CentralManager {
 	/*---Fields---*/
 	private Preferences preferences;
-	private ProxyServer proxy;
+	private ObjectProperty<ProxyServer> proxy;
 	private ConnectionPrefs addressList;
+	private Player profile;
 
 	/*---Constructors---*/
 	/**
@@ -43,7 +44,7 @@ public class CentralManager {
 		}
 		this.addressList = new ConnectionPrefs(preferences.get(
 				"SERVER_ADDRESSES", "localhost"));
-		this.proxy = null;
+		this.proxy = new SimpleObjectProperty<>();
 	}
 
 	/*---Methods---*/
@@ -87,11 +88,12 @@ public class CentralManager {
 	 * @return The ip address of the server
 	 */
 	public String tryConnectServer() {
-		if (this.proxy == null) {
-			this.proxy = getProxyFromList(this.addressList.getServer_addresses());
+		if (this.proxy.getValue() == null) {
+			ProxyServer proxyServer = getProxyFromList(this.addressList.getServer_addresses());
+			this.proxy.setValue(proxyServer);
 		}
-		if (this.proxy != null) {
-			return proxy.getSocket().getInetAddress().getHostAddress();
+		if (this.proxy.get() != null) {
+			return proxy.getValue().getSocket().getInetAddress().getHostAddress();
 		} else {
 			return null;
 		}
@@ -103,11 +105,19 @@ public class CentralManager {
 	 * @return true or false
 	 */
 	public boolean isConnected() {
-		if (this.proxy == null) {
+		if (this.proxy.getValue() == null) {
 			return false;
 		} else {
 			return true;
 		}
+	}
+
+	public void setDisconnected() {
+		this.proxy.set(null);
+	}
+
+	public ObjectProperty<ProxyServer> proxyProperty() {
+		return this.proxy;
 	}
 
 	/**
@@ -122,10 +132,10 @@ public class CentralManager {
 	 * @param password the password
 	 * @return A list of errors
 	 */
-	public List<String> requestActivationCode(String name, String lastname, String userID, String email, String password) {
+	public List<String> requestActivationCode(String name, String lastname, String userID, String email, String password) throws IOException {
 		try {
 			String hashedPw = PasswordEncryptor.hashPassword(password);
-			ServiceResultInterface sent = proxy.requestActivationCode(name, lastname, userID, email, hashedPw);
+			ServiceResultInterface sent = proxy.get().requestActivationCode(name, lastname, userID, email, hashedPw);
 			Result<?> errors = sent.getResult("Errors");
 			List<String> errMsgs = new ArrayList<>();
 			if (errors != null) {
@@ -137,10 +147,96 @@ public class CentralManager {
 			return errMsgs;
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
 		return null;
 	}
 
+	/**
+	 * Completes the procedure for the user registration by confirming the code the user recieved via email.
+	 * If the request succeeds the method returns an empty list, otherwise it returns a list of error names
+	 * to be localized in the selected language.
+	 *
+	 * @param email the email
+	 * @param code  the code
+	 * @return a list of errors
+	 * @throws IOException
+	 */
+	public List<String> confirmActivationCode(String email, String code) throws IOException {
+		ServiceResultInterface ack = proxy.get().confirmActivationCode(email, code);
+		Result<Player> playerResult = (Result<Player>) ack.getResult("Profile");
+		List<String> errMsgs = new ArrayList<>();
+		if (playerResult.getValue() != null) {
+			this.profile = playerResult.getValue();
+			return errMsgs;
+		}
+		Result<?> errors = ack.getResult("Errors");
+		if (errors != null) {
+			ErrorMsgType[] ers = (ErrorMsgType[]) ack.getResult("Errors").getValue();
+			for (ErrorMsgType e : ers) {
+				errMsgs.add(e.name());
+			}
+		}
+		return errMsgs;
+	}
+
+	/**
+	 * Resends a code via email in case the user didn't receive it. If the code is expired,
+	 * it silently generates a new code and sends it to the email address provided.
+	 * If the request succeeds the method returns an empty list, otherwise it returns a list of error names
+	 * to be localized in the selected language.
+	 *
+	 * @param email       the email
+	 * @param requestType the request type
+	 * @return a list of errors
+	 * @throws IOException
+	 */
+	public List<String> resendCode(String email, String requestType) throws IOException {
+		ServiceResultInterface ack = proxy.get().resendConde(email, requestType);
+		Result<?> errors = ack.getResult("Errors");
+		List<String> errMsgs = new ArrayList<>();
+		if (errors != null) {
+			ErrorMsgType[] ers = (ErrorMsgType[]) ack.getResult("Errors").getValue();
+			for (ErrorMsgType e : ers) {
+				errMsgs.add(e.name());
+			}
+		}
+		return errMsgs;
+	}
+
+	/**
+	 * Initiates the login procedure for a user.
+	 * If the request succeeds the method returns an empty list, otherwise it returns a list of error names
+	 * to be localized in the selected language.
+	 *
+	 * @param id the id
+	 * @param pw the pw
+	 * @return a list of errors
+	 * @throws IOException
+	 */
+	public List<String> login(String id, String pw) throws IOException, NoSuchAlgorithmException {
+		String hashedPw = PasswordEncryptor.hashPassword(pw);
+		ServiceResultInterface ack = proxy.get().login(id, hashedPw);
+		Result<Player> playerResult = (Result<Player>) ack.getResult("Profile");
+		List<String> errMsgs = new ArrayList<>();
+		if (playerResult.getValue() != null) {
+			this.profile = playerResult.getValue();
+			return errMsgs;
+		}
+		Result<?> errors = ack.getResult("Errors");
+		if (errors != null) {
+			ErrorMsgType[] ers = (ErrorMsgType[]) ack.getResult("Errors").getValue();
+			for (ErrorMsgType e : ers) {
+				errMsgs.add(e.name());
+			}
+		}
+		return errMsgs;
+	}
+
+	public Player getProfile() {
+		return profile;
+	}
+
+	public void setProfile(Player profile) {
+		this.profile = profile;
+	}
 }

@@ -1,6 +1,3 @@
-/**
- * 
- */
 package uninsubria.client.gui;
 
 import java.util.Arrays;
@@ -17,7 +14,7 @@ import java.util.stream.Collectors;
  * Should cover 90-95% of common resolutions for monitors.
  * 
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  */
 public enum AspectRatio {
 	/*---Enum constants---*/
@@ -64,7 +61,14 @@ public enum AspectRatio {
 						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_PADDING_TOP", 15.0),
 						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_TXT_FIELD_W", 350.0),
 						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_TXT_FIELD_H", 25.0),
-						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_BTN_SPACING", 10.0))
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_BTN_SPACING", 10.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_IMG_DIM", 100.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_INFO_H", 110.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_INFO_W", 235.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_INFO_PAD", 60.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_INFO_SPACING", 15.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_TAB_MIN_H", 50.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_ICONS_SIZE", 30.0))
 				  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))), 
 	RATIO_16_9(16.0 / 9.0, 
 				Arrays.asList(new Double[] {1280.0, 1920.0}),
@@ -109,7 +113,14 @@ public enum AspectRatio {
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_PADDING_TOP", 15.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_TXT_FIELD_W", 350.0),
 						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_TXT_FIELD_H", 25.0),
-						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_BTN_SPACING", 10.0))
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("REG_BTN_SPACING", 10.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_IMG_DIM", 100.0),
+						  new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_INFO_H", 110.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_INFO_W", 235.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_INFO_PAD", 60.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_INFO_SPACING", 15.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_TAB_MIN_H", 50.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_ICONS_SIZE", 30.0))
 				  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))), 
 	RATIO_16_10(16.0 / 10.0, 
 				Arrays.asList(new Double[] {1440.0, 1680.0, 1920.0}), 
@@ -154,7 +165,14 @@ public enum AspectRatio {
 						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_PADDING_TOP", 15.0),
 						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_TXT_FIELD_W", 350.0),
 						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_TXT_FIELD_H", 25.0),
-						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_BTN_SPACING", 10.0))
+						new AbstractMap.SimpleImmutableEntry<String, Double>("REG_BTN_SPACING", 10.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_IMG_DIM", 100.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_INFO_H", 110.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_INFO_W", 235.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_INFO_PAD", 60.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_PROFILE_INFO_SPACING", 15.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_TAB_MIN_H", 50.0),
+						new AbstractMap.SimpleImmutableEntry<String, Double>("HOME_ICONS_SIZE", 30.0))
 				  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 	
 	/*---Fields---*/

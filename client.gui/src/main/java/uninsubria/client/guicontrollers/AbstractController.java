@@ -1,6 +1,3 @@
-/**
- * 
- */
 package uninsubria.client.guicontrollers;
 
 import com.jfoenix.controls.JFXButton;
@@ -24,7 +21,7 @@ import java.util.ResourceBundle;
 /**
  * Abstract implementation of Controller interface.
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  *
  */
 abstract class AbstractController implements Controller {
@@ -74,13 +71,14 @@ abstract class AbstractController implements Controller {
 	
 	/**
 	 * Request the loading of the fxml file for the desired controller, intended for the loading of option menu panes
+	 * and other parents where controller fields need to be set in advance
 	 * @param ctype the requested controller type
 	 * @param controller The parent option controller
 	 * @return a Parent object (can be set as root for a scene)
 	 * @throws IOException if fxml can't be loaded
 	 */
 	Parent requestParent(ControllerType ctype, Controller controller) throws IOException {
-		return Launcher.contrManager.loadParentOptionPane(ctype.getFile(), controller);
+		return Launcher.contrManager.loadParentWithController(ctype.getFile(), controller);
 	}
 	
 	/**

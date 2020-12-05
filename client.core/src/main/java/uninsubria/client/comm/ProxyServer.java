@@ -1,9 +1,5 @@
-/**
- * 
- */
 package uninsubria.client.comm;
 
-import uninsubria.utils.business.Player;
 import uninsubria.utils.connection.CommHolder;
 import uninsubria.utils.connection.CommProtocolCommands;
 import uninsubria.utils.managersAPI.PlayerManagerInterface;
@@ -21,7 +17,7 @@ import java.util.List;
  * The class is mainly responsible for writing on or reading from the socket.
  *
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  *
  */
 public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterface {
@@ -70,10 +66,57 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
     }
 
     @Override
-    public Player login(String user, String pw) {
-        return null;
+    public ServiceResultInterface confirmActivationCode(String email, String code) throws IOException {
+        writeCommand(CommProtocolCommands.CONFIRM_ACTIVATION_CODE, email, code);
+        try {
+            if (in == null) {
+                this.in = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+            }
+            readCommand(in.readUTF());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        ServiceResultInterface res = serviceResultList.get(serviceResultList.size()-1);
+        serviceResultList.remove(res);
+        return res;
     }
 
+    @Override
+    public ServiceResultInterface resendConde(String email, String requestType) throws IOException {
+        writeCommand(CommProtocolCommands.RESEND_CODE, email, requestType);
+        try {
+            if (in == null) {
+                this.in = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+            }
+            readCommand(in.readUTF());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        ServiceResultInterface res = serviceResultList.get(serviceResultList.size()-1);
+        serviceResultList.remove(res);
+        return res;
+    }
+
+    @Override
+    public ServiceResultInterface login(String user, String pw) throws IOException {
+        writeCommand(CommProtocolCommands.LOGIN, user, pw);
+        try {
+            if (in == null) {
+                this.in = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+            }
+            readCommand(in.readUTF());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        ServiceResultInterface res = serviceResultList.get(serviceResultList.size()-1);
+        serviceResultList.remove(res);
+        return res;
+    }
+
+    @Override
+    public void logout(String userid) throws IOException {
+        writeCommand(CommProtocolCommands.LOGOUT, userid);
+    }
 
     @Override
     public void writeCommand(CommProtocolCommands command, Object... params) throws IOException {
@@ -96,7 +139,7 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
         }
         CommProtocolCommands com = CommProtocolCommands.getByCommand(command);
         switch (com) {
-            case ACTIVATION_CODE -> {
+            case ACTIVATION_CODE, CONFIRM_ACTIVATION_CODE, RESEND_CODE, LOGIN -> {
                 serviceResultList.add((ServiceResult) in.readObject());
             }
         }

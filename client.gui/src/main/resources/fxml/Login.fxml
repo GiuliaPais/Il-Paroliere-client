@@ -11,7 +11,6 @@
 <?import javafx.scene.shape.Rectangle?>
 <?import org.controlsfx.glyphfont.Glyph?>
 
-
 <AnchorPane fx:id="rootContainer" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uninsubria.client.guicontrollers.LoginController">
    <children>
       <StackPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" styleClass="scene-with-bg" stylesheets="@../css/night_sky.css">
@@ -25,7 +24,7 @@
                   <HBox fx:id="btn_box" alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="40.0" prefWidth="250.0" spacing="14.0">
                      <children>
                         <JFXButton fx:id="back_btn" alignment="CENTER" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onAction="#back" prefHeight="40.0" prefWidth="118.0" HBox.hgrow="ALWAYS" />
-                        <JFXButton fx:id="login_btn" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="40.0" prefWidth="118.0" text="Log in" HBox.hgrow="ALWAYS" />
+                        <JFXButton fx:id="login_btn" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onAction="#login" prefHeight="40.0" prefWidth="118.0" text="Log in" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
                </children>

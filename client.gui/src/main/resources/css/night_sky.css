@@ -242,7 +242,8 @@
 }
 
 /* Text fields */
-.jfx-text-field, .jfx-password-field{
+.jfx-text-field, 
+.jfx-password-field {
 	-jfx-focus-color: light2;
 	-jfx-unfocus-color: main-text-color;
 	-jfx-label-float: true;
@@ -251,7 +252,8 @@
 	-fx-prompt-text-fill: derive(main-text-color, -40%);
 }
 
-#activationAlert .jfx-text-field, .jfx-password-field{
+#activationAlert .jfx-text-field, 
+#activationAlert .jfx-password-field{
 	-jfx-focus-color: light2;
 	-jfx-unfocus-color: grey;
 	-jfx-label-float: true;
@@ -386,4 +388,70 @@
 
 .serverlistview .jfx-rippler{
 	-jfx-rippler-fill: light1;
+}
+
+/* Snackbar */
+.jfx-snackbar-content {
+    -fx-background-color: lightest;
+    -fx-padding: 5;
+    -fx-spacing: 5;
+}
+
+.jfx-snackbar-toast {
+    -fx-text-fill: darkest;
+	-fx-alignment: center;
+}
+
+.jfx-snackbar-action {
+    
+}
+
+/* Profile image */
+#profile-image {
+	-fx-shape: "M 400 300 A 50 50 0 1 1 600 300 A 50 50 0 1 1 400 300 Z";
+	-fx-border-color: white;
+	-fx-border-width: 1;
+	-fx-border-style: solid;
+}
+
+#profile-info {
+	/*-fx-shape: "M127,37.9c0,20.64-17.44,37.4-39,37.4H0c21.53,0,39-16.75,39-37.4S21.53.5,0,.5H88C109.53.5,127,17.24,127,37.9Z";*/
+	-fx-border-width: 1 1 1 1;
+	-fx-border-color: white;
+	-fx-border-style: solid;
+	-fx-border-radius: 15px;
+	-fx-background-color: rgba(255, 255, 255, 0.2);
+	-fx-background-radius: 15px;
+}
+
+#profile-info .label {
+	-fx-text-fill: white;
+}
+
+/* Home header */
+.home-header {
+
+}
+
+/* Tab Pane */
+#mainTabPane.jfx-tab-pane {
+	-fx-padding: 0 10 10 10;
+}
+
+#mainTabPane.jfx-tab-pane .tab-header-background {
+    -fx-background-color: light2;
+}
+
+#mainTabPane.jfx-tab-pane .headers-region .tab-selected-line {
+    -fx-background-color: light3;
+}
+
+#mainTabPane.jfx-tab-pane .headers-region #mainTabPane.tab .tab-container .tab-label {
+    -fx-text-fill: rgba(255,255,255, .87);
+    -fx-font-weight: BOLD;
+    -fx-padding: 10 15 10 15;
+}
+
+#mainTabPane.jfx-tab-pane .headers-region #mainTabPane.tab:selected .tab-container .tab-label {
+    -fx-text-fill: WHITE;
 }

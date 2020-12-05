@@ -1,9 +1,7 @@
-/**
- * 
- */
 package uninsubria.client.guicontrollers;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -15,10 +13,12 @@ import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.util.Duration;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.controlsfx.glyphfont.Glyph;
 
@@ -31,12 +31,13 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.shape.Rectangle;
+import uninsubria.client.comm.ProxyServer;
 import uninsubria.client.gui.Launcher;
 
 /**
  * Controller class for the registration screen.
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  *
  */
 public class RegistrationController extends AbstractMainController {
@@ -50,7 +51,8 @@ public class RegistrationController extends AbstractMainController {
 	@FXML JFXButton back_btn, register_btn, code_btn;
 	
 	private StringProperty name_txt, lastName_txt, confirmPw_text, reg_btn_txt, code_btn_txt,
-			required_valid_error, mail_valid_error, pw_length_valid_error, alert_pw_ver_heading, alert_pw_ver_body;
+			required_valid_error, mail_valid_error, pw_length_valid_error, alert_pw_ver_heading,
+			alert_pw_ver_body, notif_connection_loss;
 	private Glyph back_arrow;
 	private List<JFXTextField> validatableTextFields;
 	private List<JFXPasswordField> validatablePwFields;
@@ -71,6 +73,7 @@ public class RegistrationController extends AbstractMainController {
 		this.alert_pw_ver_body = new SimpleStringProperty();
 		this.alert_pw_ver_heading = new SimpleStringProperty();
 		this.pw_length_valid_error = new SimpleStringProperty();
+		this.notif_connection_loss = new SimpleStringProperty();
 		back_arrow = new Glyph("FontAwesome", FontAwesome.Glyph.ARROW_LEFT);
 	}
 
@@ -129,6 +132,22 @@ public class RegistrationController extends AbstractMainController {
 				pw_field_confirm.validate();
 			}
 		});
+		if (!Launcher.manager.isConnected()) {
+			register_btn.setDisable(true);
+			code_btn.setDisable(true);
+		}
+		Launcher.manager.proxyProperty().addListener(new ChangeListener<ProxyServer>() {
+			@Override
+			public void changed(ObservableValue<? extends ProxyServer> observable, ProxyServer oldValue, ProxyServer newValue) {
+				if (newValue == null) {
+					register_btn.setDisable(true);
+					code_btn.setDisable(true);
+				} else {
+					register_btn.setDisable(false);
+					code_btn.setDisable(false);
+				}
+			}
+		});
 	}
 	
 	/**
@@ -154,20 +173,52 @@ public class RegistrationController extends AbstractMainController {
 		if (!verifyPassword()) {
 			return;
 		}
-		//lancia un task e chiedi al server il codice, mentre aspetti lancia l'animazione
 		LoadingAnimationOverlay animation = new LoadingAnimationOverlay(root);
 		Task<Void> task = new Task<Void>() {
 			@Override
 			protected Void call() throws Exception {
-				List<String> errMsgs = Launcher.manager.requestActivationCode(name_field.getText(),
-						lastName_field.getText(), userID_field.getText(), email_field.getText(), pw_field.getText());
-				System.out.println(errMsgs);
+				List<String> errMsgs = null;
+				try {
+					errMsgs = Launcher.manager.requestActivationCode(name_field.getText(),
+							lastName_field.getText(), userID_field.getText(), email_field.getText(), pw_field.getText());
+				} catch (Exception e) {
+					if (e instanceof SocketException) {
+						Platform.runLater(() -> {
+							animation.stopAnimation();
+							notification(notif_connection_loss.get(), new Duration(8000));
+						});
+						boolean reconnected = false;
+						Launcher.manager.setDisconnected();
+						for (int i = 0; i < 3; i++) {
+							String ip = Launcher.manager.tryConnectServer();
+							if (ip != null) {
+								reconnected = true;
+								break;
+							}
+						}
+						if (!reconnected) {
+							Platform.runLater(() -> {
+								animation.stopAnimation();
+								serverAlert((StackPane) root, rect.getWidth()).show();
+							});
+							return null;
+						}
+					}
+				}
 				List<Text> localized = new ArrayList<>();
 				if (errMsgs.isEmpty()) {
 					Platform.runLater(() -> {
 						animation.stopAnimation();
-						System.out.println("OK");
+						JFXDialogLayout dialogLayout = new JFXDialogLayout();
+						JFXDialog dialog = new JFXDialog((StackPane) root, dialogLayout, JFXDialog.DialogTransition.CENTER);
+						JFXButton okBtn = new JFXButton("OK");
+						okBtn.setOnAction(e -> dialog.close());
+						dialogLayout.setHeading(new Label("Success"));
+						dialogLayout.setActions(okBtn);
+						dialogLayout.setBody(new Label(Launcher.contrManager.getBundleValue().getString("request_success")));
+						dialog.show();
 					});
+					return null;
 				}
 				for (String err : errMsgs) {
 					String localMsg = Launcher.contrManager.getBundleValue().getString(err);
@@ -220,6 +271,7 @@ public class RegistrationController extends AbstractMainController {
 		alert_pw_ver_heading.set(resBundle.getString("alert_pw_ver_failed_heading"));
 		alert_pw_ver_body.set(resBundle.getString("alert_pw_ver_failed_body"));
 		pw_length_valid_error.set(resBundle.getString("invalid_pw_length_error"));
+		notif_connection_loss.set(resBundle.getString("connection_lost_notif"));
 	}
 	
 	@Override
@@ -344,8 +396,18 @@ public class RegistrationController extends AbstractMainController {
 	}
 
 	private JFXDialog activationCodeDialog() throws IOException {
-		Parent parent = requestParent(ControllerType.ACTIVATION_CODE);
-		JFXDialog dialog = new JFXDialog((StackPane) root, (Region) parent, JFXDialog.DialogTransition.TOP);
+		JFXDialog dialog = new JFXDialog();
+		ActivationCodeAlertController controller = new ActivationCodeAlertController();
+		LoadingAnimationOverlay anim = new LoadingAnimationOverlay(root);
+		controller.setDiagReference(dialog);
+		controller.setAnimation(anim);
+		FXMLLoader loader = new FXMLLoader(getClass().getResource("/FXML/"+ControllerType.ACTIVATION_CODE.getFile()), Launcher.contrManager.getBundleValue());
+		loader.setController(controller);
+		Parent parent = loader.load();
+		dialog.setDialogContainer((StackPane) root);
+		dialog.setContent((Region) parent);
+		dialog.setOverlayClose(false);
+		dialog.setTransitionType(JFXDialog.DialogTransition.CENTER);
 		return dialog;
 	}
 }
