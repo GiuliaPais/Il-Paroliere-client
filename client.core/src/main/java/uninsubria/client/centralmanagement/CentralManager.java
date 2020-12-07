@@ -20,20 +20,24 @@ import java.util.prefs.Preferences;
 
 /**
  * Class responsible for central communication between client and server. Also manages preferences at start up.
+ *
  * @author Giulia Pais
- * @version 0.9.2
+ * @version 0.9.3
  */
+@SuppressWarnings("unchecked")
 public class CentralManager {
 	/*---Fields---*/
-	private Preferences preferences;
-	private ObjectProperty<ProxyServer> proxy;
+	private final Preferences preferences;
+	private final ObjectProperty<ProxyServer> proxy;
 	private ConnectionPrefs addressList;
-	private Player profile;
+	private ObjectProperty<Player> profile;
 
 	/*---Constructors---*/
+
 	/**
 	 * Builds an object of type CentralManager
-	 * @throws BackingStoreException
+	 *
+	 * @throws BackingStoreException the backing store exception
 	 */
 	public CentralManager() throws BackingStoreException {
 		if (!Preferences.userRoot().nodeExists("IlParoliere")) {
@@ -48,9 +52,11 @@ public class CentralManager {
 	}
 
 	/*---Methods---*/
+
 	/**
-	 * 
-	 * @return The value of preferences
+	 * Gets preferences.
+	 *
+	 * @return the preferences
 	 */
 	public Preferences getPreferences() {
 		return this.preferences;
@@ -68,16 +74,26 @@ public class CentralManager {
 			try {
 				proxy = new ProxyServer(address);
 				break;
-			} catch (IOException e) {
+			} catch (IOException ignored) {
 			}
 		}
 		return proxy;
 	}
 
+	/**
+	 * Gets address list.
+	 *
+	 * @return the address list
+	 */
 	public ConnectionPrefs getAddressList() {
 		return addressList;
 	}
 
+	/**
+	 * Sets address list.
+	 *
+	 * @param addressList the address list
+	 */
 	public void setAddressList(ConnectionPrefs addressList) {
 		this.addressList = addressList;
 	}
@@ -105,17 +121,21 @@ public class CentralManager {
 	 * @return true or false
 	 */
 	public boolean isConnected() {
-		if (this.proxy.getValue() == null) {
-			return false;
-		} else {
-			return true;
-		}
+		return this.proxy.getValue() != null;
 	}
 
+	/**
+	 * Sets disconnected.
+	 */
 	public void setDisconnected() {
 		this.proxy.set(null);
 	}
 
+	/**
+	 * Returns the proxyProperty.
+	 *
+	 * @return the object property
+	 */
 	public ObjectProperty<ProxyServer> proxyProperty() {
 		return this.proxy;
 	}
@@ -131,6 +151,7 @@ public class CentralManager {
 	 * @param email    the email
 	 * @param password the password
 	 * @return A list of errors
+	 * @throws IOException the io exception
 	 */
 	public List<String> requestActivationCode(String name, String lastname, String userID, String email, String password) throws IOException {
 		try {
@@ -159,14 +180,18 @@ public class CentralManager {
 	 * @param email the email
 	 * @param code  the code
 	 * @return a list of errors
-	 * @throws IOException
+	 * @throws IOException the io exception
 	 */
 	public List<String> confirmActivationCode(String email, String code) throws IOException {
 		ServiceResultInterface ack = proxy.get().confirmActivationCode(email, code);
 		Result<Player> playerResult = (Result<Player>) ack.getResult("Profile");
 		List<String> errMsgs = new ArrayList<>();
 		if (playerResult.getValue() != null) {
-			this.profile = playerResult.getValue();
+			if (this.profile == null) {
+				this.profile = new SimpleObjectProperty<>(playerResult.getValue());
+			} else {
+				this.profile.set(playerResult.getValue());
+			}
 			return errMsgs;
 		}
 		Result<?> errors = ack.getResult("Errors");
@@ -188,7 +213,7 @@ public class CentralManager {
 	 * @param email       the email
 	 * @param requestType the request type
 	 * @return a list of errors
-	 * @throws IOException
+	 * @throws IOException the io exception
 	 */
 	public List<String> resendCode(String email, String requestType) throws IOException {
 		ServiceResultInterface ack = proxy.get().resendConde(email, requestType);
@@ -211,7 +236,8 @@ public class CentralManager {
 	 * @param id the id
 	 * @param pw the pw
 	 * @return a list of errors
-	 * @throws IOException
+	 * @throws IOException              the io exception
+	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 */
 	public List<String> login(String id, String pw) throws IOException, NoSuchAlgorithmException {
 		String hashedPw = PasswordEncryptor.hashPassword(pw);
@@ -219,7 +245,11 @@ public class CentralManager {
 		Result<Player> playerResult = (Result<Player>) ack.getResult("Profile");
 		List<String> errMsgs = new ArrayList<>();
 		if (playerResult.getValue() != null) {
-			this.profile = playerResult.getValue();
+			if (this.profile == null) {
+				this.profile = new SimpleObjectProperty<>(playerResult.getValue());
+			} else {
+				this.profile.set(playerResult.getValue());
+			}
 			return errMsgs;
 		}
 		Result<?> errors = ack.getResult("Errors");
@@ -232,11 +262,105 @@ public class CentralManager {
 		return errMsgs;
 	}
 
+	/**
+	 * Gets the user profile.
+	 *
+	 * @return the profile
+	 */
 	public Player getProfile() {
+		return profile.get();
+	}
+
+	/**
+	 * Gets the profileProperty.
+	 *
+	 * @return the object property
+	 */
+	public ObjectProperty<Player> profileProperty() {
 		return profile;
 	}
 
+	/**
+	 * Sets the user profile.
+	 *
+	 * @param profile the profile
+	 */
 	public void setProfile(Player profile) {
-		this.profile = profile;
+		this.profile.set(profile);
+	}
+
+	/**
+	 * Commit profile changes.
+	 */
+	public void commitProfileChanges() {
+		if (isConnected()) {
+			try {
+				proxy.get().updatePlayerInfo(getProfile());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * Request userID change.
+	 * If the request succeeds the method returns an empty list, otherwise it returns a list of error names
+	 * to be localized in the selected language.
+	 * @param oldID the old id
+	 * @param newID the new id
+	 * @return the list
+	 * @throws IOException the io exception
+	 */
+	public List<String> changeUserID(String oldID, String newID) throws IOException {
+		ServiceResultInterface ack = proxy.get().changeUserId(oldID, newID);
+		Result<Player> playerResult = (Result<Player>) ack.getResult("Profile");
+		List<String> errMsgs = new ArrayList<>();
+		if (playerResult.getValue() != null) {
+			if (this.profile == null) {
+				this.profile = new SimpleObjectProperty<>(playerResult.getValue());
+			} else {
+				this.profile.set(playerResult.getValue());
+			}
+			return errMsgs;
+		}
+		Result<?> errors = ack.getResult("Errors");
+		if (errors != null) {
+			ErrorMsgType[] ers = (ErrorMsgType[]) ack.getResult("Errors").getValue();
+			for (ErrorMsgType e : ers) {
+				errMsgs.add(e.name());
+			}
+		}
+		return errMsgs;
+	}
+
+	/**
+	 * Request password change.
+	 * If the request succeeds the method returns an empty list, otherwise it returns a list of error names
+	 * to be localized in the selected language.
+	 * @param email the email
+	 * @param oldPW the old pw
+	 * @param newPW the new pw
+	 * @return a list of errors
+	 * @throws IOException              the io exception
+	 * @throws NoSuchAlgorithmException the no such algorithm exception
+	 */
+	public List<String> changePassword(String email, String oldPW, String newPW) throws IOException, NoSuchAlgorithmException {
+		String hashedOldPw = PasswordEncryptor.hashPassword(oldPW);
+		String hashedNewPw = PasswordEncryptor.hashPassword(newPW);
+		ServiceResultInterface ack = proxy.get().changePassword(email, hashedOldPw, hashedNewPw);
+		Boolean changed = (Boolean) ack.getResult("Changed").getValue();
+		List<String> errMsgs = new ArrayList<>();
+		if (changed) {
+			profile.get().setPassword(hashedNewPw);
+			return errMsgs;
+		}
+		Result<?> errors = ack.getResult("Errors");
+		if (errors != null) {
+			ErrorMsgType[] ers = (ErrorMsgType[]) ack.getResult("Errors").getValue();
+			for (ErrorMsgType e : ers) {
+				errMsgs.add(e.name());
+			}
+		}
+		return errMsgs;
 	}
 }

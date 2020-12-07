@@ -8,8 +8,6 @@ import javafx.application.Platform;
 import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -25,7 +23,6 @@ import javafx.scene.text.Text;
 import javafx.util.Duration;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.controlsfx.glyphfont.Glyph;
-import uninsubria.client.comm.ProxyServer;
 import uninsubria.client.gui.Launcher;
 
 import java.io.IOException;
@@ -37,7 +34,7 @@ import java.util.ResourceBundle;
 /**
  * Controller class for the login screen.
  * @author Giulia Pais
- * @version 0.9.2
+ * @version 0.9.3
  *
  */
 public class LoginController extends AbstractMainController {
@@ -50,9 +47,11 @@ public class LoginController extends AbstractMainController {
 	@FXML HBox btn_box;
 	@FXML JFXButton back_btn, login_btn;
 	
-	private Glyph back_arrow;
+	private final Glyph back_arrow;
 
-	private StringProperty required_valid_error, pw_length_valid_error, notif_connection_loss;
+	private final StringProperty required_valid_error;
+	private final StringProperty pw_length_valid_error;
+	private final StringProperty notif_connection_loss;
 
 	/*---Constructors---*/
 	
@@ -82,16 +81,7 @@ public class LoginController extends AbstractMainController {
 		if (!Launcher.manager.isConnected()) {
 			login_btn.setDisable(true);
 		}
-		Launcher.manager.proxyProperty().addListener(new ChangeListener<ProxyServer>() {
-			@Override
-			public void changed(ObservableValue<? extends ProxyServer> observable, ProxyServer oldValue, ProxyServer newValue) {
-				if (newValue == null) {
-					login_btn.setDisable(true);
-				} else {
-					login_btn.setDisable(false);
-				}
-			}
-		});
+		Launcher.manager.proxyProperty().addListener((observable, oldValue, newValue) -> login_btn.setDisable(newValue == null));
 	}
 	
 	@Override
@@ -125,10 +115,11 @@ public class LoginController extends AbstractMainController {
 		if (!validateAll()) {
 			return;
 		}
-		LoadingAnimationOverlay animation = new LoadingAnimationOverlay(root);
-		Task<Void> task = new Task<Void>() {
+		LoadingAnimationOverlay animation = new LoadingAnimationOverlay(root, "");
+		Task<Void> task = new Task<>() {
+			@SuppressWarnings("CatchMayIgnoreException")
 			@Override
-			protected Void call() throws Exception {
+			protected Void call() {
 				List<String> errMsgs = null;
 				try {
 					errMsgs = Launcher.manager.login(userid_field.getText(), pw_field.getText());
@@ -157,10 +148,11 @@ public class LoginController extends AbstractMainController {
 					}
 				}
 				List<Text> localized = new ArrayList<>();
+				assert errMsgs != null;
 				if (errMsgs.isEmpty()) {
 					Platform.runLater(() -> {
 						animation.stopAnimation();
-						Parent p = null;
+						Parent p;
 						try {
 							p = requestParent(ControllerType.HOME_VIEW);
 							Timeline anim = sceneTransitionAnimation(p, SlideDirection.TO_LEFT);
@@ -185,7 +177,7 @@ public class LoginController extends AbstractMainController {
 					okBtn.setOnAction(e -> dialog.close());
 					dialogLayout.setHeading(new Label("Error"));
 					dialogLayout.setActions(okBtn);
-					for (Text t: localized) {
+					for (Text t : localized) {
 						dialogLayout.getBody().add(t);
 					}
 					dialog.show();

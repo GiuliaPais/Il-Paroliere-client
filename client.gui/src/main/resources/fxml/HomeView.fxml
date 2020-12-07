@@ -19,11 +19,6 @@
                <children>
                   <AnchorPane fx:id="headerPane" prefHeight="145.0" prefWidth="1280.0" styleClass="home-header">
                      <children>
-                        <StackPane id="profile-image" fx:id="profImage" layoutX="20.0" layoutY="20.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="100.0" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="25.0">
-                           <effect>
-                              <DropShadow blurType="ONE_PASS_BOX" offsetX="3.0" offsetY="2.0" />
-                           </effect>
-                        </StackPane>
                         <VBox id="profile-info" fx:id="profInfo" alignment="CENTER_LEFT" layoutX="70.0" layoutY="15.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="110.0" prefWidth="235.0" spacing="15.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="70.0" AnchorPane.topAnchor="20.0">
                            <children>
                               <Label fx:id="userLabel" text="userid" />
@@ -40,6 +35,11 @@
                               <Glyph fx:id="hamburger" alignment="CENTER" contentDisplay="CENTER" layoutX="55.0" layoutY="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="30.0" />
                            </children>
                         </HBox>
+                        <StackPane id="profile-image" fx:id="profImage" layoutX="20.0" layoutY="20.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="100.0" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="25.0">
+                           <effect>
+                              <DropShadow blurType="ONE_PASS_BOX" offsetX="2.0" offsetY="2.0" />
+                           </effect>
+                        </StackPane>
                      </children></AnchorPane>
                   <JFXTabPane id="mainTabPane" fx:id="tabPane" prefHeight="641.0" prefWidth="1280.0" tabMinHeight="50.0">
                      <tabs>

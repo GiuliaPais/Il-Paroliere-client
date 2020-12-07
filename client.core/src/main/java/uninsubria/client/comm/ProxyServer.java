@@ -1,5 +1,6 @@
 package uninsubria.client.comm;
 
+import uninsubria.utils.business.Player;
 import uninsubria.utils.connection.CommHolder;
 import uninsubria.utils.connection.CommProtocolCommands;
 import uninsubria.utils.managersAPI.PlayerManagerInterface;
@@ -11,25 +12,32 @@ import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Represents a proxy object in the Proxy-Skeleton communication pattern.
  * The class is mainly responsible for writing on or reading from the socket.
  *
  * @author Giulia Pais
- * @version 0.9.2
+ * @version 0.9.3
  *
  */
 public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterface {
     /*---Fields---*/
-    private Socket socket;
-    private String address;
-    private ObjectOutputStream out;
+    private final Socket socket;
+    private final String address;
+    private final ObjectOutputStream out;
     private ObjectInputStream in;
-    private List<ServiceResult> serviceResultList;
+    private final List<ServiceResult> serviceResultList;
 
 
 	/*---Constructors---*/
+    /**
+     * Instantiates a new Proxy server.
+     *
+     * @param address the address
+     * @throws IOException the io exception
+     */
     public ProxyServer(String address) throws IOException {
         this.address = address;
         this.socket = new Socket(address, CommHolder.SERVER_PORT);
@@ -119,6 +127,43 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
     }
 
     @Override
+    public void updatePlayerInfo(Player player) throws IOException {
+        writeCommand(CommProtocolCommands.UPDATE_PLAYER_INFO, player);
+    }
+
+    @Override
+    public ServiceResultInterface changeUserId(String oldUserID, String newUserID) throws IOException {
+        writeCommand(CommProtocolCommands.CHANGE_USER_ID, oldUserID, newUserID);
+        try {
+            if (in == null) {
+                this.in = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+            }
+            readCommand(in.readUTF());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        ServiceResultInterface res = serviceResultList.get(serviceResultList.size()-1);
+        serviceResultList.remove(res);
+        return res;
+    }
+
+    @Override
+    public ServiceResultInterface changePassword(String email, String oldPassword, String newPassword) throws IOException {
+        writeCommand(CommProtocolCommands.CHANGE_PW, email, oldPassword, newPassword);
+        try {
+            if (in == null) {
+                this.in = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+            }
+            readCommand(in.readUTF());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        ServiceResultInterface res = serviceResultList.get(serviceResultList.size()-1);
+        serviceResultList.remove(res);
+        return res;
+    }
+
+    @Override
     public void writeCommand(CommProtocolCommands command, Object... params) throws IOException {
         out.writeUTF(command.getCommand());
         for (Object p : params) {
@@ -138,12 +183,8 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
             this.in = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
         }
         CommProtocolCommands com = CommProtocolCommands.getByCommand(command);
-        switch (com) {
-            case ACTIVATION_CODE, CONFIRM_ACTIVATION_CODE, RESEND_CODE, LOGIN -> {
-                serviceResultList.add((ServiceResult) in.readObject());
-            }
+        switch (Objects.requireNonNull(com)) {
+            case ACTIVATION_CODE, CONFIRM_ACTIVATION_CODE, RESEND_CODE, LOGIN, CHANGE_USER_ID, CHANGE_PW -> serviceResultList.add((ServiceResult) in.readObject());
         }
     }
-
-
 }

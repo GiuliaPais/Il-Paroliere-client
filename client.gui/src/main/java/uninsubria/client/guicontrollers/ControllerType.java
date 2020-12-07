@@ -3,7 +3,7 @@ package uninsubria.client.guicontrollers;
 /**
  * Enum class for the different types of scenes to display on GUI. Each has the reference to the appropriate fxml file.
  * @author Giulia Pais
- * @version 0.9.2
+ * @version 0.9.3
  */
 public enum ControllerType {
 	/*---Enum constants---*/
@@ -16,7 +16,8 @@ public enum ControllerType {
 	LOGIN("Login.fxml"),
 	REGISTER("Register.fxml"),
 	ACTIVATION_CODE("ActivationCodeAlert.fxml"),
-	HOME_VIEW("HomeView.fxml");
+	HOME_VIEW("HomeView.fxml"),
+	PROFILE_SETTINGS("ProfileSettings.fxml");
 
 	/*---Fields---*/
 	/**
