@@ -15,6 +15,7 @@
 	light3: #82F5FF;
 	lightest: #FFFFFF;
 	dark-transparent-1: rgba(0,0,0,0.4);
+	dark-transparent-2: rgba(0,0,0,0.2);
 	/* Default properties */
 	-fx-font-family: "Arial Black";
 	/*-fx-font-size: 14px;*/
@@ -265,14 +266,16 @@
 
 .jfx-text-field:error,
 .jfx-password-field:error,
-#activationAlert .jfx-text-field:error, .jfx-password-field:error{
+#activationAlert .jfx-text-field:error, .jfx-password-field:error,
+#profile-pane .jfx-text-field:error, .jfx-password-field:error{
     -jfx-focus-color: red;
     -jfx-unfocus-color: red;
 }
 
 .jfx-text-field .error-label,
 .jfx-password-field .error-label,
-#activationAlert .jfx-text-field .error-label, .jfx-password-field .error-label {
+#activationAlert .jfx-text-field .error-label, .jfx-password-field .error-label,
+#profile-pane .jfx-text-field .error-label, .jfx-password-field .error-label {
     -fx-text-fill: red;
 	-fx-padding: 5 0 0 0;
 	-fx-font-family: "Arial";
@@ -289,7 +292,8 @@
 
 .jfx-text-field:error .error-tooltip,
 .jfx-password-field:error .error-tooltip,
-#activationAlert .jfx-text-field:error .error-tooltip, .jfx-password-field:error .error-tooltip {
+#activationAlert .jfx-text-field:error .error-tooltip, .jfx-password-field:error .error-tooltip,
+#profile-pane .jfx-text-field:error .error-tooltip, .jfx-password-field:error .error-tooltip {
 	-fx-background-color: red;
 }
 
@@ -454,4 +458,98 @@
 
 #mainTabPane.jfx-tab-pane .headers-region #mainTabPane.tab:selected .tab-container .tab-label {
     -fx-text-fill: WHITE;
+}
+
+/* Profile options pane */
+#profile-pane {
+	-fx-text-fill: dark1;
+}
+
+#profile-pane.label{
+	-fx-text-fill: dark1;
+}
+
+#profile-pane .jfx-button{
+	-fx-background-color: dark1;
+	-jfx-button-type: RAISED;
+	-fx-background-radius: 4px;
+	-fx-border-width: 0px;
+	-fx-border-radius: 0px;
+	-fx-text-fill: main-text-color;
+	-fx-label-padding: 4px;
+	-jfx-disable-visual-focus: true;
+}
+
+#profile-pane .jfx-button:hover{
+	-fx-background-color: light2;
+}
+
+#profile-pane .jfx-tab-pane {
+	-fx-padding: 0 10 10 10;
+}
+
+#profile-pane .jfx-tab-pane .tab-header-background {
+    -fx-background-color: light2;
+}
+
+#profile-pane .jfx-tab-pane .headers-region .tab-selected-line {
+    -fx-background-color: light3;
+}
+
+#profile-pane .jfx-tab-pane > .headers-region > .tab > .tab-container > .tab-label {
+    -fx-text-fill: rgba(255,255,255, .87);
+	-fx-fill: rgba(255,255,255, .87);
+    -fx-font-weight: BOLD;
+    -fx-padding: 10 15 10 15;
+}
+
+#profile-pane .jfx-tab-pane > .headers-region > .tab:selected > .tab-container > .tab-label {
+    -fx-text-fill: WHITE;
+	-fx-fill: WHITE;
+}
+
+#profile-pane-tablabel {
+	-fx-text-fill: WHITE;
+}
+
+#profile-pane .jfx-text-field, 
+#profile-pane .jfx-password-field {
+	-jfx-focus-color: light2;
+	-jfx-unfocus-color: dark1;
+	-jfx-label-float: true;
+	-jfx-disable-animation: false;
+	-fx-text-fill: darkest;
+	-fx-prompt-text-fill: derive(darkest, +60%);
+}
+
+#profile-pane .jfx-text-field:readonly {
+	-jfx-focus-color: derive(darkest, +60%);
+	-jfx-unfocus-color: transparent;
+	-fx-background-color: dark-transparent-2;
+	-fx-prompt-text-fill: derive(darkest, +60%);
+	-jfx-label-float: true;
+}
+
+#profile-pane .jfx-text-field:readonly > .input-focused-line {
+	-fx-background-color: transparent;
+}
+
+#profile-pane .jfx-color-picker .label{
+	-fx-font-size: 12px;
+	-fx-text-fill: lightest;
+}
+
+#profile-pane .jfx-combo-box{
+	-fx-font-size: 12px;
+}
+
+#profile-pane.glyph-font{
+	-fx-text-fill: dark1;
+	-fx-fill: dark1;
+	-fx-alignment: center;
+	-fx-text-alignment: center;
+}
+
+#change-pw-btn {
+	-fx-font-size: 11px;
 }

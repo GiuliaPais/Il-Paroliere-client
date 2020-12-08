@@ -1,43 +1,42 @@
 package uninsubria.client.guicontrollers;
 
+import com.jfoenix.controls.*;
+import com.jfoenix.validation.RegexValidator;
+import com.jfoenix.validation.RequiredFieldValidator;
+import com.jfoenix.validation.base.ValidatorBase;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
+import javafx.beans.binding.DoubleBinding;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.concurrent.Task;
+import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
+import javafx.util.Duration;
+import org.controlsfx.glyphfont.FontAwesome;
+import org.controlsfx.glyphfont.Glyph;
+import uninsubria.client.gui.Launcher;
+
 import java.io.IOException;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-import com.jfoenix.controls.*;
-import com.jfoenix.validation.RegexValidator;
-import com.jfoenix.validation.RequiredFieldValidator;
-import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.concurrent.Task;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Label;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
-import javafx.util.Duration;
-import org.controlsfx.glyphfont.FontAwesome;
-import org.controlsfx.glyphfont.Glyph;
-
-import javafx.animation.Timeline;
-import javafx.beans.binding.DoubleBinding;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-import javafx.fxml.FXML;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Parent;
-import javafx.scene.shape.Rectangle;
-import uninsubria.client.comm.ProxyServer;
-import uninsubria.client.gui.Launcher;
-
 /**
  * Controller class for the registration screen.
  * @author Giulia Pais
- * @version 0.9.2
+ * @version 0.9.3
  *
  */
 public class RegistrationController extends AbstractMainController {
@@ -50,10 +49,18 @@ public class RegistrationController extends AbstractMainController {
 	@FXML HBox btn_box;
 	@FXML JFXButton back_btn, register_btn, code_btn;
 	
-	private StringProperty name_txt, lastName_txt, confirmPw_text, reg_btn_txt, code_btn_txt,
-			required_valid_error, mail_valid_error, pw_length_valid_error, alert_pw_ver_heading,
-			alert_pw_ver_body, notif_connection_loss;
-	private Glyph back_arrow;
+	private final StringProperty name_txt;
+	private final StringProperty lastName_txt;
+	private final StringProperty confirmPw_text;
+	private final StringProperty reg_btn_txt;
+	private final StringProperty code_btn_txt;
+	private final StringProperty required_valid_error;
+	private final StringProperty mail_valid_error;
+	private final StringProperty pw_length_valid_error;
+	private final StringProperty alert_pw_ver_heading;
+	private final StringProperty alert_pw_ver_body;
+	private final StringProperty notif_connection_loss;
+	private final Glyph back_arrow;
 	private List<JFXTextField> validatableTextFields;
 	private List<JFXPasswordField> validatablePwFields;
 
@@ -81,8 +88,8 @@ public class RegistrationController extends AbstractMainController {
 	@Override
 	public void initialize() {
 		super.initialize();
-		this.validatableTextFields = new ArrayList<JFXTextField>(List.of(name_field, lastName_field, userID_field, email_field));
-		this.validatablePwFields = new ArrayList<JFXPasswordField>(List.of(pw_field, pw_field_confirm));
+		this.validatableTextFields = new ArrayList<>(List.of(name_field, lastName_field, userID_field, email_field));
+		this.validatablePwFields = new ArrayList<>(List.of(pw_field, pw_field_confirm));
 		icon.setFontFamily("FontAwesome");
 		icon.setIcon(FontAwesome.Glyph.USER);
 		back_arrow.setAlignment(Pos.CENTER);
@@ -91,16 +98,13 @@ public class RegistrationController extends AbstractMainController {
 		bindButtons();
 		rescaleAll(Launcher.contrManager.getCurrentresolution().getWidthHeight()[0]);
 		setValidators();
-		required_valid_error.addListener(new ChangeListener<String>() {
-			@Override
-			public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
-				name_field.resetValidation();
-				lastName_field.resetValidation();
-				email_field.resetValidation();
-				userID_field.resetValidation();
-				pw_field.resetValidation();
-				pw_field_confirm.resetValidation();
-			}
+		required_valid_error.addListener((observableValue, s, t1) -> {
+			name_field.resetValidation();
+			lastName_field.resetValidation();
+			email_field.resetValidation();
+			userID_field.resetValidation();
+			pw_field.resetValidation();
+			pw_field_confirm.resetValidation();
 		});
 		name_field.focusedProperty().addListener((o, oldVal, newVal) -> {
 			if (!newVal) {
@@ -136,16 +140,13 @@ public class RegistrationController extends AbstractMainController {
 			register_btn.setDisable(true);
 			code_btn.setDisable(true);
 		}
-		Launcher.manager.proxyProperty().addListener(new ChangeListener<ProxyServer>() {
-			@Override
-			public void changed(ObservableValue<? extends ProxyServer> observable, ProxyServer oldValue, ProxyServer newValue) {
-				if (newValue == null) {
-					register_btn.setDisable(true);
-					code_btn.setDisable(true);
-				} else {
-					register_btn.setDisable(false);
-					code_btn.setDisable(false);
-				}
+		Launcher.manager.proxyProperty().addListener((observable, oldValue, newValue) -> {
+			if (newValue == null) {
+				register_btn.setDisable(true);
+				code_btn.setDisable(true);
+			} else {
+				register_btn.setDisable(false);
+				code_btn.setDisable(false);
 			}
 		});
 	}
@@ -162,7 +163,7 @@ public class RegistrationController extends AbstractMainController {
 	}
 
 	@FXML
-	void register() throws InterruptedException {
+	void register() {
 		if (!Launcher.manager.isConnected()) {
 			serverAlert((StackPane) root, rect.getWidth()).show();
 			return;
@@ -173,10 +174,11 @@ public class RegistrationController extends AbstractMainController {
 		if (!verifyPassword()) {
 			return;
 		}
-		LoadingAnimationOverlay animation = new LoadingAnimationOverlay(root);
-		Task<Void> task = new Task<Void>() {
+		LoadingAnimationOverlay animation = new LoadingAnimationOverlay(root, "Wait...");
+		Task<Void> task = new Task<>() {
+			@SuppressWarnings("CatchMayIgnoreException")
 			@Override
-			protected Void call() throws Exception {
+			protected Void call() {
 				List<String> errMsgs = null;
 				try {
 					errMsgs = Launcher.manager.requestActivationCode(name_field.getText(),
@@ -206,6 +208,7 @@ public class RegistrationController extends AbstractMainController {
 					}
 				}
 				List<Text> localized = new ArrayList<>();
+				assert errMsgs != null;
 				if (errMsgs.isEmpty()) {
 					Platform.runLater(() -> {
 						animation.stopAnimation();
@@ -234,7 +237,7 @@ public class RegistrationController extends AbstractMainController {
 					okBtn.setOnAction(e -> dialog.close());
 					dialogLayout.setHeading(new Label("Error"));
 					dialogLayout.setActions(okBtn);
-					for (Text t: localized) {
+					for (Text t : localized) {
 						dialogLayout.getBody().add(t);
 					}
 					dialog.show();
@@ -245,7 +248,7 @@ public class RegistrationController extends AbstractMainController {
 			@Override
 			protected void scheduled() {
 				super.scheduled();
-				Platform.runLater(() -> animation.playAnimation());
+				Platform.runLater(animation::playAnimation);
 			}
 		};
 		Thread thread = new Thread(task);
@@ -364,7 +367,7 @@ public class RegistrationController extends AbstractMainController {
 		for (JFXTextField field : validatableTextFields) {
 			field.validate();
 			valid = valid & field.getValidators().stream()
-					.noneMatch(validator -> validator.getHasErrors());
+					.noneMatch(ValidatorBase::getHasErrors);
 			if (!valid) {
 				return false;
 			}
@@ -372,7 +375,7 @@ public class RegistrationController extends AbstractMainController {
 		for (JFXPasswordField pwfield : validatablePwFields) {
 			pwfield.validate();
 			valid = valid & pwfield.getValidators().stream()
-					.noneMatch(validator -> validator.getHasErrors());
+					.noneMatch(ValidatorBase::getHasErrors);
 			if (!valid) {
 				return false;
 			}
@@ -398,16 +401,26 @@ public class RegistrationController extends AbstractMainController {
 	private JFXDialog activationCodeDialog() throws IOException {
 		JFXDialog dialog = new JFXDialog();
 		ActivationCodeAlertController controller = new ActivationCodeAlertController();
-		LoadingAnimationOverlay anim = new LoadingAnimationOverlay(root);
-		controller.setDiagReference(dialog);
+		LoadingAnimationOverlay anim = new LoadingAnimationOverlay(root, "Checking...");
+		controller.setDialog(dialog);
 		controller.setAnimation(anim);
-		FXMLLoader loader = new FXMLLoader(getClass().getResource("/FXML/"+ControllerType.ACTIVATION_CODE.getFile()), Launcher.contrManager.getBundleValue());
-		loader.setController(controller);
-		Parent parent = loader.load();
+		Parent parent = requestParent(ControllerType.ACTIVATION_CODE, controller);
 		dialog.setDialogContainer((StackPane) root);
 		dialog.setContent((Region) parent);
 		dialog.setOverlayClose(false);
 		dialog.setTransitionType(JFXDialog.DialogTransition.CENTER);
+		dialog.setOnDialogClosed(e -> {
+			if (Launcher.manager.getProfile() != null) {
+				Parent mainMenu;
+				try {
+					mainMenu = requestParent(ControllerType.HOME_VIEW);
+					Timeline transition = sceneTransitionAnimation(mainMenu, SlideDirection.TO_LEFT);
+					transition.play();
+				} catch (IOException ioException) {
+					ioException.printStackTrace();
+				}
+			}
+		});
 		return dialog;
 	}
 }

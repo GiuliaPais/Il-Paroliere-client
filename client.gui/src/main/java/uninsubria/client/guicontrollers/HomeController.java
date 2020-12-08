@@ -5,19 +5,22 @@ import com.jfoenix.svg.SVGGlyph;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.binding.DoubleBinding;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
-import javafx.scene.control.*;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Tab;
+import javafx.scene.effect.Bloom;
+import javafx.scene.effect.Effect;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import org.controlsfx.glyphfont.FontAwesome;
@@ -31,7 +34,7 @@ import java.util.ResourceBundle;
  * Controller for the home view.
  *
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  */
 public class HomeController extends AbstractMainController {
     /*---Fields---*/
@@ -43,9 +46,14 @@ public class HomeController extends AbstractMainController {
     @FXML Tab roomTab, statsTab;
     @FXML Glyph tutorialIcon, settingsIcon, hamburger;
 
-    private StringProperty roomTab_txt, statsTab_txt, menu_exit_txt, menu_info_txt, menu_logout_txt;
+    private final StringProperty roomTab_txt;
+    private final StringProperty statsTab_txt;
+    private final StringProperty menu_exit_txt;
+    private final StringProperty menu_info_txt;
+    private final StringProperty menu_logout_txt;
     private SVGGlyph img;
     private DoubleBinding imgSidelength;
+    private ObjectProperty<Background> imgBackground;
 
     /*---Constructors---*/
     public HomeController() {
@@ -61,15 +69,7 @@ public class HomeController extends AbstractMainController {
     public void initialize() {
         super.initialize();
         this.imgSidelength = (profImage.prefWidthProperty().divide(2)).multiply(Math.sqrt(2));
-        tutorialIcon.setFontFamily("FontAwesome");
-        tutorialIcon.setIcon(FontAwesome.Glyph.QUESTION);
-        tutorialIcon.setFontSize(ref.getReferences().get("HOME_ICONS_SIZE"));
-        settingsIcon.setFontFamily("FontAwesome");
-        settingsIcon.setIcon(FontAwesome.Glyph.GEAR);
-        settingsIcon.setFontSize(ref.getReferences().get("HOME_ICONS_SIZE"));
-        hamburger.setFontFamily("FontAwesome");
-        hamburger.setIcon(FontAwesome.Glyph.BARS);
-        hamburger.setFontSize(ref.getReferences().get("HOME_ICONS_SIZE"));
+        initIcons();
         loadImagePreset();
         loadProfileInfo();
         initPopupMenu();
@@ -99,6 +99,18 @@ public class HomeController extends AbstractMainController {
         rescaleProfile(after);
         rescaleTabPane(after);
         rescaleIcons(after);
+    }
+
+    private void initIcons() {
+        tutorialIcon.setFontFamily("FontAwesome");
+        tutorialIcon.setIcon(FontAwesome.Glyph.QUESTION);
+        tutorialIcon.setFontSize(ref.getReferences().get("HOME_ICONS_SIZE"));
+        settingsIcon.setFontFamily("FontAwesome");
+        settingsIcon.setIcon(FontAwesome.Glyph.GEAR);
+        settingsIcon.setFontSize(ref.getReferences().get("HOME_ICONS_SIZE"));
+        hamburger.setFontFamily("FontAwesome");
+        hamburger.setIcon(FontAwesome.Glyph.BARS);
+        hamburger.setFontSize(ref.getReferences().get("HOME_ICONS_SIZE"));
     }
 
     private void rescaleProfile(double after) {
@@ -151,27 +163,57 @@ public class HomeController extends AbstractMainController {
 
     private void loadImagePreset() {
         /* Sets the background color */
-        profImage.setStyle("-fx-background-color: " + Launcher.manager.getProfile().getBgColor() + ";");
+        imgBackground = new SimpleObjectProperty<>(new Background(
+                new BackgroundFill(Color.valueOf(Launcher.manager.getProfile().getBgColor()),
+                        new CornerRadii(0.0), new Insets(0,0,0,0))));
+        profImage.backgroundProperty().bind(imgBackground);
         /* Loads the actual image vector */
         ProfileImagePreset preset = ProfileImagePreset.getByCode(Launcher.manager.getProfile().getProfileImage());
-//        ProfileImagePreset preset = ProfileImagePreset.getByCode(10);
+        assert preset != null;
         this.img = new SVGGlyph(preset.getSvgPath());
         if (preset.getOrientation().equals(ProfileImagePreset.Orientation.VERTICAL)) {
             img.setSizeForHeight(imgSidelength.get());
-            imgSidelength.addListener(new ChangeListener<Number>() {
-                @Override
-                public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                    img.setSizeForHeight(newValue.doubleValue());
-                }
-            });
+            imgSidelength.addListener((observable, oldValue, newValue) -> img.setSizeForHeight(newValue.doubleValue()));
         } else {
             img.setSizeForWidth(imgSidelength.get());
-            imgSidelength.addListener(new ChangeListener<Number>() {
-                @Override
-                public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                    img.setSizeForWidth(newValue.doubleValue());
-                }
-            });
+            imgSidelength.addListener((observable, oldValue, newValue) -> img.setSizeForWidth(newValue.doubleValue()));
+        }
+        img.setFill(Color.valueOf(Launcher.manager.getProfile().getImgColor()));
+        profImage.getChildren().clear();
+        profImage.getChildren().add(img);
+        profImage.toFront();
+        Effect shadow = profImage.getEffect();
+        profImage.setOnMouseEntered(e -> {
+            Bloom bloom = new Bloom();
+            bloom.setThreshold(0.1);
+            bloom.setInput(shadow);
+            profImage.setEffect(bloom);
+        });
+        profImage.setOnMouseExited(e -> profImage.setEffect(shadow));
+        profImage.setOnMouseClicked(e -> {
+            try {
+                profileSettingsDialog().show();
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        });
+    }
+
+    private void updateImage() {
+        /* Sets the background color */
+        imgBackground.set(new Background(
+                new BackgroundFill(Color.valueOf(Launcher.manager.getProfile().getBgColor()),
+                        new CornerRadii(0.0), new Insets(0,0,0,0))));
+        /* Loads the actual image vector */
+        ProfileImagePreset preset = ProfileImagePreset.getByCode(Launcher.manager.getProfile().getProfileImage());
+        assert preset != null;
+        this.img = new SVGGlyph(preset.getSvgPath());
+        if (preset.getOrientation().equals(ProfileImagePreset.Orientation.VERTICAL)) {
+            img.setSizeForHeight(imgSidelength.get());
+            imgSidelength.addListener((observable, oldValue, newValue) -> img.setSizeForHeight(newValue.doubleValue()));
+        } else {
+            img.setSizeForWidth(imgSidelength.get());
+            imgSidelength.addListener((observable, oldValue, newValue) -> img.setSizeForWidth(newValue.doubleValue()));
         }
         img.setFill(Color.valueOf(Launcher.manager.getProfile().getImgColor()));
         profImage.getChildren().clear();
@@ -183,10 +225,10 @@ public class HomeController extends AbstractMainController {
         ObservableList<StringProperty> localizedOptions = FXCollections.observableArrayList(menu_info_txt, menu_logout_txt, menu_exit_txt);
         /* Content of the menu */
         JFXListView<StringProperty> menuContent = new JFXListView<>();
-        menuContent.setCellFactory(new Callback<ListView<StringProperty>, ListCell<StringProperty>>() {
+        menuContent.setCellFactory(new Callback<>() {
             @Override
             public ListCell<StringProperty> call(ListView<StringProperty> param) {
-                return new JFXListCell<StringProperty>() {
+                return new JFXListCell<>() {
                     @Override
                     protected void updateItem(StringProperty item, boolean empty) {
                         super.updateItem(item, empty);
@@ -198,22 +240,19 @@ public class HomeController extends AbstractMainController {
             }
         });
         menuContent.setItems(localizedOptions);
-        menuContent.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<StringProperty>() {
-            @Override
-            public void changed(ObservableValue<? extends StringProperty> observable, StringProperty oldValue, StringProperty newValue) {
-               if (newValue.equals(menu_exit_txt)) {
-                   Platform.exit();
-                   System.exit(0);
-                   return;
-               }
-               if (newValue.equals(menu_info_txt)) {
-                   //do something
-                   return;
-               }
-               if (newValue.equals(menu_logout_txt)) {
-                   //do something
-                   return;
-               }
+        menuContent.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue.equals(menu_exit_txt)) {
+                Platform.exit();
+                System.exit(0);
+                return;
+            }
+            if (newValue.equals(menu_info_txt)) {
+                //do something
+                return;
+            }
+            if (newValue.equals(menu_logout_txt)) {
+                //do something
+                return;
             }
         });
 
@@ -224,5 +263,23 @@ public class HomeController extends AbstractMainController {
     private void loadProfileInfo() {
         userLabel.setText(Launcher.manager.getProfile().getPlayerID());
         emailLabel.setText(Launcher.manager.getProfile().getEmail());
+    }
+
+    private JFXDialog profileSettingsDialog() throws IOException {
+        JFXDialog dialog = new JFXDialog();
+        ProfileSettingsAlertController controller = new ProfileSettingsAlertController();
+        controller.setFontSize(currentFontSize.get() - 5);
+        controller.setDialog(dialog);
+        Parent parent = requestParent(ControllerType.PROFILE_SETTINGS, controller);
+        Region content = (Region) parent;
+        content.setPrefSize(root.getPrefWidth()/2, root.getPrefHeight()/2);
+        dialog.setContent(content);
+        dialog.setTransitionType(JFXDialog.DialogTransition.CENTER);
+        dialog.setDialogContainer((StackPane) root);
+        dialog.setOnDialogClosed(e -> {
+            updateImage();
+            loadProfileInfo();
+        });
+        return dialog;
     }
 }
