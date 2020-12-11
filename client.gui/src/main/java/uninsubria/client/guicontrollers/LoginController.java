@@ -9,6 +9,8 @@ import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.concurrent.Task;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -30,11 +32,12 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.prefs.BackingStoreException;
 
 /**
  * Controller class for the login screen.
  * @author Giulia Pais
- * @version 0.9.3
+ * @version 0.9.4
  *
  */
 public class LoginController extends AbstractMainController {
@@ -46,6 +49,8 @@ public class LoginController extends AbstractMainController {
 	@FXML JFXPasswordField pw_field;
 	@FXML HBox btn_box;
 	@FXML JFXButton back_btn, login_btn;
+	@FXML Label forgotPw;
+	@FXML JFXCheckBox rememberMe;
 	
 	private final Glyph back_arrow;
 
@@ -72,7 +77,6 @@ public class LoginController extends AbstractMainController {
 		super.initialize();
 		icon.setFontFamily("FontAwesome");
 		icon.setIcon(FontAwesome.Glyph.UNLOCK_ALT);
-		icon.useGradientEffect();
 		back_arrow.setAlignment(Pos.CENTER);
 		back_btn.setGraphic(back_arrow);
 		bindButtons();
@@ -82,6 +86,10 @@ public class LoginController extends AbstractMainController {
 			login_btn.setDisable(true);
 		}
 		Launcher.manager.proxyProperty().addListener((observable, oldValue, newValue) -> login_btn.setDisable(newValue == null));
+		rememberMe.setSelected(Launcher.contrManager.getSettings().isRememberMe());
+		if (rememberMe.isSelected()) {
+			userid_field.setText(Launcher.contrManager.getSettings().getUserName());
+		}
 	}
 	
 	@Override
@@ -117,7 +125,6 @@ public class LoginController extends AbstractMainController {
 		}
 		LoadingAnimationOverlay animation = new LoadingAnimationOverlay(root, "");
 		Task<Void> task = new Task<>() {
-			@SuppressWarnings("CatchMayIgnoreException")
 			@Override
 			protected Void call() {
 				List<String> errMsgs = null;
@@ -150,8 +157,25 @@ public class LoginController extends AbstractMainController {
 				List<Text> localized = new ArrayList<>();
 				assert errMsgs != null;
 				if (errMsgs.isEmpty()) {
+					if (rememberMe.isSelected()) {
+						Launcher.contrManager.getSettings().setRememberMe(true);
+						Launcher.contrManager.getSettings().setUserName(userid_field.getText());
+						try {
+							Launcher.contrManager.writePrefs();
+						} catch (BackingStoreException e) {
+							e.printStackTrace();
+						}
+					} else {
+						Launcher.contrManager.getSettings().setRememberMe(false);
+						Launcher.contrManager.getSettings().setUserName("");
+						try {
+							Launcher.contrManager.writePrefs();
+						} catch (BackingStoreException e) {
+							e.printStackTrace();
+						}
+					}
+					Platform.runLater(animation::stopAnimation);
 					Platform.runLater(() -> {
-						animation.stopAnimation();
 						Parent p;
 						try {
 							p = requestParent(ControllerType.HOME_VIEW);
@@ -171,16 +195,9 @@ public class LoginController extends AbstractMainController {
 				}
 				Platform.runLater(() -> {
 					animation.stopAnimation();
-					JFXDialogLayout dialogLayout = new JFXDialogLayout();
-					JFXDialog dialog = new JFXDialog((StackPane) root, dialogLayout, JFXDialog.DialogTransition.CENTER);
-					JFXButton okBtn = new JFXButton("OK");
-					okBtn.setOnAction(e -> dialog.close());
-					dialogLayout.setHeading(new Label("Error"));
-					dialogLayout.setActions(okBtn);
-					for (Text t : localized) {
-						dialogLayout.getBody().add(t);
-					}
-					dialog.show();
+					Text[] localizedErrors = new Text[localized.size()];
+					generateDialog((StackPane) root, rect.getWidth(), "ERROR",
+							localized.toArray(localizedErrors)).show();
 				});
 				return null;
 			}
@@ -188,12 +205,169 @@ public class LoginController extends AbstractMainController {
 			@Override
 			protected void scheduled() {
 				super.scheduled();
-				Platform.runLater(() -> animation.playAnimation());
+				Platform.runLater(animation::playAnimation);
 			}
 		};
 		Thread thread = new Thread(task);
 		thread.setDaemon(true);
 		thread.start();
+	}
+
+	@FXML void passwordForgotten() {
+		if (!userid_field.validate()) {
+			return;
+		}
+		if (!userid_field.getText().contains("@")) {
+			generateDialog((StackPane) root, rect.getWidth(), "ERROR",
+					Launcher.contrManager.getBundleValue().getString("email_needed_error")).show();
+			return;
+		}
+		LoadingAnimationOverlay animation = new LoadingAnimationOverlay(root, "Wait...");
+		Task<Void> task = new Task<>() {
+			@Override
+			protected Void call() {
+				List<String> errMsgs = null;
+				try {
+					errMsgs = Launcher.manager.resetPassword(userid_field.getText());
+				} catch (Exception e) {
+					if (e instanceof SocketException) {
+						Platform.runLater(() -> {
+							animation.stopAnimation();
+							notification(notif_connection_loss.get(), new Duration(8000));
+						});
+						boolean reconnected = false;
+						Launcher.manager.setDisconnected();
+						for (int i = 0; i < 3; i++) {
+							String ip = Launcher.manager.tryConnectServer();
+							if (ip != null) {
+								reconnected = true;
+								break;
+							}
+						}
+						if (!reconnected) {
+							Platform.runLater(() -> {
+								animation.stopAnimation();
+								serverAlert((StackPane) root, rect.getWidth()).show();
+							});
+							return null;
+						}
+					}
+				}
+				List<Text> localized = new ArrayList<>();
+				assert errMsgs != null;
+				if (errMsgs.isEmpty()) {
+					Platform.runLater(() -> {
+						animation.stopAnimation();
+						generateDialog((StackPane) root, rect.getWidth(), "SUCCESS",
+								Launcher.contrManager.getBundleValue().getString("pw_reset_success")).show();
+					});
+					return null;
+				}
+				for (String err : errMsgs) {
+					String localMsg = Launcher.contrManager.getBundleValue().getString(err);
+					Text text = new Text(localMsg + "\n");
+					text.setFill(Color.RED);
+					localized.add(text);
+				}
+				Platform.runLater(() -> {
+					animation.stopAnimation();
+					Text[] localizedErrors = new Text[localized.size()];
+					generateDialog((StackPane) root, rect.getWidth(), "ERROR",
+							localized.toArray(localizedErrors)).show();
+				});
+				return null;
+			}
+
+			@Override
+			protected void scheduled() {
+				super.scheduled();
+				Platform.runLater(animation::playAnimation);
+			}
+		};
+		Thread thread = new Thread(task);
+		thread.setDaemon(true);
+		thread.start();
+	}
+
+	@FXML void deleteProfile() {
+		if (!validateAll()) {
+			return;
+		}
+		EventHandler<ActionEvent> yesHandler = new EventHandler<>() {
+			@Override
+			public void handle(ActionEvent event) {
+
+				LoadingAnimationOverlay animation = new LoadingAnimationOverlay(root, "Wait...");
+				Task<Void> task = new Task<>() {
+					@Override
+					protected Void call() {
+						List<String> errMsgs = null;
+						try {
+							errMsgs = Launcher.manager.deleteProfile(userid_field.getText(), pw_field.getText());
+						} catch (Exception e) {
+							if (e instanceof SocketException) {
+								Platform.runLater(() -> {
+									animation.stopAnimation();
+									notification(notif_connection_loss.get(), new Duration(8000));
+								});
+								boolean reconnected = false;
+								Launcher.manager.setDisconnected();
+								for (int i = 0; i < 3; i++) {
+									String ip = Launcher.manager.tryConnectServer();
+									if (ip != null) {
+										reconnected = true;
+										break;
+									}
+								}
+								if (!reconnected) {
+									Platform.runLater(() -> {
+										animation.stopAnimation();
+										serverAlert((StackPane) root, rect.getWidth()).show();
+									});
+									return null;
+								}
+							}
+						}
+						List<Text> localized = new ArrayList<>();
+						assert errMsgs != null;
+						if (errMsgs.isEmpty()) {
+							Platform.runLater(() -> {
+								animation.stopAnimation();
+								generateDialog((StackPane) root, rect.getWidth(), "SUCCESS",
+										Launcher.contrManager.getBundleValue().getString("del_profile_success")).show();
+							});
+							return null;
+						}
+						for (String err : errMsgs) {
+							String localMsg = Launcher.contrManager.getBundleValue().getString(err);
+							Text text = new Text(localMsg + "\n");
+							text.setFill(Color.RED);
+							localized.add(text);
+						}
+						Platform.runLater(() -> {
+							animation.stopAnimation();
+							Text[] localizedErrors = new Text[localized.size()];
+							generateDialog((StackPane) root, rect.getWidth(), "ERROR",
+									localized.toArray(localizedErrors)).show();
+						});
+						return null;
+					}
+
+					@Override
+					protected void scheduled() {
+						super.scheduled();
+						Platform.runLater(animation::playAnimation);
+					}
+				};
+				Thread thread = new Thread(task);
+				thread.setDaemon(true);
+				thread.start();
+			}
+		};
+		generateYNDialog((StackPane) root, rect.getWidth(),
+				Launcher.contrManager.getBundleValue().getString("confirm_choice"),
+				Launcher.contrManager.getBundleValue().getString("delete_confirm_body"),
+				yesHandler, null).show();
 	}
 	
 	/* ---- Private internal methods for rescaling ---- */

@@ -19,7 +19,7 @@ import java.util.Objects;
  * The class is mainly responsible for writing on or reading from the socket.
  *
  * @author Giulia Pais
- * @version 0.9.3
+ * @version 0.9.4
  *
  */
 public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterface {
@@ -90,7 +90,7 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
     }
 
     @Override
-    public ServiceResultInterface resendConde(String email, String requestType) throws IOException {
+    public ServiceResultInterface resendCode(String email, String requestType) throws IOException {
         writeCommand(CommProtocolCommands.RESEND_CODE, email, requestType);
         try {
             if (in == null) {
@@ -164,6 +164,44 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
     }
 
     @Override
+    public ServiceResultInterface deleteProfile(String id, String password) throws IOException {
+        writeCommand(CommProtocolCommands.DELETE_PROFILE, id, password);
+        try {
+            if (in == null) {
+                this.in = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+            }
+            readCommand(in.readUTF());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        ServiceResultInterface res = serviceResultList.get(serviceResultList.size()-1);
+        serviceResultList.remove(res);
+        return res;
+    }
+
+    @Override
+    public void quit() throws IOException {
+        writeCommand(CommProtocolCommands.QUIT);
+        closeResources();
+    }
+
+    @Override
+    public ServiceResultInterface resetPassword(String email) throws IOException {
+        writeCommand(CommProtocolCommands.RESET_PW, email);
+        try {
+            if (in == null) {
+                this.in = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+            }
+            readCommand(in.readUTF());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        ServiceResultInterface res = serviceResultList.get(serviceResultList.size()-1);
+        serviceResultList.remove(res);
+        return res;
+    }
+
+    @Override
     public void writeCommand(CommProtocolCommands command, Object... params) throws IOException {
         out.writeUTF(command.getCommand());
         for (Object p : params) {
@@ -184,7 +222,14 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
         }
         CommProtocolCommands com = CommProtocolCommands.getByCommand(command);
         switch (Objects.requireNonNull(com)) {
-            case ACTIVATION_CODE, CONFIRM_ACTIVATION_CODE, RESEND_CODE, LOGIN, CHANGE_USER_ID, CHANGE_PW -> serviceResultList.add((ServiceResult) in.readObject());
+            case ACTIVATION_CODE, CONFIRM_ACTIVATION_CODE, RESEND_CODE, LOGIN,
+                    CHANGE_USER_ID, CHANGE_PW, RESET_PW, DELETE_PROFILE -> serviceResultList.add((ServiceResult) in.readObject());
         }
+    }
+
+    private void closeResources() throws IOException {
+        in.close();
+        out.close();
+        socket.close();
     }
 }

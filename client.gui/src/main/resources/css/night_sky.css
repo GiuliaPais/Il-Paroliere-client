@@ -233,6 +233,14 @@
 	-fx-font-family: "Arial Black";
 }
 
+#forgot-pw.label:hover{
+	-fx-text-fill: light3;
+}
+
+#forgot-pw.jfx-rippler{
+	-jfx-rippler-fill: main-text-color;
+	-jfx-mask-type: RECT;
+}
 
 /* Glyphs fontawsomefx */
 .glyph-font{
@@ -281,7 +289,8 @@
 	-fx-font-family: "Arial";
 }
 
-#activationAlert .jfx-text-field .error-label, .jfx-password-field .error-label {
+#activationAlert .jfx-text-field .error-label, 
+#activationAlert .jfx-password-field .error-label {
     -fx-font-size: 12px;
 }
 
@@ -552,4 +561,11 @@
 
 #change-pw-btn {
 	-fx-font-size: 11px;
+}
+
+/* Combo box */
+.jfx-check-box{
+	-jfx-checked-color: light2;
+	-jfx-unchecked-color: main-text-color;
+	-fx-text-fill: main-text-color;
 }

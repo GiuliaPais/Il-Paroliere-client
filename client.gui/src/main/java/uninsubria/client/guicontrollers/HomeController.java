@@ -34,7 +34,7 @@ import java.util.ResourceBundle;
  * Controller for the home view.
  *
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  */
 public class HomeController extends AbstractMainController {
     /*---Fields---*/
@@ -45,6 +45,7 @@ public class HomeController extends AbstractMainController {
     @FXML JFXTabPane tabPane;
     @FXML Tab roomTab, statsTab;
     @FXML Glyph tutorialIcon, settingsIcon, hamburger;
+    @FXML JFXTreeTableView roomList;
 
     private final StringProperty roomTab_txt;
     private final StringProperty statsTab_txt;
@@ -56,6 +57,9 @@ public class HomeController extends AbstractMainController {
     private ObjectProperty<Background> imgBackground;
 
     /*---Constructors---*/
+    /**
+     * Instantiates a new Home controller.
+     */
     public HomeController() {
         this.roomTab_txt = new SimpleStringProperty();
         this.statsTab_txt = new SimpleStringProperty();
@@ -242,6 +246,11 @@ public class HomeController extends AbstractMainController {
         menuContent.setItems(localizedOptions);
         menuContent.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue.equals(menu_exit_txt)) {
+                try {
+                    Launcher.manager.quit();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 Platform.exit();
                 System.exit(0);
                 return;
@@ -255,7 +264,6 @@ public class HomeController extends AbstractMainController {
                 return;
             }
         });
-
         JFXPopup menu = new JFXPopup(menuContent);
         hamburger.setOnMouseClicked(e -> menu.show(hamburger, JFXPopup.PopupVPosition.TOP, JFXPopup.PopupHPosition.RIGHT));
     }
@@ -281,5 +289,9 @@ public class HomeController extends AbstractMainController {
             loadProfileInfo();
         });
         return dialog;
+    }
+
+    private void initRoomTable() {
+
     }
 }
