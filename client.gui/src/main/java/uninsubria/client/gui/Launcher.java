@@ -21,7 +21,7 @@ public class Launcher extends Application{
 	
 	/*---Fields---*/
 	/**
-	 * The CentralManager for this application.
+	 * The	 CentralManager for this application.
 	 */
 	public static CentralManager manager;
 	/**
