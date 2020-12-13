@@ -22,9 +22,8 @@ import java.util.prefs.Preferences;
  * Class responsible for central communication between client and server. Also manages preferences at start up.
  *
  * @author Giulia Pais
- * @version 0.9.3
+ * @version 0.9.4
  */
-@SuppressWarnings("unchecked")
 public class CentralManager {
 	/*---Fields---*/
 	private final Preferences preferences;
@@ -216,7 +215,7 @@ public class CentralManager {
 	 * @throws IOException the io exception
 	 */
 	public List<String> resendCode(String email, String requestType) throws IOException {
-		ServiceResultInterface ack = proxy.get().resendConde(email, requestType);
+		ServiceResultInterface ack = proxy.get().resendCode(email, requestType);
 		Result<?> errors = ack.getResult("Errors");
 		List<String> errMsgs = new ArrayList<>();
 		if (errors != null) {
@@ -306,6 +305,7 @@ public class CentralManager {
 	 * Request userID change.
 	 * If the request succeeds the method returns an empty list, otherwise it returns a list of error names
 	 * to be localized in the selected language.
+	 *
 	 * @param oldID the old id
 	 * @param newID the new id
 	 * @return the list
@@ -337,6 +337,7 @@ public class CentralManager {
 	 * Request password change.
 	 * If the request succeeds the method returns an empty list, otherwise it returns a list of error names
 	 * to be localized in the selected language.
+	 *
 	 * @param email the email
 	 * @param oldPW the old pw
 	 * @param newPW the new pw
@@ -362,5 +363,65 @@ public class CentralManager {
 			}
 		}
 		return errMsgs;
+	}
+
+	/**
+	 * Request password reset after clicking on "Password forgotten" prompt.
+	 * If the request succeeds the method returns an empty list, otherwise it returns a list of error names
+	 * to be localized in the selected language.
+	 *
+	 * @param email the email
+	 * @return a list of errors
+	 * @throws IOException the io exception
+	 */
+	public List<String> resetPassword(String email) throws IOException {
+		ServiceResultInterface ack = proxy.get().resetPassword(email);
+		Boolean changed = (Boolean) ack.getResult("Success").getValue();
+		List<String> errMsgs = new ArrayList<>();
+		if (changed) {
+			return errMsgs;
+		}
+		Result<?> errors = ack.getResult("Errors");
+		if (errors != null) {
+			ErrorMsgType[] ers = (ErrorMsgType[]) ack.getResult("Errors").getValue();
+			for (ErrorMsgType e : ers) {
+				errMsgs.add(e.name());
+			}
+		}
+		return errMsgs;
+	}
+
+	/**
+	 * Request the deletion of the user profile.
+	 * If the request succeeds the method returns an empty list, otherwise it returns a list of error names
+	 * to be localized in the selected language.
+	 *
+	 * @param id       the id
+	 * @param password the password
+	 * @return a list of errors
+	 * @throws IOException              the io exception
+	 * @throws NoSuchAlgorithmException the no such algorithm exception
+	 */
+	public List<String> deleteProfile(String id, String password) throws IOException, NoSuchAlgorithmException {
+		String hashedPw = PasswordEncryptor.hashPassword(password);
+		ServiceResultInterface ack = proxy.get().deleteProfile(id, hashedPw);
+		List<String> errMsgs = new ArrayList<>();
+		Result<?> errors = ack.getResult("Errors");
+		if (errors != null) {
+			ErrorMsgType[] ers = (ErrorMsgType[]) ack.getResult("Errors").getValue();
+			for (ErrorMsgType e : ers) {
+				errMsgs.add(e.name());
+			}
+		}
+		return errMsgs;
+	}
+
+	/**
+	 * Signals server that the client application has been closed.
+	 *
+	 * @throws IOException the io exception
+	 */
+	public void quit() throws IOException {
+		proxy.get().quit();
 	}
 }

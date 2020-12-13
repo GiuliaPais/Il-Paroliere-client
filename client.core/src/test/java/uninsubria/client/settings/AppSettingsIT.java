@@ -16,7 +16,7 @@ class AppSettingsIT {
     @BeforeEach
     private void initParams() {
         this.connPrefs = new ConnectionPrefs("localhost, 192.168.36.1, 172.36.45.1");
-        this.appSettings = new AppSettings(prefs, true, 16.0/9.0, 1920.0, 1080.0, "NIGHT_SKY", "ITALIAN", connPrefs);
+        this.appSettings = new AppSettings(prefs, true, 16.0/9.0, 1920.0, 1080.0, "NIGHT_SKY", "ITALIAN", true, "", connPrefs);
     }
 
     @Test

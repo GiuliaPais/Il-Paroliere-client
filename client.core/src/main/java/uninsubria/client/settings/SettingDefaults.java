@@ -1,6 +1,3 @@
-/**
- * 
- */
 package uninsubria.client.settings;
 
 import java.util.prefs.Preferences;
@@ -8,7 +5,7 @@ import java.util.prefs.Preferences;
 /**
  * Object representing setting defaults.
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  *
  */
 public class SettingDefaults extends AppSettings {
@@ -27,6 +24,7 @@ public class SettingDefaults extends AppSettings {
 		setLanguage("ITALIAN");
 		setTheme("NIGHT_SKY");
 		setFullscreen(true);
+		setRememberMe(true);
 	}
 
 	/**
@@ -42,8 +40,10 @@ public class SettingDefaults extends AppSettings {
 		setLanguage("ITALIAN");
 		setTheme("NIGHT_SKY");
 		setFullscreen(true);
+		setRememberMe(true);
 		getConnectionPrefs().setServer_addresses("localhost");
 	}
+
 	/*---Methods---*/
 	
 }

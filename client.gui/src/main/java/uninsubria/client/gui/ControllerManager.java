@@ -1,16 +1,10 @@
 package uninsubria.client.gui;
 
-import java.io.IOException;
-import java.util.ResourceBundle;
-import java.util.prefs.BackingStoreException;
-import java.util.prefs.Preferences;
-
 import javafx.beans.binding.ObjectBinding;
 import javafx.beans.binding.When;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
@@ -21,10 +15,15 @@ import uninsubria.client.settings.AppSettings;
 import uninsubria.utils.languages.Language;
 import uninsubria.utils.languages.LanguageManager;
 
+import java.io.IOException;
+import java.util.ResourceBundle;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
+
 /**
  * Central class for coordinating GUI controllers.
  * @author Giulia Pais
- * @version 0.9.2
+ * @version 0.9.3
  *
  */
 public class ControllerManager {
@@ -83,45 +82,31 @@ public class ControllerManager {
 				pref.getDouble("WIDTH", 1280.0),
 				pref.getDouble("HEIGHT", 720.0), pref.get("THEME", "NIGHT_SKY"),
 				pref.get("LANGUAGE", "ITALIAN"),
+				pref.getBoolean("REMEMBER_ME", true),
+				pref.get("USERNAME", ""),
 				Launcher.manager.getAddressList());
 		this.langManager = new LanguageManager(Language.valueOf(settings.getLanguage()));
-		this.bundle = new SimpleObjectProperty<ResourceBundle>(langManager.getResourcesBundle());
-		this.chosen_resolution = new SimpleObjectProperty<Resolution>(new Resolution(settings.getAspectRatio(), settings.getWidth()));
-		this.language_listener = new ChangeListener<String>() {
-
-			@Override
-			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-				LanguageManager lm = langManager;
-				lm.setLang(Language.valueOf(newValue));
-				langManager = lm;
-				bundle.set(lm.getResourcesBundle());
-			}
-			
+		this.bundle = new SimpleObjectProperty<>(langManager.getResourcesBundle());
+		this.chosen_resolution = new SimpleObjectProperty<>(new Resolution(settings.getAspectRatio(), settings.getWidth()));
+		this.language_listener = (observable, oldValue, newValue) -> {
+			LanguageManager lm = langManager;
+			lm.setLang(Language.valueOf(newValue));
+			langManager = lm;
+			bundle.set(lm.getResourcesBundle());
 		};
-		this.resolution_listener = new ChangeListener<Resolution>() {
-
-			@Override
-			public void changed(ObservableValue<? extends Resolution> observable, Resolution oldValue,
-					Resolution newValue) {
-				Double[] dims = newValue.getWidthHeight();
-				Launcher.mainStage.setHeight(dims[1]);
-				Launcher.mainStage.setWidth(dims[0]);
+		this.resolution_listener = (observable, oldValue, newValue) -> {
+			Double[] dims = newValue.getWidthHeight();
+			Launcher.mainStage.setHeight(dims[1]);
+			Launcher.mainStage.setWidth(dims[0]);
+			Launcher.mainStage.centerOnScreen();
+		};
+		this.fullscreen_listener = (observable, oldValue, newValue) -> {
+			Launcher.mainStage.setFullScreen(newValue);
+			if (!newValue) {
+				Launcher.mainStage.setHeight(current_resolution.get().getWidthHeight()[1]);
+				Launcher.mainStage.setWidth(current_resolution.get().getWidthHeight()[0]);
 				Launcher.mainStage.centerOnScreen();
 			}
-			
-		};
-		this.fullscreen_listener = new ChangeListener<Boolean>() {
-
-			@Override
-			public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-				Launcher.mainStage.setFullScreen(newValue);
-				if (newValue.booleanValue() == false) {
-					Launcher.mainStage.setHeight(current_resolution.get().getWidthHeight()[1]);
-					Launcher.mainStage.setWidth(current_resolution.get().getWidthHeight()[0]);
-					Launcher.mainStage.centerOnScreen();
-				}
-			}
-			
 		};
 		Rectangle2D screenBounds = Screen.getPrimary().getBounds();
 		FULLSCREEN_RES = new Resolution(new Double[] {screenBounds.getWidth(), screenBounds.getHeight()});
@@ -190,17 +175,11 @@ public class ControllerManager {
 	 */
 	private void setUpPropertyListeners() {
 		this.current_resolution.addListener(resolution_listener);
-		this.chosen_resolution.addListener(new ChangeListener<Resolution>() {
-
-			@Override
-			public void changed(ObservableValue<? extends Resolution> observable, Resolution oldValue,
-					Resolution newValue) {
-				Double[] dims = newValue.getWidthHeight();
-				settings.setAspectRatio(newValue.getAspectRatio());
-				settings.setWidth(dims[0]);
-				settings.setHeight(dims[1]);
-			}
-			
+		this.chosen_resolution.addListener((observable, oldValue, newValue) -> {
+			Double[] dims = newValue.getWidthHeight();
+			settings.setAspectRatio(newValue.getAspectRatio());
+			settings.setWidth(dims[0]);
+			settings.setHeight(dims[1]);
 		});
 		registerSettingListeners();
 	}
@@ -289,6 +268,11 @@ public class ControllerManager {
 		this.chosenResolutionProperty().set(chosen_resolution);
 	}
 
+	/**
+	 * Gets app theme.
+	 *
+	 * @return the app theme
+	 */
 	public String getAppTheme() {
 		Theme theme = Theme.valueOf(settings.getTheme());
 		return getClass().getResource(theme.getFilePath()).toExternalForm();
