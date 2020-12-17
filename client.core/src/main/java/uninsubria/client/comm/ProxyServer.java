@@ -1,5 +1,6 @@
 package uninsubria.client.comm;
 
+import uninsubria.utils.business.Lobby;
 import uninsubria.utils.business.Player;
 import uninsubria.utils.connection.CommHolder;
 import uninsubria.utils.connection.CommProtocolCommands;
@@ -19,7 +20,7 @@ import java.util.Objects;
  * The class is mainly responsible for writing on or reading from the socket.
  *
  * @author Giulia Pais
- * @version 0.9.4
+ * @version 0.9.5
  *
  */
 public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterface {
@@ -202,6 +203,21 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
     }
 
     @Override
+    public boolean createRoom(Lobby lobby) throws IOException {
+        writeCommand(CommProtocolCommands.CREATE_ROOM, lobby);
+        try {
+            if (in == null) {
+                this.in = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+            }
+            readCommand(in.readUTF());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     public void writeCommand(CommProtocolCommands command, Object... params) throws IOException {
         out.writeUTF(command.getCommand());
         for (Object p : params) {
@@ -224,6 +240,7 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
         switch (Objects.requireNonNull(com)) {
             case ACTIVATION_CODE, CONFIRM_ACTIVATION_CODE, RESEND_CODE, LOGIN,
                     CHANGE_USER_ID, CHANGE_PW, RESET_PW, DELETE_PROFILE -> serviceResultList.add((ServiceResult) in.readObject());
+            case CREATE_ROOM -> {}
         }
     }
 

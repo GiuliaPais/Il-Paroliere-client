@@ -16,6 +16,8 @@
 	lightest: #FFFFFF;
 	dark-transparent-1: rgba(0,0,0,0.4);
 	dark-transparent-2: rgba(0,0,0,0.2);
+	white-transparent-1: rgba(255, 255, 255, 0.1);
+	white-transparent-2: rgba(255, 255, 255, 0.2);
 	/* Default properties */
 	-fx-font-family: "Arial Black";
 	/*-fx-font-size: 14px;*/
@@ -568,4 +570,158 @@
 	-jfx-checked-color: light2;
 	-jfx-unchecked-color: main-text-color;
 	-fx-text-fill: main-text-color;
+}
+
+/* Grid view game */
+.game-grid{
+	-fx-background-color: dark-transparent-1;
+	-fx-background-radius: 5px;
+	-fx-border-color: main-text-color;
+	-fx-border-style: solid;
+	-fx-border-width: 1px;
+	-fx-border-radius: 5px;
+}
+
+.ip-dice-face{
+	-jfx-toggle-color: light3;
+}
+
+.ip-dice-face .label {
+	-fx-text-fill: black;
+}
+
+.ip-dice-face .selected-number-label {
+	-fx-text-fill: light3;
+}
+
+.ip-dice-face:hover .dice-base{
+	-fx-effect: innershadow(three-pass-box, red, 14.45, 0.0, 0.0, 0.0);
+}
+
+.ip-dice-face:hover:selectable .dice-base{
+	-fx-effect: innershadow(three-pass-box, green, 14.45, 0.0, 0.0, 0.0);
+}
+
+/* RoomList */
+#rooms.table-view{
+	-fx-background-color: dark-transparent-1;
+}
+
+#rooms.table-view .column-header-background .filler,
+#rooms.table-view .column-header-background .nested-column-header,
+#rooms.table-view .column-header-background .nested-column-header .column-header{
+	-fx-background-color: dark1, light2;	
+}
+
+#rooms.table-view .jfx-text-field,
+#rooms.table-view .jfx-combo-box{
+	-fx-font-family: "Arial";
+	-jfx-focus-color: light3;
+	-jfx-unfocus-color: main-text-color;
+	-fx-background-color: white-transparent-1;
+	-fx-padding: 5 5 5 5;
+}
+
+#rooms.table-view .table-row-cell,
+#rooms.table-view .virtual-flow .clipped-container .sheet{
+	-fx-background-color: transparent;
+	-fx-alignment: center;
+}
+
+#rooms.table-view .virtual-flow .clipped-container .sheet .table-row-cell:selected .table-cell{
+	-fx-text-fill: darkest;
+}
+
+#rooms.table-view .table-row-cell:filled:even{
+	-fx-background-color: white-transparent-1;
+}
+
+#rooms.table-view .table-row-cell:filled:selected{
+	-fx-background-color: light3;
+}
+
+#rooms.table-view .table-row-cell:filled:hover{
+	-fx-background-color: white-transparent-2;
+}
+
+#rooms.table-view .table-row-cell:filled:selected:hover{
+	-fx-background-color: white-transparent-2, light3;
+}
+
+
+#rooms.table-view .table-cell:filled{
+	-fx-padding: 10 10 10 10;
+	-fx-background-color: transparent;
+	-fx-border-color: transparent;
+	-fx-text-fill: main-text-color;
+	-fx-font-family: "Arial";
+	-fx-alignment: center;
+	-fx-text-alignment: center;
+}
+
+
+#rooms.table-view .table-cell:empty{
+	-fx-background-color: transparent;
+	-fx-border-color: transparent;
+}
+
+.lobby .content{
+	-fx-background-color: dark-transparent-1;
+	-fx-border-width: 0;
+}
+
+.lobby .title{
+	-fx-background-color: light2;
+}
+
+.lobby .title .text{
+	-fx-fill: main-text-color;
+}
+
+/* Stats pane */
+.stats-scroll-pane,
+.stats-scroll-pane .viewport{
+	-fx-background-color:transparent;
+}
+
+.stats-scroll-pane .scroll-bar:vertical{
+	-fx-background-color: transparent;
+	-fx-pref-width: 15px;
+}
+
+.stats-scroll-pane .scroll-bar:vertical .thumb{
+	-fx-background-color: white;
+}
+
+.stats-scroll-pane .scroll-bar:vertical .decrement-button .decrement-arrow,
+.stats-scroll-pane .scroll-bar:vertical .increment-button .increment-arrow{
+	-fx-background-color: white;
+}
+
+.stats-scroll-pane .scroll-bar:vertical .decrement-button:hover,
+.stats-scroll-pane .scroll-bar:vertical .increment-button:hover{
+	-fx-background-color: light2;
+}
+
+.stats-card{
+}
+
+.stats-card .card-header{
+	-fx-background-color: light2;
+	-fx-background-radius: 10 10 0 0;
+}
+
+.stats-card .card-body{
+	-fx-background-color: dark-transparent-1;
+	-fx-background-radius: 0 0 10 10;
+}
+
+.stats-card .card-body .table-view{
+	-fx-background-color: dark-transparent-1;
+}
+
+.stats-card .card-body .table-view .column-header-background .nested-column-header .column-header,
+.stats-card .card-body .table-view .column-header-background .nested-column-header,
+.stats-card .card-body .table-view .column-header-background .filler {
+	-fx-background-color: light1;
 }
