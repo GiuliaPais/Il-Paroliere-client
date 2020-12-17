@@ -5,36 +5,42 @@ import com.jfoenix.svg.SVGGlyph;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.binding.DoubleBinding;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
+import javafx.concurrent.ScheduledService;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.Tab;
+import javafx.scene.control.*;
 import javafx.scene.effect.Bloom;
 import javafx.scene.effect.Effect;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
+import javafx.util.Duration;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.controlsfx.glyphfont.Glyph;
 import uninsubria.client.gui.Launcher;
+import uninsubria.client.gui.ObservableLobby;
+import uninsubria.utils.business.Lobby;
+import uninsubria.utils.languages.Language;
+import uninsubria.utils.ruleset.Ruleset;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.UUID;
 
 /**
  * Controller for the home view.
  *
  * @author Giulia Pais
- * @version 0.9.2
+ * @version 0.9.3
  */
 public class HomeController extends AbstractMainController {
     /*---Fields---*/
@@ -43,18 +49,27 @@ public class HomeController extends AbstractMainController {
     @FXML VBox profInfo;
     @FXML Label userLabel, emailLabel;
     @FXML JFXTabPane tabPane;
-    @FXML Tab roomTab, statsTab;
+    @FXML Tab roomTab, playerStatsTab, gameStatsTab, wordStatsTab;
     @FXML Glyph tutorialIcon, settingsIcon, hamburger;
-    @FXML JFXTreeTableView roomList;
+    @FXML TableView roomList;
+    @FXML TableColumn<ObservableLobby, String> name_col;
+    @FXML TableColumn<ObservableLobby, Integer> players_col;
+    @FXML TableColumn<ObservableLobby, Language> lang_col;
+    @FXML TableColumn<ObservableLobby, Ruleset> ruleset_col;
+    @FXML TableColumn<ObservableLobby, Lobby.LobbyStatus> status_col;
+    @FXML JFXButton create_room_btn, join_room_btn;
+    @FXML TitledPane lobbyView;
 
-    private final StringProperty roomTab_txt;
-    private final StringProperty statsTab_txt;
-    private final StringProperty menu_exit_txt;
-    private final StringProperty menu_info_txt;
-    private final StringProperty menu_logout_txt;
+    private final StringProperty roomTab_txt, playerStatsTab_txt, gameStatsTab_txt, wordStatsTab_txt,
+            menu_exit_txt, menu_info_txt, menu_logout_txt, name_col_txt, players_col_txt, lang_col_text, rule_col_text,
+            status_col_txt;
     private SVGGlyph img;
     private DoubleBinding imgSidelength;
     private ObjectProperty<Background> imgBackground;
+
+    private MapProperty<UUID, ObservableLobby> lobbyMap;
+    private ListProperty<ObservableLobby> lobbies_list;
+    private ScheduledService<Void> lobbiesRefresher;
 
     /*---Constructors---*/
     /**
@@ -62,30 +77,56 @@ public class HomeController extends AbstractMainController {
      */
     public HomeController() {
         this.roomTab_txt = new SimpleStringProperty();
-        this.statsTab_txt = new SimpleStringProperty();
+        this.playerStatsTab_txt = new SimpleStringProperty();
         this.menu_info_txt = new SimpleStringProperty();
         this.menu_logout_txt = new SimpleStringProperty();
         this.menu_exit_txt = new SimpleStringProperty();
+        this.gameStatsTab_txt = new SimpleStringProperty();
+        this.wordStatsTab_txt = new SimpleStringProperty();
+        this.name_col_txt = new SimpleStringProperty();
+        this.players_col_txt = new SimpleStringProperty();
+        this.lang_col_text = new SimpleStringProperty();
+        this.rule_col_text = new SimpleStringProperty();
+        this.status_col_txt = new SimpleStringProperty();
+        this.lobbyMap = new SimpleMapProperty<>();
+        this.lobbies_list = new SimpleListProperty();
     }
 
     /*---Methods---*/
     @Override
     public void initialize() {
         super.initialize();
+        try {
+            Launcher.manager.startRoomServer();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         this.imgSidelength = (profImage.prefWidthProperty().divide(2)).multiply(Math.sqrt(2));
         initIcons();
         loadImagePreset();
         loadProfileInfo();
         initPopupMenu();
+        initRoomTable();
+        join_room_btn.setDisable(true);
+        lobbyView.setVisible(false);
+        lobbiesRefresher = getReferesherService();
+        lobbiesRefresher.start();
     }
 
     @Override
     public void setTextResources(ResourceBundle resBundle) {
         roomTab_txt.set(resBundle.getString("room_tab"));
-        statsTab_txt.set(resBundle.getString("stats_tab"));
+        playerStatsTab_txt.set(resBundle.getString("playerstats_tab"));
         menu_exit_txt.set(resBundle.getString("main_menu_exit"));
         menu_logout_txt.set(resBundle.getString("main_menu_logout"));
         menu_info_txt.set(resBundle.getString("main_menu_about"));
+        gameStatsTab_txt.set(resBundle.getString("gamestats_tab"));
+        wordStatsTab_txt.set(resBundle.getString("wordstats_tab"));
+        name_col_txt.set(resBundle.getString("name_col"));
+        players_col_txt.set(resBundle.getString("players_col"));
+        lang_col_text.set(resBundle.getString("language_col"));
+        rule_col_text.set(resBundle.getString("rule_col"));
+        status_col_txt.set(resBundle.getString("status_col"));
     }
 
     @FXML void showSettings() throws IOException {
@@ -96,6 +137,18 @@ public class HomeController extends AbstractMainController {
         anim.play();
     }
 
+    @FXML void createRoom() {
+        Lobby lobby = new Lobby("testroom1", 2, Language.ITALIAN, Ruleset.STANDARD, Lobby.LobbyStatus.OPEN);
+        try {
+            if (Launcher.manager.createRoom(lobby)) {
+                lobbyView.setText(lobby.getRoomName());
+                lobbyView.setVisible(true);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     /*----------- Private methods for initialization and scaling -----------*/
     @Override
     protected void rescaleAll(double after) {
@@ -103,6 +156,38 @@ public class HomeController extends AbstractMainController {
         rescaleProfile(after);
         rescaleTabPane(after);
         rescaleIcons(after);
+        rescaleButton(after);
+    }
+
+    private ScheduledService<Void> getReferesherService() {
+        ScheduledService<Void> service = new ScheduledService<>() {
+            @Override
+            protected Task<Void> createTask() {
+                return new Task<>() {
+                    @Override
+                    protected Void call() {
+                        try {
+                            Map<UUID, Lobby> map = Launcher.manager.requestRoomUpdate();
+                            ObservableMap<UUID, ObservableLobby> obmap = FXCollections.observableMap(new HashMap<>());
+                            for (Map.Entry<UUID, Lobby> entry : map.entrySet()) {
+                                ObservableLobby oblobby = ObservableLobby.toObservableLobby(entry.getValue());
+                                obmap.put(entry.getKey(), oblobby);
+                            }
+                            lobbyMap.setValue(obmap);
+                            lobbies_list.setValue(FXCollections.observableArrayList(lobbyMap.values()));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                        return null;
+                    }
+                };
+            }
+        };
+        service.setPeriod(Duration.seconds(2));
+        service.setRestartOnFailure(true);
+        return service;
     }
 
     private void initIcons() {
@@ -145,14 +230,30 @@ public class HomeController extends AbstractMainController {
             roomTab.setGraphic(roomTabLabel);
         }
         roomTab.getGraphic().setStyle("-fx-font-size: " + currentFontSize.get() + "px;");
-        if (statsTab.getGraphic() == null) {
+        if (playerStatsTab.getGraphic() == null) {
             /* Converts simple text of tab headers in stylable labels*/
-            Label statsTabLabel = new Label();
-            statsTabLabel.textProperty().bind(statsTab_txt);
-            statsTab.setText("");
-            statsTab.setGraphic(statsTabLabel);
+            Label playerStatsTabLabel = new Label();
+            playerStatsTabLabel.textProperty().bind(playerStatsTab_txt);
+            playerStatsTab.setText("");
+            playerStatsTab.setGraphic(playerStatsTabLabel);
         }
-        statsTab.getGraphic().setStyle("-fx-font-size: " + currentFontSize.get() + "px;");
+        playerStatsTab.getGraphic().setStyle("-fx-font-size: " + currentFontSize.get() + "px;");
+        if (gameStatsTab.getGraphic() == null) {
+            /* Converts simple text of tab headers in stylable labels*/
+            Label gameStatsTabLabel = new Label();
+            gameStatsTabLabel.textProperty().bind(gameStatsTab_txt);
+            gameStatsTab.setText("");
+            gameStatsTab.setGraphic(gameStatsTabLabel);
+        }
+        gameStatsTab.getGraphic().setStyle("-fx-font-size: " + currentFontSize.get() + "px;");
+        if (wordStatsTab.getGraphic() == null) {
+            /* Converts simple text of tab headers in stylable labels*/
+            Label wordStatsTabLabel = new Label();
+            wordStatsTabLabel.textProperty().bind(wordStatsTab_txt);
+            wordStatsTab.setText("");
+            wordStatsTab.setGraphic(wordStatsTabLabel);
+        }
+        wordStatsTab.getGraphic().setStyle("-fx-font-size: " + currentFontSize.get() + "px;");
     }
 
     private void rescaleIcons(double after) {
@@ -163,6 +264,15 @@ public class HomeController extends AbstractMainController {
         tutorialIcon.setFontSize(dimAfter);
         settingsIcon.setFontSize(dimAfter);
         hamburger.setFontSize(dimAfter);
+    }
+
+    private void rescaleButton(double after) {
+        double h = after*ref.getReferences().get("HOME_ROOM_BTN_H") / ref.getReferences().get("REF_RESOLUTION");
+        double w = after*ref.getReferences().get("HOME_ROOM_BTN_W") / ref.getReferences().get("REF_RESOLUTION");
+        create_room_btn.setPrefSize(w, h);
+        create_room_btn.setStyle("-fx-font-size: " + (currentFontSize.get() - 5) + ";");
+        join_room_btn.setPrefSize(w, h);
+        join_room_btn.setStyle("-fx-font-size: " + (currentFontSize.get() - 5) + ";");
     }
 
     private void loadImagePreset() {
@@ -248,6 +358,7 @@ public class HomeController extends AbstractMainController {
             if (newValue.equals(menu_exit_txt)) {
                 try {
                     Launcher.manager.quit();
+                    Launcher.manager.stopRoomServer();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -292,6 +403,59 @@ public class HomeController extends AbstractMainController {
     }
 
     private void initRoomTable() {
+        /* Set column headers */
+        roomList.setItems(lobbies_list);
+        lobbies_list.addListener((observable, oldValue, newValue) -> {
+            roomList.setItems(newValue);
+        });
+        name_col.setText("");
+        name_col.setGraphic(generateTableHeaderTxtField(name_col_txt));
+        name_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.3));
+        name_col.setCellValueFactory(param -> param.getValue().roomNameProperty());
+        players_col.setText("");
+        players_col.setGraphic(generateTableHeaderCombo(players_col_txt));
+        players_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.175));
+        players_col.setCellValueFactory(param -> param.getValue().numPlayersProperty().asObject());
+        lang_col.setText("");
+        lang_col.setGraphic(generateTableHeaderCombo(lang_col_text));
+        lang_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.175));
+        lang_col.setCellValueFactory(param -> param.getValue().languageProperty());
+        ruleset_col.setText("");
+        ruleset_col.setGraphic(generateTableHeaderCombo(rule_col_text));
+        ruleset_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.175));
+        ruleset_col.setCellValueFactory(param -> param.getValue().rulesetProperty());
+        status_col.setText("");
+        status_col.setGraphic(generateTableHeaderCombo(status_col_txt));
+        status_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.175));
+        status_col.setCellValueFactory(param -> param.getValue().statusProperty());
+    }
 
+    private VBox generateTableHeaderTxtField(StringProperty title_txt) {
+        VBox vBox = new VBox();
+        vBox.setAlignment(Pos.TOP_CENTER);
+        vBox.setPadding(new Insets(10, 10, 10, 10));
+        vBox.setSpacing(5);
+        Label title = new Label();
+        title.textProperty().bind(title_txt);
+        title.setStyle("-fx-font-size: " + (currentFontSize.get() - 5) + ";");
+        JFXTextField textField = new JFXTextField();
+        textField.setStyle("-fx-font-size: " + (currentFontSize.get() - 7) + ";");
+        vBox.getChildren().addAll(title, textField);
+        return vBox;
+    }
+
+    private VBox generateTableHeaderCombo(StringProperty title_txt) {
+        VBox vBox = new VBox();
+        vBox.setAlignment(Pos.TOP_CENTER);
+        vBox.setPadding(new Insets(10, 10, 10, 10));
+        vBox.setSpacing(5);
+        Label title = new Label();
+        title.textProperty().bind(title_txt);
+        title.setStyle("-fx-font-size: " + (currentFontSize.get() - 5) + ";");
+        JFXComboBox comboBox = new JFXComboBox();
+        comboBox.setStyle("-fx-font-size: " + (currentFontSize.get() - 7) + ";");
+        //init combo box
+        vBox.getChildren().addAll(title, comboBox);
+        return vBox;
     }
 }

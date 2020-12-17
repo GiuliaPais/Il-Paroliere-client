@@ -3,18 +3,26 @@ package uninsubria.client.centralmanagement;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import uninsubria.client.comm.ProxyServer;
+import uninsubria.client.comm.RoomServer;
 import uninsubria.client.settings.ConnectionPrefs;
 import uninsubria.client.settings.SettingDefaults;
+import uninsubria.utils.business.Lobby;
 import uninsubria.utils.business.Player;
+import uninsubria.utils.connection.CommHolder;
+import uninsubria.utils.connection.CommProtocolCommands;
 import uninsubria.utils.security.PasswordEncryptor;
 import uninsubria.utils.serviceResults.ErrorMsgType;
 import uninsubria.utils.serviceResults.Result;
 import uninsubria.utils.serviceResults.ServiceResultInterface;
 
-import java.io.IOException;
+import java.io.*;
+import java.net.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -22,7 +30,7 @@ import java.util.prefs.Preferences;
  * Class responsible for central communication between client and server. Also manages preferences at start up.
  *
  * @author Giulia Pais
- * @version 0.9.4
+ * @version 0.9.5
  */
 public class CentralManager {
 	/*---Fields---*/
@@ -30,6 +38,9 @@ public class CentralManager {
 	private final ObjectProperty<ProxyServer> proxy;
 	private ConnectionPrefs addressList;
 	private ObjectProperty<Player> profile;
+
+	private RoomServer roomServer;
+	private DatagramSocket datagramSocket;
 
 	/*---Constructors---*/
 
@@ -423,5 +434,49 @@ public class CentralManager {
 	 */
 	public void quit() throws IOException {
 		proxy.get().quit();
+	}
+
+	public void startRoomServer() throws IOException {
+		if (roomServer == null) {
+			roomServer = new RoomServer();
+		}
+	}
+
+	public Map<UUID, Lobby> requestRoomUpdate() throws IOException, ClassNotFoundException {
+		byte[] buf;
+		if (datagramSocket == null) {
+			datagramSocket = new DatagramSocket();
+		}
+		if (this.proxy == null | this.proxy.get() == null) {
+			return null;
+		}
+		buf = CommProtocolCommands.SEND_ROOM_LIST.getCommand().getBytes();
+		DatagramPacket packet
+				= new DatagramPacket(buf, buf.length, InetAddress.getByName(proxy.get().getAddress()), CommHolder.SERVER_PORT);
+		datagramSocket.send(packet);
+		buf = new byte[5000];
+		packet = new DatagramPacket(buf, buf.length);
+		datagramSocket.receive(packet);
+		ByteArrayInputStream byteStream = new
+				ByteArrayInputStream(buf);
+		ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(byteStream));
+		Map<UUID, Lobby> received = (ConcurrentHashMap<UUID, Lobby>) is.readObject();
+		return received;
+	}
+
+	public void stopRoomServer() {
+		if (roomServer != null) {
+			roomServer.interrupt();
+			try {
+				new Socket("localhost", CommHolder.ROOM_PORT);
+				roomServer = null;
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public boolean createRoom(Lobby lobby) throws IOException {
+		return proxy.get().createRoom(lobby);
 	}
 }
