@@ -14,13 +14,14 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Represents a proxy object in the Proxy-Skeleton communication pattern.
  * The class is mainly responsible for writing on or reading from the socket.
  *
  * @author Giulia Pais
- * @version 0.9.5
+ * @version 0.9.6
  *
  */
 public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterface {
@@ -200,6 +201,11 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
         ServiceResultInterface res = serviceResultList.get(serviceResultList.size()-1);
         serviceResultList.remove(res);
         return res;
+    }
+
+    @Override
+    public void leaveRoom(UUID roomID) throws IOException {
+        writeCommand(CommProtocolCommands.LEAVE_ROOM, roomID);
     }
 
     @Override

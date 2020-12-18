@@ -11,8 +11,10 @@ module uninsubria.client.gui {
 	requires com.jfoenix;
 	requires utils.business;
     requires utils.ruleset;
+	requires utils.connection;
+	requires utils.managers.api;
 
-    opens uninsubria.client.gui to javafx.fxml;
+	opens uninsubria.client.gui to javafx.fxml;
     opens uninsubria.client.guicontrollers to javafx.fxml;
     opens uninsubria.client.customcontrols to javafx.graphics;
     exports uninsubria.client.gui;

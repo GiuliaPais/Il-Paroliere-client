@@ -26,6 +26,7 @@ import org.controlsfx.glyphfont.FontAwesome;
 import org.controlsfx.glyphfont.Glyph;
 import uninsubria.client.gui.Launcher;
 import uninsubria.client.gui.ObservableLobby;
+import uninsubria.client.roomserver.RoomCentralManager;
 import uninsubria.utils.business.Lobby;
 import uninsubria.utils.languages.Language;
 import uninsubria.utils.ruleset.Ruleset;
@@ -40,17 +41,18 @@ import java.util.UUID;
  * Controller for the home view.
  *
  * @author Giulia Pais
- * @version 0.9.3
+ * @version 0.9.4
  */
 public class HomeController extends AbstractMainController {
     /*---Fields---*/
     @FXML AnchorPane headerPane;
     @FXML StackPane profImage;
     @FXML VBox profInfo;
-    @FXML Label userLabel, emailLabel;
+    @FXML Label userLabel, emailLabel, lobbyPlayer_lbl, lobbyLang_lbl, lobbyRule_lbl, lobbyPlayer_cont, lobbyLang_cont,
+            lobbyRule_cont, playerList_lbl;
     @FXML JFXTabPane tabPane;
     @FXML Tab roomTab, playerStatsTab, gameStatsTab, wordStatsTab;
-    @FXML Glyph tutorialIcon, settingsIcon, hamburger;
+    @FXML Glyph tutorialIcon, settingsIcon, hamburger, leaveIcon;
     @FXML TableView roomList;
     @FXML TableColumn<ObservableLobby, String> name_col;
     @FXML TableColumn<ObservableLobby, Integer> players_col;
@@ -62,7 +64,7 @@ public class HomeController extends AbstractMainController {
 
     private final StringProperty roomTab_txt, playerStatsTab_txt, gameStatsTab_txt, wordStatsTab_txt,
             menu_exit_txt, menu_info_txt, menu_logout_txt, name_col_txt, players_col_txt, lang_col_text, rule_col_text,
-            status_col_txt;
+            status_col_txt, playerLobby_lbltext, langLobby_lbltext, ruleLobby_lbltext, playerList_lbltext;
     private SVGGlyph img;
     private DoubleBinding imgSidelength;
     private ObjectProperty<Background> imgBackground;
@@ -70,6 +72,8 @@ public class HomeController extends AbstractMainController {
     private MapProperty<UUID, ObservableLobby> lobbyMap;
     private ListProperty<ObservableLobby> lobbies_list;
     private ScheduledService<Void> lobbiesRefresher;
+
+    private ObjectProperty<ObservableLobby> activeLobby;
 
     /*---Constructors---*/
     /**
@@ -90,6 +94,11 @@ public class HomeController extends AbstractMainController {
         this.status_col_txt = new SimpleStringProperty();
         this.lobbyMap = new SimpleMapProperty<>();
         this.lobbies_list = new SimpleListProperty();
+        this.activeLobby = new SimpleObjectProperty<>(null);
+        this.playerLobby_lbltext = new SimpleStringProperty();
+        this.langLobby_lbltext = new SimpleStringProperty();
+        this.ruleLobby_lbltext = new SimpleStringProperty();
+        this.playerList_lbltext = new SimpleStringProperty();
     }
 
     /*---Methods---*/
@@ -97,7 +106,7 @@ public class HomeController extends AbstractMainController {
     public void initialize() {
         super.initialize();
         try {
-            Launcher.manager.startRoomServer();
+            RoomCentralManager.startRoomServer(this);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -107,6 +116,7 @@ public class HomeController extends AbstractMainController {
         loadProfileInfo();
         initPopupMenu();
         initRoomTable();
+        initLobby();
         join_room_btn.setDisable(true);
         lobbyView.setVisible(false);
         lobbiesRefresher = getReferesherService();
@@ -127,6 +137,10 @@ public class HomeController extends AbstractMainController {
         lang_col_text.set(resBundle.getString("language_col"));
         rule_col_text.set(resBundle.getString("rule_col"));
         status_col_txt.set(resBundle.getString("status_col"));
+        playerLobby_lbltext.set(resBundle.getString("max_players_lbl"));
+        langLobby_lbltext.set(resBundle.getString("lang_lbl"));
+        ruleLobby_lbltext.set(resBundle.getString("ruleset_lbl"));
+        playerList_lbltext.set(resBundle.getString("player_list"));
     }
 
     @FXML void showSettings() throws IOException {
@@ -137,16 +151,30 @@ public class HomeController extends AbstractMainController {
         anim.play();
     }
 
-    @FXML void createRoom() {
-        Lobby lobby = new Lobby("testroom1", 2, Language.ITALIAN, Ruleset.STANDARD, Lobby.LobbyStatus.OPEN);
-        try {
-            if (Launcher.manager.createRoom(lobby)) {
-                lobbyView.setText(lobby.getRoomName());
-                lobbyView.setVisible(true);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+    @FXML void createRoom() throws IOException {
+        JFXDialog dialog = new JFXDialog();
+        CreateRoomAlertController controller = new CreateRoomAlertController();
+        controller.setFontSize(currentFontSize.get() - 5);
+        controller.setDialog(dialog);
+        controller.setHomeRef(this);
+        Parent parent = requestParent(ControllerType.CREATE_ROOM_ALERT, controller);
+        Region content = (Region) parent;
+        content.setPrefSize(root.getPrefWidth()/2, root.getPrefHeight()/2);
+        dialog.setContent(content);
+        dialog.setTransitionType(JFXDialog.DialogTransition.CENTER);
+        dialog.setDialogContainer((StackPane) root);
+        dialog.show();
+    }
+
+    @FXML void leaveRoom() throws IOException {
+        Launcher.manager.leaveRoom(activeLobby.get().getRoomId());
+        if (activeLobby.get() != null) {
+            activeLobby.set(null);
         }
+    }
+
+    public void setActiveLobby(ObservableLobby lobby) {
+        this.activeLobby.set(lobby);
     }
 
     /*----------- Private methods for initialization and scaling -----------*/
@@ -358,7 +386,7 @@ public class HomeController extends AbstractMainController {
             if (newValue.equals(menu_exit_txt)) {
                 try {
                     Launcher.manager.quit();
-                    Launcher.manager.stopRoomServer();
+                    RoomCentralManager.stopRoomServer();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -458,4 +486,31 @@ public class HomeController extends AbstractMainController {
         vBox.getChildren().addAll(title, comboBox);
         return vBox;
     }
+
+    private void initLobby() {
+        leaveIcon.setFontFamily("FontAwesome");
+        leaveIcon.setIcon(FontAwesome.Glyph.SIGN_OUT);
+        leaveIcon.setFontSize(currentFontSize.get());
+        currentFontSize.addListener((observable, oldValue, newValue) -> {
+            leaveIcon.setFontSize(newValue.doubleValue());
+        });
+        activeLobby.addListener((observable, oldValue, newValue) -> {
+            if (newValue == null) {
+                /* Means the player is not in a room */
+                lobbyView.setVisible(false);
+                create_room_btn.setDisable(false);
+                roomList.setDisable(false);
+                //other stuff?
+                return;
+            }
+            lobbyView.setText(newValue.getRoomName());
+            lobbyPlayer_cont.setText(String.valueOf(newValue.getNumPlayers()));
+            lobbyLang_cont.setText(newValue.getLanguage().name());
+            lobbyRule_cont.setText(newValue.getRuleset().name());
+            create_room_btn.setDisable(true);
+            roomList.setDisable(true);
+            lobbyView.setVisible(true);
+        });
+    }
+
 }

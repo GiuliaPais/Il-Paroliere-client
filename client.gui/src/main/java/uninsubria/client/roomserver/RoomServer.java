@@ -1,5 +1,6 @@
-package uninsubria.client.comm;
+package uninsubria.client.roomserver;
 
+import uninsubria.client.guicontrollers.HomeController;
 import uninsubria.utils.connection.CommHolder;
 
 import java.io.IOException;
@@ -7,17 +8,22 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
+ * Client-side server responsible for accepting connection requests
+ * from rooms.
+ *
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  */
 public class RoomServer extends Thread {
     /*---Fields---*/
     private ServerSocket serverSocket;
     private RoomSkeleton activeRoom;
+    private HomeController controller;
 
     /*---Constructors---*/
-    public RoomServer() throws IOException {
+    public RoomServer(HomeController controller) throws IOException {
         serverSocket = new ServerSocket(CommHolder.ROOM_PORT);
+        this.controller = controller;
         start();
     }
 
@@ -30,12 +36,21 @@ public class RoomServer extends Thread {
                 if (activeRoom != null) {
                     activeRoom.terminate();
                 }
-                activeRoom = new RoomSkeleton(room);
+                activeRoom = new RoomSkeleton(room, controller);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
+    public boolean isInRoom() {
+        if (activeRoom == null) {
+            return false;
+        }
+        return true;
+    }
 
+    public void stopRoom() {
+        activeRoom = null;
+    }
 }

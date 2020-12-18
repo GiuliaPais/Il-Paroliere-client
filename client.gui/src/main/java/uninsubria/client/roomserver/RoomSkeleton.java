@@ -1,5 +1,6 @@
-package uninsubria.client.comm;
+package uninsubria.client.roomserver;
 
+import uninsubria.client.guicontrollers.HomeController;
 import uninsubria.utils.connection.CommProtocolCommands;
 import uninsubria.utils.managersAPI.ProxySkeletonInterface;
 import uninsubria.utils.managersAPI.RoomProxyInterface;
@@ -10,18 +11,22 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
+ * A thread that serves as Skeleton for the lobby.
+ *
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  */
 public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
     /*---Fields---*/
     private Socket roomClient;
     private ObjectOutputStream out;
     private ObjectInputStream in;
+    private HomeController homeController;
 
     /*---Constructors---*/
-    public RoomSkeleton(Socket roomClient) {
+    public RoomSkeleton(Socket roomClient, HomeController homeController) {
         this.roomClient = roomClient;
+        this.homeController = homeController;
         start();
     }
 
@@ -39,12 +44,23 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
             terminate();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
+            terminate();
+            RoomCentralManager.stopRoom();
         }
     }
 
     @Override
     public void writeCommand(CommProtocolCommands command, Object... params) throws IOException {
-
+        out.writeUTF(command.getCommand());
+        for (Object p : params) {
+            if (p instanceof String) {
+                String s = (String) p;
+                out.writeUTF(s);
+            } else {
+                out.writeObject(p);
+            }
+        }
+        out.flush();
     }
 
     @Override
