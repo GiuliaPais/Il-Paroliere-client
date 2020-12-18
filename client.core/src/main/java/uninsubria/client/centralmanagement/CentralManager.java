@@ -3,7 +3,6 @@ package uninsubria.client.centralmanagement;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import uninsubria.client.comm.ProxyServer;
-import uninsubria.client.comm.RoomServer;
 import uninsubria.client.settings.ConnectionPrefs;
 import uninsubria.client.settings.SettingDefaults;
 import uninsubria.utils.business.Lobby;
@@ -15,8 +14,13 @@ import uninsubria.utils.serviceResults.ErrorMsgType;
 import uninsubria.utils.serviceResults.Result;
 import uninsubria.utils.serviceResults.ServiceResultInterface;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +34,7 @@ import java.util.prefs.Preferences;
  * Class responsible for central communication between client and server. Also manages preferences at start up.
  *
  * @author Giulia Pais
- * @version 0.9.5
+ * @version 0.9.6
  */
 public class CentralManager {
 	/*---Fields---*/
@@ -38,8 +42,6 @@ public class CentralManager {
 	private final ObjectProperty<ProxyServer> proxy;
 	private ConnectionPrefs addressList;
 	private ObjectProperty<Player> profile;
-
-	private RoomServer roomServer;
 	private DatagramSocket datagramSocket;
 
 	/*---Constructors---*/
@@ -436,12 +438,13 @@ public class CentralManager {
 		proxy.get().quit();
 	}
 
-	public void startRoomServer() throws IOException {
-		if (roomServer == null) {
-			roomServer = new RoomServer();
-		}
-	}
-
+	/**
+	 * Requests an update of the room list via datagram socket.
+	 *
+	 * @return the map of lobbies
+	 * @throws IOException            the io exception
+	 * @throws ClassNotFoundException the class not found exception
+	 */
 	public Map<UUID, Lobby> requestRoomUpdate() throws IOException, ClassNotFoundException {
 		byte[] buf;
 		if (datagramSocket == null) {
@@ -464,19 +467,24 @@ public class CentralManager {
 		return received;
 	}
 
-	public void stopRoomServer() {
-		if (roomServer != null) {
-			roomServer.interrupt();
-			try {
-				new Socket("localhost", CommHolder.ROOM_PORT);
-				roomServer = null;
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
+	/**
+	 * Creates a new room on the room list.
+	 *
+	 * @param lobby the lobby
+	 * @return the boolean
+	 * @throws IOException the io exception
+	 */
 	public boolean createRoom(Lobby lobby) throws IOException {
 		return proxy.get().createRoom(lobby);
+	}
+
+	/**
+	 * Leaves a room.
+	 *
+	 * @param roomID the room id
+	 * @throws IOException the io exception
+	 */
+	public void leaveRoom(UUID roomID) throws IOException {
+		proxy.get().leaveRoom(roomID);
 	}
 }

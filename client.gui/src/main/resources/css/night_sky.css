@@ -678,6 +678,10 @@
 	-fx-fill: main-text-color;
 }
 
+#leave-lobby.glyph-font:hover {
+	-fx-text-fill: light3;
+}
+
 /* Stats pane */
 .stats-scroll-pane,
 .stats-scroll-pane .viewport{
