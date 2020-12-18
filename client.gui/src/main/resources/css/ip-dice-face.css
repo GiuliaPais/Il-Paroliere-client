@@ -1,0 +1,36 @@
+.ip-dice-face,
+.ip-dice-face:armed,
+.ip-dice-face:hover,
+.ip-dice-face:selected,
+.ip-dice-face:focused,
+.ip-dice-face:focused:selected{
+    -fx-background-color: TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT;
+    -fx-background-radius: 3px;
+    -fx-background-insets: 0px;
+	-jfx-untoggle-color: transparent;
+	-fx-padding: 5 5 5 5;
+}
+
+
+.ip-dice-face .face-label{
+	-fx-font-family: "Arial Black";
+	-fx-font-size: 18px;
+}
+
+.ip-dice-face .number-label{
+	-fx-font-family: "Arial";
+	-fx-font-size: 14px;
+}
+
+.ip-dice-face .selected-number-label{
+	-fx-font-family: "Arial Black";
+	-fx-font-size: 14px;
+}
+
+.ip-dice-face .dice-base{
+	-fx-background-color: white;
+	-fx-background-radius: 5px;
+	-fx-effect: innershadow(three-pass-box, black, 14.45, 0.0, 0.0, 0.0);
+	-fx-padding: 10px;
+}
+
