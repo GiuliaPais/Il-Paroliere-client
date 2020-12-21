@@ -7,19 +7,21 @@ import javafx.application.Platform;
 import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.ObservableMap;
 import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
+import javafx.scene.chart.StackedBarChart;
 import javafx.scene.control.*;
 import javafx.scene.effect.Bloom;
 import javafx.scene.effect.Effect;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 import javafx.util.Callback;
 import javafx.util.Duration;
 import org.controlsfx.glyphfont.FontAwesome;
@@ -32,16 +34,15 @@ import uninsubria.utils.languages.Language;
 import uninsubria.utils.ruleset.Ruleset;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.UUID;
+import java.net.SocketException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Controller for the home view.
  *
  * @author Giulia Pais
- * @version 0.9.4
+ * @version 0.9.5
  */
 public class HomeController extends AbstractMainController {
     /*---Fields---*/
@@ -52,8 +53,8 @@ public class HomeController extends AbstractMainController {
             lobbyRule_cont, playerList_lbl;
     @FXML JFXTabPane tabPane;
     @FXML Tab roomTab, playerStatsTab, gameStatsTab, wordStatsTab;
-    @FXML Glyph tutorialIcon, settingsIcon, hamburger, leaveIcon;
-    @FXML TableView roomList;
+    @FXML Glyph tutorialIcon, settingsIcon, hamburger, leaveIcon, refreshIcon;
+    @FXML TableView<ObservableLobby> roomList;
     @FXML TableColumn<ObservableLobby, String> name_col;
     @FXML TableColumn<ObservableLobby, Integer> players_col;
     @FXML TableColumn<ObservableLobby, Language> lang_col;
@@ -61,19 +62,25 @@ public class HomeController extends AbstractMainController {
     @FXML TableColumn<ObservableLobby, Lobby.LobbyStatus> status_col;
     @FXML JFXButton create_room_btn, join_room_btn;
     @FXML TitledPane lobbyView;
+    @FXML JFXListView<Label> playersList;
+    @FXML JFXMasonryPane playerStatsMasonry;
+    @FXML TableView bestPTable, bestPMatchTable, avgBestPTable, avgBestPMatchTable, maxGamesTable, maxWrongWTable, maxDuplWTable, turnPlayersTable;
+    @FXML StackedBarChart brarGraph;
 
     private final StringProperty roomTab_txt, playerStatsTab_txt, gameStatsTab_txt, wordStatsTab_txt,
             menu_exit_txt, menu_info_txt, menu_logout_txt, name_col_txt, players_col_txt, lang_col_text, rule_col_text,
-            status_col_txt, playerLobby_lbltext, langLobby_lbltext, ruleLobby_lbltext, playerList_lbltext;
+            status_col_txt, playerLobby_lbltext, langLobby_lbltext, ruleLobby_lbltext, playerList_lbltext,
+            notif_connection_loss;
     private SVGGlyph img;
     private DoubleBinding imgSidelength;
     private ObjectProperty<Background> imgBackground;
 
     private MapProperty<UUID, ObservableLobby> lobbyMap;
-    private ListProperty<ObservableLobby> lobbies_list;
-    private ScheduledService<Void> lobbiesRefresher;
+    private ObservableList<ObservableLobby> lobbiesList;
+    private ScheduledService<Void> lobbiesRefresher, roomPlayersUpdater;
 
     private ObjectProperty<ObservableLobby> activeLobby;
+    private ListProperty<Label> observablePlayerList;
 
     /*---Constructors---*/
     /**
@@ -92,13 +99,15 @@ public class HomeController extends AbstractMainController {
         this.lang_col_text = new SimpleStringProperty();
         this.rule_col_text = new SimpleStringProperty();
         this.status_col_txt = new SimpleStringProperty();
-        this.lobbyMap = new SimpleMapProperty<>();
-        this.lobbies_list = new SimpleListProperty();
+        this.lobbyMap = new SimpleMapProperty<>(FXCollections.observableHashMap());
+        this.lobbiesList = FXCollections.observableArrayList();
         this.activeLobby = new SimpleObjectProperty<>(null);
         this.playerLobby_lbltext = new SimpleStringProperty();
         this.langLobby_lbltext = new SimpleStringProperty();
         this.ruleLobby_lbltext = new SimpleStringProperty();
         this.playerList_lbltext = new SimpleStringProperty();
+        this.observablePlayerList = new SimpleListProperty<>();
+        this.notif_connection_loss = new SimpleStringProperty();
     }
 
     /*---Methods---*/
@@ -119,7 +128,7 @@ public class HomeController extends AbstractMainController {
         initLobby();
         join_room_btn.setDisable(true);
         lobbyView.setVisible(false);
-        lobbiesRefresher = getReferesherService();
+        lobbiesRefresher = getRoomReferesherService();
         lobbiesRefresher.start();
     }
 
@@ -141,6 +150,7 @@ public class HomeController extends AbstractMainController {
         langLobby_lbltext.set(resBundle.getString("lang_lbl"));
         ruleLobby_lbltext.set(resBundle.getString("ruleset_lbl"));
         playerList_lbltext.set(resBundle.getString("player_list"));
+        notif_connection_loss.set(resBundle.getString("connection_lost_notif"));
     }
 
     @FXML void showSettings() throws IOException {
@@ -173,6 +183,72 @@ public class HomeController extends AbstractMainController {
         }
     }
 
+    @FXML void joinRoom() {
+        ObservableLobby selectedLobby = roomList.getSelectionModel().getSelectedItem();
+        LoadingAnimationOverlay animation = new LoadingAnimationOverlay(root, "");
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() {
+                List<String> errMsgs = null;
+                try {
+                    errMsgs = Launcher.manager.joinRoom(selectedLobby.getRoomId());
+                } catch (Exception e) {
+                    if (e instanceof SocketException) {
+                        Platform.runLater(() -> {
+                            animation.stopAnimation();
+                            notification(notif_connection_loss.get(), new Duration(8000));
+                        });
+                        boolean reconnected = false;
+                        Launcher.manager.setDisconnected();
+                        for (int i = 0; i < 3; i++) {
+                            String ip = Launcher.manager.tryConnectServer();
+                            if (ip != null) {
+                                reconnected = true;
+                                break;
+                            }
+                        }
+                        if (!reconnected) {
+                            Platform.runLater(() -> {
+                                animation.stopAnimation();
+                                serverAlert((StackPane) root, root.getWidth()/2).show();
+                            });
+                            return null;
+                        }
+                    }
+                }
+                List<Text> localized = new ArrayList<>();
+                assert errMsgs != null;
+                if (errMsgs.isEmpty()) {
+                    Platform.runLater(animation::stopAnimation);
+                    activeLobby.set(selectedLobby);
+                    return null;
+                }
+                for (String err : errMsgs) {
+                    String localMsg = Launcher.contrManager.getBundleValue().getString(err);
+                    Text text = new Text(localMsg + "\n");
+                    text.setFill(Color.RED);
+                    localized.add(text);
+                }
+                Platform.runLater(() -> {
+                    animation.stopAnimation();
+                    Text[] localizedErrors = new Text[localized.size()];
+                    generateDialog((StackPane) root, root.getWidth()/2, "ERROR",
+                            localized.toArray(localizedErrors)).show();
+                });
+                return null;
+            }
+
+            @Override
+            protected void scheduled() {
+                super.scheduled();
+                Platform.runLater(animation::playAnimation);
+            }
+        };
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
+    }
+
     public void setActiveLobby(ObservableLobby lobby) {
         this.activeLobby.set(lobby);
     }
@@ -185,9 +261,10 @@ public class HomeController extends AbstractMainController {
         rescaleTabPane(after);
         rescaleIcons(after);
         rescaleButton(after);
+        rescaleMasonry(after);
     }
 
-    private ScheduledService<Void> getReferesherService() {
+    private ScheduledService<Void> getRoomReferesherService() {
         ScheduledService<Void> service = new ScheduledService<>() {
             @Override
             protected Task<Void> createTask() {
@@ -196,13 +273,31 @@ public class HomeController extends AbstractMainController {
                     protected Void call() {
                         try {
                             Map<UUID, Lobby> map = Launcher.manager.requestRoomUpdate();
-                            ObservableMap<UUID, ObservableLobby> obmap = FXCollections.observableMap(new HashMap<>());
-                            for (Map.Entry<UUID, Lobby> entry : map.entrySet()) {
-                                ObservableLobby oblobby = ObservableLobby.toObservableLobby(entry.getValue());
-                                obmap.put(entry.getKey(), oblobby);
+                            /* Keys that are present in both maps (either room hasn't changed or only it's status has changed */
+                            List<UUID> alreadyPresentKeys = lobbyMap.keySet().stream()
+                                    .filter(k -> map.containsKey(k))
+                                    .collect(Collectors.toList());
+                            /* Keys that are present in the map on the client side but are not present in the updated map
+                            * received. It means the keys were removed and the room associated does not exist anymore. */
+                            List<UUID> removedKeys = lobbyMap.keySet().stream()
+                                    .filter(k -> !map.containsKey(k))
+                                    .collect(Collectors.toList());
+                            /* Keys that are present in the new received map but not in the map on the client side.
+                            * It means the keys were added. */
+                            List<UUID> addedKeys = map.keySet().stream()
+                                    .filter(k -> !lobbyMap.containsKey(k))
+                                    .collect(Collectors.toList());
+                            for (UUID k : alreadyPresentKeys) {
+                                if (!lobbyMap.get(k).getStatus().equals(map.get(k).getStatus())) {
+                                    lobbyMap.get(k).setStatus(map.get(k).getStatus());
+                                }
                             }
-                            lobbyMap.setValue(obmap);
-                            lobbies_list.setValue(FXCollections.observableArrayList(lobbyMap.values()));
+                            for (UUID k : removedKeys) {
+                                lobbyMap.remove(k, lobbyMap.get(k));
+                            }
+                            for (UUID k : addedKeys) {
+                                lobbyMap.put(k, ObservableLobby.toObservableLobby(map.get(k)));
+                            }
                         } catch (IOException e) {
                             e.printStackTrace();
                         } catch (ClassNotFoundException e) {
@@ -213,9 +308,29 @@ public class HomeController extends AbstractMainController {
                 };
             }
         };
-        service.setPeriod(Duration.seconds(2));
+        service.setPeriod(Duration.seconds(5));
         service.setRestartOnFailure(true);
         return service;
+    }
+
+    private ScheduledService<Void> getRoomPlayersService() {
+        return new ScheduledService<>() {
+            @Override
+            protected Task<Void> createTask() {
+                Task<Void> service = new Task<>() {
+                    @Override
+                    protected Void call() throws Exception {
+                        ArrayList<String> received = Launcher.manager.requestPlayerList(activeLobby.get().getRoomId());
+                        List<Label> labels = new ArrayList<>();
+                        received.stream()
+                                .forEach(s -> labels.add(new Label(s)));
+                        observablePlayerList.set(FXCollections.observableArrayList(labels));
+                        return null;
+                    }
+                };
+                return service;
+            }
+        };
     }
 
     private void initIcons() {
@@ -228,6 +343,9 @@ public class HomeController extends AbstractMainController {
         hamburger.setFontFamily("FontAwesome");
         hamburger.setIcon(FontAwesome.Glyph.BARS);
         hamburger.setFontSize(ref.getReferences().get("HOME_ICONS_SIZE"));
+        refreshIcon.setFontFamily("FontAwesome");
+        refreshIcon.setIcon(FontAwesome.Glyph.REFRESH);
+        refreshIcon.setFontSize(ref.getReferences().get("HOME_ICONS_SIZE"));
     }
 
     private void rescaleProfile(double after) {
@@ -301,6 +419,30 @@ public class HomeController extends AbstractMainController {
         create_room_btn.setStyle("-fx-font-size: " + (currentFontSize.get() - 5) + ";");
         join_room_btn.setPrefSize(w, h);
         join_room_btn.setStyle("-fx-font-size: " + (currentFontSize.get() - 5) + ";");
+    }
+
+    private void rescaleMasonry(double after) {
+        //Player stats
+        double pMasonryW = after*ref.getReferences().get("HOME_MASONRY_W") / ref.getReferences().get("REF_RESOLUTION");
+        double pMasonryH = after*ref.getReferences().get("HOME_MASONRY_H") / ref.getReferences().get("REF_RESOLUTION");
+        playerStatsMasonry.setCellHeight(pMasonryH);
+        playerStatsMasonry.setCellWidth(pMasonryW);
+        double prefWTable = after*ref.getReferences().get("HOME_PSTATSTABLE_W") / ref.getReferences().get("REF_RESOLUTION");
+        double prefHTable = after*ref.getReferences().get("HOME_PSTATSTABLE_H") / ref.getReferences().get("REF_RESOLUTION");
+        bestPMatchTable.setPrefSize(prefWTable, prefHTable);
+        bestPTable.setPrefSize(prefWTable, prefHTable);
+        avgBestPTable.setPrefSize(prefWTable, prefHTable);
+        avgBestPMatchTable.setPrefSize(prefWTable, prefHTable);
+        maxDuplWTable.setPrefSize(prefWTable, prefHTable);
+        maxGamesTable.setPrefSize(prefWTable, prefHTable);
+        maxWrongWTable.setPrefSize(prefWTable, prefHTable);
+        //Game Stats
+        double turnsW = after*ref.getReferences().get("HOME_TURNSCARDTBL_W") / ref.getReferences().get("REF_RESOLUTION");
+        double turnsH = after*ref.getReferences().get("HOME_TURNSCARDTBL_H") / ref.getReferences().get("REF_RESOLUTION");
+        turnPlayersTable.setPrefSize(turnsW, turnsH);
+        double graphW = after*ref.getReferences().get("HOME_GRAPH_W") / ref.getReferences().get("REF_RESOLUTION");
+        double graphH = after*ref.getReferences().get("HOME_GRAPH_H") / ref.getReferences().get("REF_RESOLUTION");
+        brarGraph.setPrefSize(graphW, graphH);
     }
 
     private void loadImagePreset() {
@@ -385,6 +527,9 @@ public class HomeController extends AbstractMainController {
         menuContent.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue.equals(menu_exit_txt)) {
                 try {
+                    if (activeLobby.get() != null) {
+                        Launcher.manager.leaveRoom(activeLobby.get().getRoomId());
+                    }
                     Launcher.manager.quit();
                     RoomCentralManager.stopRoomServer();
                 } catch (IOException e) {
@@ -432,30 +577,44 @@ public class HomeController extends AbstractMainController {
 
     private void initRoomTable() {
         /* Set column headers */
-        roomList.setItems(lobbies_list);
-        lobbies_list.addListener((observable, oldValue, newValue) -> {
-            roomList.setItems(newValue);
+        roomList.setItems(lobbiesList);
+        lobbyMap.addListener((MapChangeListener<UUID, ObservableLobby>) change -> {
+            /* If change is both a removal and an insert it's a modify change */
+            if (change.wasAdded() & change.wasRemoved()) {
+                lobbiesList.get(lobbiesList.indexOf(change.getValueAdded())).setStatus(change.getValueAdded().getStatus());
+            } else if (change.wasRemoved()) {
+                lobbiesList.remove(change.getValueRemoved());
+            } else {
+                lobbiesList.add(change.getValueAdded());
+            }
         });
         name_col.setText("");
         name_col.setGraphic(generateTableHeaderTxtField(name_col_txt));
         name_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.3));
         name_col.setCellValueFactory(param -> param.getValue().roomNameProperty());
         players_col.setText("");
-        players_col.setGraphic(generateTableHeaderCombo(players_col_txt));
+        players_col.setGraphic(generateTableHeaderCombo(players_col_txt, "PLAYERS"));
         players_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.175));
         players_col.setCellValueFactory(param -> param.getValue().numPlayersProperty().asObject());
         lang_col.setText("");
-        lang_col.setGraphic(generateTableHeaderCombo(lang_col_text));
+        lang_col.setGraphic(generateTableHeaderCombo(lang_col_text, "LANGUAGE"));
         lang_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.175));
         lang_col.setCellValueFactory(param -> param.getValue().languageProperty());
         ruleset_col.setText("");
-        ruleset_col.setGraphic(generateTableHeaderCombo(rule_col_text));
+        ruleset_col.setGraphic(generateTableHeaderCombo(rule_col_text, "RULESET"));
         ruleset_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.175));
         ruleset_col.setCellValueFactory(param -> param.getValue().rulesetProperty());
         status_col.setText("");
-        status_col.setGraphic(generateTableHeaderCombo(status_col_txt));
+        status_col.setGraphic(generateTableHeaderCombo(status_col_txt, "STATUS"));
         status_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.175));
         status_col.setCellValueFactory(param -> param.getValue().statusProperty());
+        roomList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null) {
+                join_room_btn.setDisable(true);
+            } else {
+                join_room_btn.setDisable(false);
+            }
+        });
     }
 
     private VBox generateTableHeaderTxtField(StringProperty title_txt) {
@@ -472,7 +631,7 @@ public class HomeController extends AbstractMainController {
         return vBox;
     }
 
-    private VBox generateTableHeaderCombo(StringProperty title_txt) {
+    private VBox generateTableHeaderCombo(StringProperty title_txt, String comboType) {
         VBox vBox = new VBox();
         vBox.setAlignment(Pos.TOP_CENTER);
         vBox.setPadding(new Insets(10, 10, 10, 10));
@@ -480,10 +639,32 @@ public class HomeController extends AbstractMainController {
         Label title = new Label();
         title.textProperty().bind(title_txt);
         title.setStyle("-fx-font-size: " + (currentFontSize.get() - 5) + ";");
-        JFXComboBox comboBox = new JFXComboBox();
-        comboBox.setStyle("-fx-font-size: " + (currentFontSize.get() - 7) + ";");
-        //init combo box
-        vBox.getChildren().addAll(title, comboBox);
+        switch(comboType) {
+            case "PLAYERS" -> {
+                JFXComboBox<Integer> comboBox = new JFXComboBox();
+                comboBox.setStyle("-fx-font-size: " + (currentFontSize.get() - 7) + ";");
+                comboBox.setItems(FXCollections.observableArrayList(2,3,4,5,6));
+                vBox.getChildren().addAll(title, comboBox);
+            }
+            case "LANGUAGE" -> {
+                JFXComboBox<Language> comboBox = new JFXComboBox<>();
+                comboBox.setStyle("-fx-font-size: " + (currentFontSize.get() - 7) + ";");
+                comboBox.setItems(FXCollections.observableArrayList(Language.values()));
+                vBox.getChildren().addAll(title, comboBox);
+            }
+            case "RULESET" -> {
+                JFXComboBox<Ruleset> comboBox = new JFXComboBox<>();
+                comboBox.setStyle("-fx-font-size: " + (currentFontSize.get() - 7) + ";");
+                comboBox.setItems(FXCollections.observableArrayList(Ruleset.values()));
+                vBox.getChildren().addAll(title, comboBox);
+            }
+            case "STATUS" -> {
+                JFXComboBox<Lobby.LobbyStatus> comboBox = new JFXComboBox<>();
+                comboBox.setStyle("-fx-font-size: " + (currentFontSize.get() - 7) + ";");
+                comboBox.setItems(FXCollections.observableArrayList(Lobby.LobbyStatus.values()));
+                vBox.getChildren().addAll(title, comboBox);
+            }
+        }
         return vBox;
     }
 
@@ -494,13 +675,19 @@ public class HomeController extends AbstractMainController {
         currentFontSize.addListener((observable, oldValue, newValue) -> {
             leaveIcon.setFontSize(newValue.doubleValue());
         });
+        observablePlayerList.addListener((observable, oldValue, newValue) -> {
+            Platform.runLater(() -> playersList.setItems(newValue));
+        });
         activeLobby.addListener((observable, oldValue, newValue) -> {
             if (newValue == null) {
                 /* Means the player is not in a room */
                 lobbyView.setVisible(false);
                 create_room_btn.setDisable(false);
                 roomList.setDisable(false);
-                //other stuff?
+                roomPlayersUpdater.cancel();
+                roomPlayersUpdater = null;
+                lobbiesRefresher = getRoomReferesherService();
+                lobbiesRefresher.start();
                 return;
             }
             lobbyView.setText(newValue.getRoomName());
@@ -510,6 +697,10 @@ public class HomeController extends AbstractMainController {
             create_room_btn.setDisable(true);
             roomList.setDisable(true);
             lobbyView.setVisible(true);
+            lobbiesRefresher.cancel();
+            lobbiesRefresher = null;
+            roomPlayersUpdater = getRoomPlayersService();
+            roomPlayersUpdater.start();
         });
     }
 
