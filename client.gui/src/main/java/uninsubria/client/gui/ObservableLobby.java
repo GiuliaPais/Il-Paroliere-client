@@ -5,13 +5,14 @@ import uninsubria.utils.business.Lobby;
 import uninsubria.utils.languages.Language;
 import uninsubria.utils.ruleset.Ruleset;
 
+import java.util.Objects;
 import java.util.UUID;
 
 /**
- *
+ * Wrapper of a lobby implementing observable properties for display on the GUI.
  *
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  */
 public class ObservableLobby {
     /*---Fields---*/
@@ -102,5 +103,30 @@ public class ObservableLobby {
 
     public void setStatus(Lobby.LobbyStatus status) {
         this.status.set(status);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ObservableLobby that = (ObservableLobby) o;
+        return roomId.equals(that.roomId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(roomId);
+    }
+
+    @Override
+    public String toString() {
+        return "ObservableLobby{" +
+                "roomId=" + roomId +
+                ", roomName=" + roomName +
+                ", numPlayers=" + numPlayers +
+                ", language=" + language +
+                ", ruleset=" + ruleset +
+                ", status=" + status +
+                '}';
     }
 }

@@ -18,9 +18,7 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.net.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +32,7 @@ import java.util.prefs.Preferences;
  * Class responsible for central communication between client and server. Also manages preferences at start up.
  *
  * @author Giulia Pais
- * @version 0.9.6
+ * @version 0.9.7
  */
 public class CentralManager {
 	/*---Fields---*/
@@ -468,6 +466,36 @@ public class CentralManager {
 	}
 
 	/**
+	 * Request an update of the player list of the active room via datagram socket.
+	 *
+	 * @param roomID the room id
+	 * @return the list of players currently in the room
+	 * @throws IOException            the io exception
+	 * @throws ClassNotFoundException the class not found exception
+	 */
+	public ArrayList<String> requestPlayerList(UUID roomID) throws IOException, ClassNotFoundException {
+		byte[] buf;
+		if (datagramSocket == null) {
+			datagramSocket = new DatagramSocket();
+		}
+		if (this.proxy == null | this.proxy.get() == null) {
+			return null;
+		}
+		buf = (CommProtocolCommands.SEND_PLIST.getCommand() + "|" + roomID.toString()).getBytes();
+		DatagramPacket packet
+				= new DatagramPacket(buf, buf.length, InetAddress.getByName(proxy.get().getAddress()), CommHolder.SERVER_PORT);
+		datagramSocket.send(packet);
+		buf = new byte[5000];
+		packet = new DatagramPacket(buf, buf.length);
+		datagramSocket.receive(packet);
+		ByteArrayInputStream byteStream = new
+				ByteArrayInputStream(buf);
+		ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(byteStream));
+		ArrayList<String> received = (ArrayList<String>) is.readObject();
+		return received;
+	}
+
+	/**
 	 * Creates a new room on the room list.
 	 *
 	 * @param lobby the lobby
@@ -486,5 +514,27 @@ public class CentralManager {
 	 */
 	public void leaveRoom(UUID roomID) throws IOException {
 		proxy.get().leaveRoom(roomID);
+	}
+
+	/**
+	 * Joins a selected room.
+	 * If the request succeeds the method returns an empty list, otherwise it returns a list of error names
+	 * to be localized in the selected language.
+	 *
+	 * @param roomID the room id
+	 * @return a list of errors
+	 * @throws IOException the io exception
+	 */
+	public List<String> joinRoom(UUID roomID) throws IOException {
+		ServiceResultInterface ack = proxy.get().joinRoom(roomID);
+		List<String> errMsgs = new ArrayList<>();
+		Result<?> errors = ack.getResult("Errors");
+		if (errors != null) {
+			ErrorMsgType[] ers = (ErrorMsgType[]) ack.getResult("Errors").getValue();
+			for (ErrorMsgType e : ers) {
+				errMsgs.add(e.name());
+			}
+		}
+		return errMsgs;
 	}
 }
