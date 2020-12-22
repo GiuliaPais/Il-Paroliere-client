@@ -405,6 +405,33 @@
 	-jfx-rippler-fill: light1;
 }
 
+.playerslistview {
+	-fx-background-color: dark-transparent-1;
+	-fx-font-family: "Arial";
+}
+
+.playerslistview .cell{
+	-fx-background-color: transparent;
+	-fx-text-fill: main-text-color;
+}
+
+.playerslistview .cell:selected{
+	-fx-background-color: light2;
+}
+
+.playerslistview .cell:filled{
+	-fx-border-color: light2;
+	-fx-border-width: 0 0 1 0;
+}
+
+.playerslistview .cell .label {
+	-fx-padding: 0 0 0 10;
+}
+
+.playerslistview .jfx-rippler{
+	-jfx-rippler-fill: light1;
+}
+
 /* Snackbar */
 .jfx-snackbar-content {
     -fx-background-color: lightest;
@@ -619,7 +646,15 @@
 	-jfx-focus-color: light3;
 	-jfx-unfocus-color: main-text-color;
 	-fx-background-color: white-transparent-1;
+	-fx-text-fill: main-text-color;
+}
+
+#rooms.table-view .jfx-text-field{
 	-fx-padding: 5 5 5 5;
+}
+
+#rooms.table-view .jfx-combo-box > .arrow-button > .arrow{
+	-fx-background-color: main-text-color;
 }
 
 #rooms.table-view .table-row-cell,
@@ -678,8 +713,8 @@
 	-fx-fill: main-text-color;
 }
 
-#leave-lobby.glyph-font:hover {
-	-fx-text-fill: light3;
+.lobby .title:hover .text{
+	-fx-fill: light3;
 }
 
 /* Stats pane */
