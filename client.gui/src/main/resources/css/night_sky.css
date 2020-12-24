@@ -18,6 +18,10 @@
 	dark-transparent-2: rgba(0,0,0,0.2);
 	white-transparent-1: rgba(255, 255, 255, 0.1);
 	white-transparent-2: rgba(255, 255, 255, 0.2);
+	color-bar-0: light3;
+	color-bar-1: light1;
+	color-bar-2: light2;
+	color-bar-3: dark2;
 	/* Default properties */
 	-fx-font-family: "Arial Black";
 	/*-fx-font-size: 14px;*/
@@ -161,6 +165,28 @@
 	-fx-label-padding: 4px;
 	-jfx-disable-visual-focus: true;
 	-fx-font-weight: bold;
+}
+
+#search-btn.jfx-button{
+	-fx-background-color: transparent;
+	-fx-background-radius: 30px;
+	-fx-border-color: transparent;
+	-fx-border-width: 0px;
+	-fx-border-radius: 0px;
+	-fx-text-fill: main-text-color;
+	-fx-fill: main-text-color;
+	-fx-label-padding: 4px;
+	-jfx-disable-visual-focus: true;
+}
+
+#search-btn.jfx-button:hover{
+	-fx-background-color: transparent;
+	-fx-text-fill: light3;
+	-fx-fill: light3;
+}
+
+#search-btn.jfx-button:hover .glyph-font{
+	-fx-text-fill: light3;
 }
 
 /* MENUS */
@@ -742,7 +768,13 @@
 	-fx-background-color: light2;
 }
 
-.stats-card{
+.stats-card .card-header .glyph-font:hover{
+	-fx-text-fill: light3;
+}
+
+.stats-card .card-header #info.jfx-rippler {
+	-jfx-rippler-fill: main-text-color;
+	-jfx-mask-type: CIRCLE;
 }
 
 .stats-card .card-header{
@@ -763,4 +795,91 @@
 .stats-card .card-body .table-view .column-header-background .nested-column-header,
 .stats-card .card-body .table-view .column-header-background .filler {
 	-fx-background-color: light1;
+}
+
+.stats-card .card-body .table-view .table-cell:filled{
+	-fx-padding: 10 10 10 10;
+	-fx-background-color: transparent;
+	-fx-border-color: transparent;
+	-fx-text-fill: main-text-color;
+	-fx-font-family: "Arial";
+	-fx-alignment: center;
+	-fx-text-alignment: center;
+}
+
+
+.stats-card .card-body .table-view .table-row-cell,
+.stats-card .card-body .table-view .virtual-flow .clipped-container .sheet{
+	-fx-background-color: transparent;
+	-fx-alignment: center;
+}
+
+
+.stats-card .card-body .table-view .table-row-cell:filled:even{
+	-fx-background-color: white-transparent-1;
+}
+
+
+.stats-card .card-body .table-view .table-row-cell:filled:hover{
+	-fx-background-color: white-transparent-2;
+}
+
+.stats-card .card-body .table-view .table-cell:empty{
+	-fx-background-color: transparent;
+	-fx-border-color: transparent;
+}
+
+.stats-card-desc {
+	-fx-text-fill: darkest;
+	-fx-font-family: "Arial";
+	-fx-padding: 10 10 10 10;
+}
+
+/* Bar charts */
+.chart-plot-background{
+	-fx-background-color: transparent;
+}
+
+.axis{
+	-fx-tick-label-fill: main-text-color;
+}
+
+.axis:top {
+    -fx-border-color: transparent transparent main-text-color transparent;
+}
+.axis:right {
+    -fx-border-color: transparent transparent transparent main-text-color;
+}
+.axis:bottom {
+    -fx-border-color: main-text-color transparent transparent transparent;
+}
+.axis:left {
+    -fx-border-color: transparent main-text-color transparent transparent;
+}
+
+.axis:top > .axis-label,
+.axis:left > .axis-label {
+    -fx-padding: 0 0 4px 0;
+}
+.axis:bottom > .axis-label,
+.axis:right > .axis-label {
+    -fx-padding: 4px 0 0 0;
+}
+.axis-tick-mark,
+.axis-minor-tick-mark {
+    -fx-fill: null;
+    -fx-stroke: main-text-color;
+}
+
+.default-color0.chart-bar { -fx-bar-fill: color-bar-0; }
+.default-color1.chart-bar { -fx-bar-fill: color-bar-1; }
+.default-color2.chart-bar { -fx-bar-fill: color-bar-2; }
+.default-color3.chart-bar { -fx-bar-fill: color-bar-3; }
+
+.bar-chart{
+	-fx-bar-gap: 0;
+}
+
+.chart-legend{
+	-fx-background-color: transparent;
 }

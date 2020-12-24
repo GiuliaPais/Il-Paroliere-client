@@ -537,4 +537,36 @@ public class CentralManager {
 		}
 		return errMsgs;
 	}
+
+	/**
+	 * Fetch statistics from server.
+	 *
+	 * @return the service result
+	 * @throws IOException the io exception
+	 */
+	public ServiceResultInterface fetchStatistics() throws IOException {
+		ServiceResultInterface stats = proxy.get().fetchStatistics();
+		return stats;
+	}
+
+	/**
+	 * Request word stats to the server.
+	 *
+	 * @param word the word
+	 * @return the service result
+	 * @throws IOException the io exception
+	 */
+	public ServiceResultInterface requestWordStats(String word) throws IOException {
+		ServiceResultInterface stats = proxy.get().requestWordStats(word);
+		return stats;
+	}
+
+	/**
+	 * Logs out the player.
+	 *
+	 * @throws IOException the io exception
+	 */
+	public void logout() throws IOException {
+		proxy.get().logout(profile.get().getPlayerID());
+	}
 }

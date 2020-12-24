@@ -21,7 +21,7 @@ import java.util.UUID;
  * The class is mainly responsible for writing on or reading from the socket.
  *
  * @author Giulia Pais
- * @version 0.9.7
+ * @version 0.9.8
  *
  */
 public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterface {
@@ -30,7 +30,7 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
     private final String address;
     private final ObjectOutputStream out;
     private ObjectInputStream in;
-    private final List<ServiceResult> serviceResultList;
+    private final List<ServiceResultInterface> serviceResultList;
 
 
 	/*---Constructors---*/
@@ -240,6 +240,38 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
     }
 
     @Override
+    public ServiceResultInterface fetchStatistics() throws IOException {
+        writeCommand(CommProtocolCommands.FETCH_STATS);
+        try {
+            if (in == null) {
+                this.in = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+            }
+            readCommand(in.readUTF());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        ServiceResultInterface res = serviceResultList.get(serviceResultList.size()-1);
+        serviceResultList.remove(res);
+        return res;
+    }
+
+    @Override
+    public ServiceResultInterface requestWordStats(String word) throws IOException {
+        writeCommand(CommProtocolCommands.WORD_STATS , word);
+        try {
+            if (in == null) {
+                this.in = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+            }
+            readCommand(in.readUTF());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        ServiceResultInterface res = serviceResultList.get(serviceResultList.size()-1);
+        serviceResultList.remove(res);
+        return res;
+    }
+
+    @Override
     public void writeCommand(CommProtocolCommands command, Object... params) throws IOException {
         out.writeUTF(command.getCommand());
         for (Object p : params) {
@@ -262,7 +294,8 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
         switch (Objects.requireNonNull(com)) {
             case ACTIVATION_CODE, CONFIRM_ACTIVATION_CODE, RESEND_CODE, LOGIN,
                     CHANGE_USER_ID, CHANGE_PW, RESET_PW,
-                    DELETE_PROFILE, JOIN_ROOM -> serviceResultList.add((ServiceResult) in.readObject());
+                    DELETE_PROFILE, JOIN_ROOM, FETCH_STATS,
+                    WORD_STATS -> serviceResultList.add((ServiceResultInterface) in.readObject());
             case CREATE_ROOM -> {}
         }
     }

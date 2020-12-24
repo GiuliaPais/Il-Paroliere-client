@@ -12,7 +12,7 @@ import java.net.Socket;
  * from rooms.
  *
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  */
 public class RoomServer extends Thread {
     /*---Fields---*/
@@ -21,6 +21,12 @@ public class RoomServer extends Thread {
     private HomeController controller;
 
     /*---Constructors---*/
+    /**
+     * Instantiates a new Room server.
+     *
+     * @param controller the controller
+     * @throws IOException the io exception
+     */
     public RoomServer(HomeController controller) throws IOException {
         serverSocket = new ServerSocket(CommHolder.ROOM_PORT);
         this.controller = controller;
@@ -41,16 +47,24 @@ public class RoomServer extends Thread {
                 e.printStackTrace();
             }
         }
+        closeResources();
     }
 
-    public boolean isInRoom() {
-        if (activeRoom == null) {
-            return false;
-        }
-        return true;
-    }
-
+    /**
+     * Stops room.
+     */
     public void stopRoom() {
         activeRoom = null;
+    }
+
+    private void closeResources() {
+        if (activeRoom != null) {
+            activeRoom.terminate();
+        }
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

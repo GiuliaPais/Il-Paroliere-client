@@ -43,7 +43,6 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
             }
             terminate();
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
             terminate();
             RoomCentralManager.stopRoom();
         }
@@ -87,7 +86,8 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
             }
         }
         try {
-            out.close();
+            if (out != null)
+                out.close();
         } catch (IOException ignored) {
         }
         try {
