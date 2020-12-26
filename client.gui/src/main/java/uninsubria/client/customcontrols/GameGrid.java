@@ -11,8 +11,11 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
+ * Custom control that represents the game grid with selectable
+ * dices and custom behaviour.
+ *
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  */
 public class GameGrid extends GridPane {
     /*---Fields---*/

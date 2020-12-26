@@ -48,7 +48,6 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalField;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -59,7 +58,7 @@ import java.util.stream.Collectors;
  * Controller for the home view.
  *
  * @author Giulia Pais
- * @version 0.9.6
+ * @version 0.9.7
  */
 public class HomeController extends AbstractMainController {
     /*---Fields---*/
@@ -591,6 +590,7 @@ public class HomeController extends AbstractMainController {
         controller.setGridNumb(gridN);
         timeline.setOnFinished(e -> {
             try {
+                System.out.println("Timeline finished");
                 Parent parent = requestParent(ControllerType.MATCH, controller);
                 sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
             } catch (IOException ioException) {
@@ -600,9 +600,13 @@ public class HomeController extends AbstractMainController {
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() {
+                return null;
+            }
+
+            @Override
+            protected void scheduled() {
                 root.getChildren().add(overlay);
                 timeline.play();
-                return null;
             }
         };
         long delay = Instant.now().until(startingTime, ChronoUnit.MILLIS);

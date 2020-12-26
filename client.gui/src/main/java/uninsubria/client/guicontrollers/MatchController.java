@@ -1,11 +1,12 @@
 package uninsubria.client.guicontrollers;
 
-import javafx.beans.property.IntegerProperty;
 import uninsubria.client.gui.ObservableLobby;
 
 import java.util.ResourceBundle;
 
 /**
+ * Controller for the match view.
+ *
  * @author Giulia Pais
  * @version 0.9.0
  */

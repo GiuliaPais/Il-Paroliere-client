@@ -271,7 +271,7 @@
 }
 
 .game-loading-msg {
-	-fx-text-fill: darkest;
+	-fx-text-fill: dark1;
 	-fx-font-size: 21px;
 }
 
