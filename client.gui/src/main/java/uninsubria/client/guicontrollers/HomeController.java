@@ -2,6 +2,8 @@ package uninsubria.client.guicontrollers;
 
 import com.jfoenix.controls.*;
 import com.jfoenix.svg.SVGGlyph;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.binding.DoubleBinding;
@@ -44,7 +46,13 @@ import uninsubria.utils.serviceResults.ServiceResultInterface;
 
 import java.io.IOException;
 import java.net.SocketException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalField;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -107,21 +115,17 @@ public class HomeController extends AbstractMainController {
     private SVGGlyph img;
     private DoubleBinding imgSidelength;
     private ObjectProperty<Background> imgBackground;
-
     private MapProperty<UUID, ObservableLobby> lobbyMap;
     private ObservableList<ObservableLobby> lobbiesList;
     private ScheduledService<Void> lobbiesRefresher, roomPlayersUpdater;
-
     private ObjectProperty<ObservableLobby> activeLobby;
     private ListProperty<Label> observablePlayerList;
     private ObservableList<Label> observableGlist;
-
     private ObservableList<PlayerStatTuple> bestPlayerGame, bestPlayerMatch, bestAvgPlayerGame, bestAvgPlayerMatch,
             maxGamesPlayed, maxWrongWords, maxDuplWords;
     private ObservableList<TurnResultTuple> turnStats;
     private ObservableList<WordTuple> validWordRankingList, reqWordRankingList;
     private ObservableList<WGPTuple> wordGamePointsList;
-
     private XYChart.Series<String, Number> turnSeries1, turnSeries2, turnSeries3;
 
     /*---Constructors---*/
@@ -552,6 +556,58 @@ public class HomeController extends AbstractMainController {
 
     public void setActiveLobby(ObservableLobby lobby) {
         this.activeLobby.set(lobby);
+    }
+
+    public void gameStarting(String[] gridF, Integer[] gridN, Instant startingTime) {
+        if (roomPlayersUpdater != null) {
+            roomPlayersUpdater.cancel();
+            roomPlayersUpdater = null;
+        }
+        if (lobbiesRefresher != null) {
+            lobbiesRefresher.cancel();
+            lobbiesRefresher = null;
+        }
+        StackPane overlay = new StackPane();
+        overlay.setId("bg-loading");
+        overlay.setAlignment(Pos.CENTER);
+        VBox vBox = new VBox();
+        vBox.setSpacing(60);
+        vBox.setAlignment(Pos.CENTER);
+        JFXProgressBar progressBar = new JFXProgressBar();
+        Label msg = new Label(Launcher.contrManager.getBundleValue().getString("game_loading_lbl"));
+        msg.getStyleClass().add("game-loading-msg");
+        vBox.getChildren().addAll(progressBar, msg);
+        overlay.getChildren().add(vBox);
+        progressBar.progressProperty().setValue(0);
+        java.time.Duration preGameTimer = activeLobby.get().getRuleset().getTimeToStart();
+        Timeline timeline = new Timeline(
+                new KeyFrame(Duration.seconds(preGameTimer.getSeconds()),
+                        new KeyValue(progressBar.progressProperty(), 1))
+        );
+        timeline.setCycleCount(1);
+        MatchController controller = new MatchController();
+        controller.setActiveRoom(activeLobby.get());
+        controller.setGridFaces(gridF);
+        controller.setGridNumb(gridN);
+        timeline.setOnFinished(e -> {
+            try {
+                Parent parent = requestParent(ControllerType.MATCH, controller);
+                sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        });
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() {
+                root.getChildren().add(overlay);
+                timeline.play();
+                return null;
+            }
+        };
+        long delay = Instant.now().until(startingTime, ChronoUnit.MILLIS);
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+        executorService.schedule(task, delay, TimeUnit.MILLISECONDS);
     }
 
     /*----------- Private methods for initialization and scaling -----------*/
@@ -1320,4 +1376,5 @@ public class HomeController extends AbstractMainController {
         popOver13.setDetachable(false);
         infoCard13.setOnMouseClicked(e -> popOver13.show(infoCard13));
     }
+
 }

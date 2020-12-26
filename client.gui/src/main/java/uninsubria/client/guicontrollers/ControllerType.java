@@ -18,7 +18,8 @@ public enum ControllerType {
 	ACTIVATION_CODE("ActivationCodeAlert.fxml"),
 	HOME_VIEW("HomeView.fxml"),
 	PROFILE_SETTINGS("ProfileSettings.fxml"),
-	CREATE_ROOM_ALERT("CreateRoomAlert.fxml");
+	CREATE_ROOM_ALERT("CreateRoomAlert.fxml"),
+	MATCH("MatchView.fxml");
 
 	/*---Fields---*/
 	/**

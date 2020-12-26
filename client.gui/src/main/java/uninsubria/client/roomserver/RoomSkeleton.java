@@ -1,9 +1,9 @@
 package uninsubria.client.roomserver;
 
+import javafx.application.Platform;
 import uninsubria.client.guicontrollers.HomeController;
 import uninsubria.utils.connection.CommProtocolCommands;
 import uninsubria.utils.managersAPI.ProxySkeletonInterface;
-import uninsubria.utils.managersAPI.RoomProxyInterface;
 
 import java.io.*;
 import java.net.Socket;
@@ -22,6 +22,9 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private HomeController homeController;
+    private String[] currentGridFaces;
+    private Integer[] currentGridNumbers;
+    private Instant timerStartingTime;
 
     /*---Constructors---*/
     public RoomSkeleton(Socket roomClient, HomeController homeController) {
@@ -69,11 +72,17 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
         }
         CommProtocolCommands com = CommProtocolCommands.getByCommand(command);
         switch (Objects.requireNonNull(com)) {
+            case GAME_STARTING -> {
+                currentGridFaces = (String[]) in.readObject();
+                currentGridNumbers = (Integer[]) in.readObject();
+                writeCommand(CommProtocolCommands.GAME_STARTING);
+            }
             case SET_SYNC -> {
-                RoomProxyInterface.TimerType timerType = (RoomProxyInterface.TimerType) in.readObject();
-                writeCommand(CommProtocolCommands.SET_SYNC);
-                Instant future = (Instant) in.readObject();
-                //do other stuff TODO
+                timerStartingTime = (Instant) in.readObject();
+                Platform.runLater(() -> homeController.gameStarting(currentGridFaces, currentGridNumbers, timerStartingTime));
+            }
+            case INTERRUPT_GAME -> {
+                //interr
             }
         }
     }

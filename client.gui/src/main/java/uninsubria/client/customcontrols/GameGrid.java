@@ -250,6 +250,10 @@ public class GameGrid extends GridPane {
                                     dicePosition.get(ind).setSelectable(true);
                                 }
                             }
+                        } else {
+                            for (GridIndex ind : adjacentNodes.keySet()) {
+                                dicePosition.get(ind).setSelectable(true);
+                            }
                         }
                     }
                 });

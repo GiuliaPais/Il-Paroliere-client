@@ -270,6 +270,11 @@
 	-jfx-mask-type: RECT;
 }
 
+.game-loading-msg {
+	-fx-text-fill: darkest;
+	-fx-font-size: 21px;
+}
+
 /* Glyphs fontawsomefx */
 .glyph-font{
 	-fx-text-fill: main-text-color;
@@ -882,4 +887,9 @@
 
 .chart-legend{
 	-fx-background-color: transparent;
+}
+
+/* Progress bar */
+.jfx-progress-bar .bar{
+	-fx-background-color: light2;
 }
