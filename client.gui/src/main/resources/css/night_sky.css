@@ -271,8 +271,9 @@
 }
 
 .game-loading-msg {
-	-fx-text-fill: dark1;
+	-fx-text-fill: main-text-color;
 	-fx-font-size: 21px;
+	-fx-effect: dropshadow(one-pass-box, darkest, 10, 0.4, 2, 2);
 }
 
 /* Glyphs fontawsomefx */
@@ -891,5 +892,5 @@
 
 /* Progress bar */
 .jfx-progress-bar .bar{
-	-fx-background-color: light2;
+	-fx-background-color: light3;
 }

@@ -12,6 +12,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.concurrent.ScheduledService;
+import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -58,7 +59,7 @@ import java.util.stream.Collectors;
  * Controller for the home view.
  *
  * @author Giulia Pais
- * @version 0.9.7
+ * @version 0.9.8
  */
 public class HomeController extends AbstractMainController {
     /*---Fields---*/
@@ -126,6 +127,13 @@ public class HomeController extends AbstractMainController {
     private ObservableList<WordTuple> validWordRankingList, reqWordRankingList;
     private ObservableList<WGPTuple> wordGamePointsList;
     private XYChart.Series<String, Number> turnSeries1, turnSeries2, turnSeries3;
+
+    //+++ Services, tasks, loading +++//
+    //only one task at time
+    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    private LoadingAnimationOverlay generalLoadingOverlay;
+    private Service<ObservableLobby> activeLobbyService;
+    private Task<Void> gameLoadingService;
 
     /*---Constructors---*/
     /**
@@ -217,7 +225,8 @@ public class HomeController extends AbstractMainController {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        this.imgSidelength = (profImage.prefWidthProperty().divide(2)).multiply(Math.sqrt(2));
+        imgSidelength = (profImage.prefWidthProperty().divide(2)).multiply(Math.sqrt(2));
+        initServicesAndTasks();
         initIcons();
         loadImagePreset();
         loadProfileInfo();
@@ -230,6 +239,8 @@ public class HomeController extends AbstractMainController {
         join_room_btn.setDisable(true);
         lobbyView.setVisible(false);
         loadStatistics();
+        activeLobbyService.setExecutor(executorService);
+        activeLobbyService.valueProperty().addListener((observable, oldValue, newValue) -> activeLobby.set(newValue));
         lobbiesRefresher = getRoomReferesherService();
         lobbiesRefresher.start();
     }
@@ -324,69 +335,7 @@ public class HomeController extends AbstractMainController {
     }
 
     @FXML void joinRoom() {
-        ObservableLobby selectedLobby = roomList.getSelectionModel().getSelectedItem();
-        LoadingAnimationOverlay animation = new LoadingAnimationOverlay(root, "");
-        Task<Void> task = new Task<>() {
-            @Override
-            protected Void call() {
-                List<String> errMsgs = null;
-                try {
-                    errMsgs = Launcher.manager.joinRoom(selectedLobby.getRoomId());
-                } catch (Exception e) {
-                    if (e instanceof SocketException) {
-                        Platform.runLater(() -> {
-                            animation.stopAnimation();
-                            notification(notif_connection_loss.get(), new Duration(8000));
-                        });
-                        boolean reconnected = false;
-                        Launcher.manager.setDisconnected();
-                        for (int i = 0; i < 3; i++) {
-                            String ip = Launcher.manager.tryConnectServer();
-                            if (ip != null) {
-                                reconnected = true;
-                                break;
-                            }
-                        }
-                        if (!reconnected) {
-                            Platform.runLater(() -> {
-                                animation.stopAnimation();
-                                serverAlert((StackPane) root, root.getWidth()/2).show();
-                            });
-                            return null;
-                        }
-                    }
-                }
-                List<Text> localized = new ArrayList<>();
-                assert errMsgs != null;
-                if (errMsgs.isEmpty()) {
-                    Platform.runLater(animation::stopAnimation);
-                    activeLobby.set(selectedLobby);
-                    return null;
-                }
-                for (String err : errMsgs) {
-                    String localMsg = Launcher.contrManager.getBundleValue().getString(err);
-                    Text text = new Text(localMsg + "\n");
-                    text.setFill(Color.RED);
-                    localized.add(text);
-                }
-                Platform.runLater(() -> {
-                    animation.stopAnimation();
-                    Text[] localizedErrors = new Text[localized.size()];
-                    generateDialog((StackPane) root, root.getWidth()/2, "ERROR",
-                            localized.toArray(localizedErrors)).show();
-                });
-                return null;
-            }
-
-            @Override
-            protected void scheduled() {
-                super.scheduled();
-                Platform.runLater(animation::playAnimation);
-            }
-        };
-        Thread thread = new Thread(task);
-        thread.setDaemon(true);
-        thread.start();
+        activeLobbyService.start();
     }
 
     @FXML void loadStatistics() {
@@ -558,60 +507,23 @@ public class HomeController extends AbstractMainController {
     }
 
     public void gameStarting(String[] gridF, Integer[] gridN, Instant startingTime) {
-        if (roomPlayersUpdater != null) {
-            roomPlayersUpdater.cancel();
-            roomPlayersUpdater = null;
-        }
-        if (lobbiesRefresher != null) {
-            lobbiesRefresher.cancel();
-            lobbiesRefresher = null;
-        }
-        StackPane overlay = new StackPane();
-        overlay.setId("bg-loading");
-        overlay.setAlignment(Pos.CENTER);
-        VBox vBox = new VBox();
-        vBox.setSpacing(60);
-        vBox.setAlignment(Pos.CENTER);
-        JFXProgressBar progressBar = new JFXProgressBar();
-        Label msg = new Label(Launcher.contrManager.getBundleValue().getString("game_loading_lbl"));
-        msg.getStyleClass().add("game-loading-msg");
-        vBox.getChildren().addAll(progressBar, msg);
-        overlay.getChildren().add(vBox);
-        progressBar.progressProperty().setValue(0);
-        java.time.Duration preGameTimer = activeLobby.get().getRuleset().getTimeToStart();
-        Timeline timeline = new Timeline(
-                new KeyFrame(Duration.seconds(preGameTimer.getSeconds()),
-                        new KeyValue(progressBar.progressProperty(), 1))
-        );
-        timeline.setCycleCount(1);
-        MatchController controller = new MatchController();
-        controller.setActiveRoom(activeLobby.get());
-        controller.setGridFaces(gridF);
-        controller.setGridNumb(gridN);
-        timeline.setOnFinished(e -> {
-            try {
-                System.out.println("Timeline finished");
-                Parent parent = requestParent(ControllerType.MATCH, controller);
-                sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
+        gameLoadingService.progressProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue.longValue() == 1) {
+                MatchController controller = new MatchController();
+                controller.setActiveRoom(activeLobby.get());
+                controller.setGridFaces(gridF);
+                controller.setGridNumb(gridN);
+                Parent parent;
+                try {
+                    parent = requestParent(ControllerType.MATCH, controller);
+                    sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
-        Task<Void> task = new Task<>() {
-            @Override
-            protected Void call() {
-                return null;
-            }
-
-            @Override
-            protected void scheduled() {
-                root.getChildren().add(overlay);
-                timeline.play();
-            }
-        };
         long delay = Instant.now().until(startingTime, ChronoUnit.MILLIS);
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
-        executorService.schedule(task, delay, TimeUnit.MILLISECONDS);
+        executorService.schedule(gameLoadingService, delay, TimeUnit.MILLISECONDS);
     }
 
     /*----------- Private methods for initialization and scaling -----------*/
@@ -1171,8 +1083,10 @@ public class HomeController extends AbstractMainController {
                 join_room_btn.setDisable(true);
                 roomList.setDisable(true);
                 lobbyView.setVisible(true);
-                lobbiesRefresher.cancel();
-                lobbiesRefresher = null;
+//                if (lobbiesRefresher != null) {
+                    lobbiesRefresher.cancel();
+                    lobbiesRefresher = null;
+//                }
                 roomPlayersUpdater = getRoomPlayersService();
                 roomPlayersUpdater.start();
             });
@@ -1381,4 +1295,136 @@ public class HomeController extends AbstractMainController {
         infoCard13.setOnMouseClicked(e -> popOver13.show(infoCard13));
     }
 
+    //++ Services initialization ++//
+    private void initLoadingAnim() {
+        generalLoadingOverlay = new LoadingAnimationOverlay(root, "");
+    }
+
+    private void initServicesAndTasks() {
+        initLoadingAnim();
+        initActiveLobbyService();
+        initGameLoadingService();
+    }
+
+    private void initActiveLobbyService() {
+        activeLobbyService = new Service<>() {
+            @Override
+            protected Task<ObservableLobby> createTask() {
+                Task<ObservableLobby> task  = new Task<>() {
+                    private List<String> errors;
+
+                    @Override
+                    protected ObservableLobby call() throws Exception {
+                        ObservableLobby selectedLobby = roomList.getSelectionModel().getSelectedItem();
+                        errors = Launcher.manager.joinRoom(selectedLobby.getRoomId());
+                        if (!errors.isEmpty()) {
+                            selectedLobby = null;
+                        }
+                        updateValue(selectedLobby);
+                        return selectedLobby;
+                    }
+
+                    @Override
+                    protected void running() {
+                        super.running();
+                        Platform.runLater(generalLoadingOverlay::playAnimation);
+                    }
+
+                    @Override
+                    protected void succeeded() {
+                        super.succeeded();
+                        Platform.runLater(generalLoadingOverlay::stopAnimation);
+                        if (!errors.isEmpty()) {
+                            List<Text> localized = new ArrayList<>();
+                            for (String err : errors) {
+                                String localMsg = Launcher.contrManager.getBundleValue().getString(err);
+                                Text text = new Text(localMsg + "\n");
+                                text.setFill(Color.RED);
+                                localized.add(text);
+                            }
+                            Text[] localizedErrors = new Text[localized.size()];
+                            Platform.runLater(() -> {
+                                generateDialog((StackPane) root, root.getWidth()/2, "ERROR",
+                                        localized.toArray(localizedErrors)).show();
+                            });
+                        }
+                    }
+
+                    @Override
+                    protected void cancelled() {
+                        super.cancelled();
+                        Platform.runLater(generalLoadingOverlay::stopAnimation);
+                    }
+
+                    @Override
+                    protected void failed() {
+                        super.failed();
+                        Platform.runLater(generalLoadingOverlay::stopAnimation);
+                        if (getException() instanceof SocketException) {
+                            Platform.runLater(() -> {
+                                notification(notif_connection_loss.get(), new Duration(8000));
+                            });
+                            boolean reconnected = false;
+                            Launcher.manager.setDisconnected();
+                            for (int i = 0; i < 3; i++) {
+                                String ip = Launcher.manager.tryConnectServer();
+                                if (ip != null) {
+                                    reconnected = true;
+                                    break;
+                                }
+                            }
+                            if (!reconnected) {
+                                Platform.runLater(() -> {
+                                    serverAlert((StackPane) root, root.getWidth()/2).show();
+                                });
+                            }
+                        }
+                    }
+                };
+                return task;
+            }
+        };
+    }
+
+    private void initGameLoadingService() {
+        gameLoadingService = new Task<>() {
+            private StackPane overlay;
+            private Timeline timeline;
+
+            @Override
+            protected Void call() throws Exception {
+                StackPane over = new StackPane();
+                over.setId("bg-loading");
+                over.setAlignment(Pos.CENTER);
+                VBox vBox = new VBox();
+                vBox.setSpacing(60);
+                vBox.setAlignment(Pos.CENTER);
+                JFXProgressBar progressBar = new JFXProgressBar();
+                Label msg = new Label(Launcher.contrManager.getBundleValue().getString("game_loading_lbl"));
+                msg.getStyleClass().add("game-loading-msg");
+                vBox.getChildren().addAll(progressBar, msg);
+                over.getChildren().add(vBox);
+                progressBar.progressProperty().setValue(0);
+                overlay = over;
+                java.time.Duration preGameTimer = activeLobby.get().getRuleset().getTimeToStart();
+                Timeline tl = new Timeline(
+                        new KeyFrame(Duration.seconds(preGameTimer.getSeconds()),
+                                new KeyValue(progressBar.progressProperty(), 1))
+                );
+                tl.setCycleCount(1);
+                tl.setOnFinished(e -> updateProgress(1, 1));
+                timeline = tl;
+                return null;
+            }
+
+            @Override
+            protected void scheduled() {
+                super.scheduled();
+                Platform.runLater(() -> {
+                    root.getChildren().add(overlay);
+                });
+                timeline.play();
+            }
+        };
+    }
 }
