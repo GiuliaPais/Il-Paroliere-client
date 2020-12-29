@@ -6,9 +6,9 @@
 <?import com.jfoenix.controls.JFXTabPane?>
 <?import com.jfoenix.controls.JFXTextField?>
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.BarChart?>
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.NumberAxis?>
-<?import javafx.scene.chart.StackedBarChart?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Tab?>
@@ -18,7 +18,6 @@
 <?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
@@ -45,7 +44,7 @@
                         </VBox>
                         <HBox alignment="CENTER" layoutX="1230.0" layoutY="20.0" spacing="15.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0">
                            <children>
-                              <Glyph fx:id="refreshIcon" alignment="CENTER" contentDisplay="CENTER" layoutX="10.0" layoutY="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="30.0" />
+                              <Glyph fx:id="refreshIcon" alignment="CENTER" contentDisplay="CENTER" layoutX="10.0" layoutY="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#loadStatistics" prefHeight="30.0" prefWidth="30.0" />
                               <Glyph fx:id="settingsIcon" alignment="CENTER" contentDisplay="CENTER" layoutX="10.0" layoutY="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#showSettings" prefHeight="30.0" prefWidth="30.0" />
                               <Glyph fx:id="tutorialIcon" alignment="CENTER" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="30.0" />
                               <Glyph fx:id="hamburger" alignment="CENTER" contentDisplay="CENTER" layoutX="55.0" layoutY="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="30.0" />
@@ -177,7 +176,8 @@
                                                                <children>
                                                                   <AnchorPane styleClass="card-header" VBox.vgrow="ALWAYS">
                                                                      <children>
-                                                                        <Label text="Best player game" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Label fx:id="titleCard1p" text="%stats_p_topGame" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Glyph fx:id="infoCard1" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="10.0" />
                                                                      </children>
                                                                   </AnchorPane>
                                                                   <StackPane styleClass="card-body" VBox.vgrow="ALWAYS">
@@ -187,8 +187,8 @@
                                                                      <children>
                                                                         <TableView fx:id="bestPTable" prefHeight="80.0" prefWidth="180.0">
                                                                           <columns>
-                                                                            <TableColumn prefWidth="75.0" text="C1" />
-                                                                            <TableColumn prefWidth="75.0" text="C2" />
+                                                                            <TableColumn fx:id="idCol1" editable="false" prefWidth="75.0" sortable="false" text="Player ID" />
+                                                                            <TableColumn fx:id="scoreCol1" prefWidth="75.0" text="%score_col" />
                                                                           </columns>
                                                                            <columnResizePolicy>
                                                                               <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -206,15 +206,16 @@
                                                                <children>
                                                                   <AnchorPane styleClass="card-header" VBox.vgrow="ALWAYS">
                                                                      <children>
-                                                                        <Label text="Best player match" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Label fx:id="titleCard2p" text="%stats_p_topMatch" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Glyph fx:id="infoCard2" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="10.0" />
                                                                      </children>
                                                                   </AnchorPane>
                                                                   <StackPane styleClass="card-body" VBox.vgrow="ALWAYS">
                                                                      <children>
                                                                         <TableView fx:id="bestPMatchTable" prefHeight="80.0" prefWidth="180.0">
                                                                            <columns>
-                                                                              <TableColumn minWidth="0.0" prefWidth="119.0" text="C1" />
-                                                                              <TableColumn prefWidth="165.0" text="C2" />
+                                                                              <TableColumn fx:id="idCol2" editable="false" minWidth="0.0" prefWidth="119.0" sortable="false" text="Player ID" />
+                                                                              <TableColumn fx:id="scoreCol2" prefWidth="165.0" text="%score_col" />
                                                                            </columns>
                                                                            <columnResizePolicy>
                                                                               <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -235,15 +236,16 @@
                                                                <children>
                                                                   <AnchorPane styleClass="card-header" VBox.vgrow="ALWAYS">
                                                                      <children>
-                                                                        <Label text="avg best player game" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Label fx:id="titleCard3p" text="%stats_p_avgGame" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Glyph fx:id="infoCard3" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="10.0" />
                                                                      </children>
                                                                   </AnchorPane>
                                                                   <StackPane styleClass="card-body" VBox.vgrow="ALWAYS">
                                                                      <children>
                                                                         <TableView fx:id="avgBestPTable" prefHeight="80.0" prefWidth="180.0">
                                                                            <columns>
-                                                                              <TableColumn prefWidth="171.0" text="C1" />
-                                                                              <TableColumn prefWidth="113.0" text="C2" />
+                                                                              <TableColumn fx:id="idCol3" editable="false" prefWidth="171.0" sortable="false" text="Player ID" />
+                                                                              <TableColumn fx:id="scoreCol3" prefWidth="113.0" text="%score_col" />
                                                                            </columns>
                                                                            <columnResizePolicy>
                                                                               <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -264,15 +266,16 @@
                                                                <children>
                                                                   <AnchorPane styleClass="card-header" VBox.vgrow="ALWAYS">
                                                                      <children>
-                                                                        <Label text="avg best player match" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Label fx:id="titleCard4p" text="%stats_p_avgMatch" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Glyph fx:id="infoCard4" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="10.0" />
                                                                      </children>
                                                                   </AnchorPane>
                                                                   <StackPane styleClass="card-body" VBox.vgrow="ALWAYS">
                                                                      <children>
                                                                         <TableView fx:id="avgBestPMatchTable" prefHeight="80.0" prefWidth="180.0">
                                                                            <columns>
-                                                                              <TableColumn prefWidth="171.0" text="C1" />
-                                                                              <TableColumn prefWidth="113.0" text="C2" />
+                                                                              <TableColumn fx:id="idCol4" editable="false" prefWidth="171.0" sortable="false" text="Player ID" />
+                                                                              <TableColumn fx:id="scoreCol4" prefWidth="113.0" text="%score_col" />
                                                                            </columns>
                                                                            <columnResizePolicy>
                                                                               <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -293,15 +296,16 @@
                                                                <children>
                                                                   <AnchorPane styleClass="card-header" VBox.vgrow="ALWAYS">
                                                                      <children>
-                                                                        <Label text="max games" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Label fx:id="titleCard5p" text="%stats_p_maxGames" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Glyph fx:id="infoCard5" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="10.0" />
                                                                      </children>
                                                                   </AnchorPane>
                                                                   <StackPane styleClass="card-body" VBox.vgrow="ALWAYS">
                                                                      <children>
                                                                         <TableView fx:id="maxGamesTable" prefHeight="80.0" prefWidth="180.0">
                                                                            <columns>
-                                                                              <TableColumn prefWidth="171.0" text="C1" />
-                                                                              <TableColumn prefWidth="113.0" text="C2" />
+                                                                              <TableColumn fx:id="idCol5" editable="false" prefWidth="171.0" sortable="false" text="Player ID" />
+                                                                              <TableColumn fx:id="gamesCol1" prefWidth="113.0" text="%games_col" />
                                                                            </columns>
                                                                            <columnResizePolicy>
                                                                               <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -322,15 +326,16 @@
                                                                <children>
                                                                   <AnchorPane styleClass="card-header" VBox.vgrow="ALWAYS">
                                                                      <children>
-                                                                        <Label text="max wrong words" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Label fx:id="titleCard6p" text="%stats_p_maxWrong" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Glyph fx:id="infoCard6" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="10.0" />
                                                                      </children>
                                                                   </AnchorPane>
                                                                   <StackPane styleClass="card-body" VBox.vgrow="ALWAYS">
                                                                      <children>
                                                                         <TableView fx:id="maxWrongWTable" prefHeight="80.0" prefWidth="180.0">
                                                                            <columns>
-                                                                              <TableColumn prefWidth="171.0" text="C1" />
-                                                                              <TableColumn prefWidth="113.0" text="C2" />
+                                                                              <TableColumn fx:id="idCol6" editable="false" prefWidth="171.0" sortable="false" text="Player ID" />
+                                                                              <TableColumn fx:id="wordCol1" prefWidth="113.0" text="%n_words_col" />
                                                                            </columns>
                                                                            <columnResizePolicy>
                                                                               <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -351,15 +356,16 @@
                                                                <children>
                                                                   <AnchorPane styleClass="card-header" VBox.vgrow="ALWAYS">
                                                                      <children>
-                                                                        <Label text="max dupl words" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Label fx:id="titleCard7p" text="%stats_p_maxDupl" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Glyph fx:id="infoCard7" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="10.0" />
                                                                      </children>
                                                                   </AnchorPane>
                                                                   <StackPane styleClass="card-body" VBox.vgrow="ALWAYS">
                                                                      <children>
                                                                         <TableView fx:id="maxDuplWTable" prefHeight="80.0" prefWidth="180.0">
                                                                            <columns>
-                                                                              <TableColumn prefWidth="171.0" text="C1" />
-                                                                              <TableColumn prefWidth="113.0" text="C2" />
+                                                                              <TableColumn fx:id="idCol7" editable="false" prefWidth="171.0" sortable="false" text="Player ID" />
+                                                                              <TableColumn fx:id="wordCol2" prefWidth="113.0" text="%n_words_col" />
                                                                            </columns>
                                                                            <columnResizePolicy>
                                                                               <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -391,7 +397,7 @@
                                       <content>
                                         <AnchorPane>
                                              <children>
-                                                <FlowPane alignment="TOP_CENTER" columnHalignment="CENTER" hgap="10.0" layoutX="20.0" layoutY="10.0" vgap="10.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="10.0">
+                                                <JFXMasonryPane fx:id="gameStatsMasonry" HSpacing="10.0" VSpacing="10.0" cellHeight="90.0" cellWidth="130.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
                                                    <children>
                                                       <StackPane styleClass="stats-card">
                                                          <children>
@@ -399,22 +405,35 @@
                                                                <children>
                                                                   <AnchorPane styleClass="card-header" VBox.vgrow="ALWAYS">
                                                                      <children>
-                                                                        <Label text="Turns per players" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Label fx:id="titleCard1g" text="%stats_g_turns" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Glyph fx:id="infoCard8" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="10.0" />
                                                                      </children>
                                                                   </AnchorPane>
                                                                   <StackPane styleClass="card-body" VBox.vgrow="ALWAYS">
                                                                      <children>
-                                                                        <TableView fx:id="turnPlayersTable" prefHeight="400.0" prefWidth="350.0">
-                                                                           <columns>
-                                                                              <TableColumn prefWidth="74.0" text="C1" />
-                                                                              <TableColumn prefWidth="73.0" text="C2" />
-                                                                              <TableColumn prefWidth="89.0" text="Column X" />
-                                                                              <TableColumn prefWidth="88.0" text="Column X" />
-                                                                           </columns>
-                                                                           <columnResizePolicy>
-                                                                              <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                                                                           </columnResizePolicy>
-                                                                        </TableView>
+                                                                        <VBox>
+                                                                           <children>
+                                                                              <TableView fx:id="turnPlayersTable" prefHeight="200.0" prefWidth="350.0">
+                                                                                 <columns>
+                                                                                    <TableColumn fx:id="turnIdCol" editable="false" prefWidth="74.0" text="%players_col" />
+                                                                                    <TableColumn fx:id="maxTurns" prefWidth="73.0" text="%max_matches_col" />
+                                                                                    <TableColumn fx:id="minTurns" prefWidth="89.0" text="%min_matches_col" />
+                                                                                    <TableColumn fx:id="avgTurns" prefWidth="88.0" text="%avg_matches_col" />
+                                                                                 </columns>
+                                                                                 <columnResizePolicy>
+                                                                                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                                                                 </columnResizePolicy>
+                                                                              </TableView>
+                                                                              <BarChart fx:id="turnsGraph">
+                                                                                <xAxis>
+                                                                                  <CategoryAxis animated="false" label="%players_col" side="BOTTOM" />
+                                                                                </xAxis>
+                                                                                <yAxis>
+                                                                                  <NumberAxis side="LEFT" />
+                                                                                </yAxis>
+                                                                              </BarChart>
+                                                                           </children>
+                                                                        </VBox>
                                                                      </children>
                                                                      <padding>
                                                                         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
@@ -430,7 +449,8 @@
                                                                <children>
                                                                   <AnchorPane styleClass="card-header" VBox.vgrow="ALWAYS">
                                                                      <children>
-                                                                        <Label text="Letter occurrences" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Label fx:id="titleCard2g" text="%stats_g_grid" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Glyph fx:id="infoCard9" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="10.0" />
                                                                      </children>
                                                                   </AnchorPane>
                                                                   <StackPane styleClass="card-body" VBox.vgrow="ALWAYS">
@@ -438,14 +458,14 @@
                                                                         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                                                                      </padding>
                                                                      <children>
-                                                                        <StackedBarChart fx:id="brarGraph" prefHeight="400.0" prefWidth="600.0">
+                                                                        <BarChart fx:id="gridGraph" prefHeight="420.0" prefWidth="620.0">
                                                                           <xAxis>
-                                                                            <CategoryAxis side="BOTTOM" />
+                                                                            <CategoryAxis label="%letters_lbl" side="BOTTOM" />
                                                                           </xAxis>
                                                                           <yAxis>
-                                                                            <NumberAxis side="LEFT" />
+                                                                            <NumberAxis label="%avg_occurr_lbl" side="LEFT" />
                                                                           </yAxis>
-                                                                        </StackedBarChart>
+                                                                        </BarChart>
                                                                      </children>
                                                                   </StackPane>
                                                                </children>
@@ -458,7 +478,8 @@
                                                                <children>
                                                                   <AnchorPane styleClass="card-header">
                                                                      <children>
-                                                                        <Label prefHeight="24.0" prefWidth="245.0" text="Definition requested" AnchorPane.bottomAnchor="9.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Label fx:id="titleCard3g" text="%stats_g_requestedw" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Glyph fx:id="infoCard10" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="10.0" />
                                                                      </children>
                                                                   </AnchorPane>
                                                                   <StackPane styleClass="card-body">
@@ -468,21 +489,21 @@
                                                                      <children>
                                                                         <VBox>
                                                                            <children>
-                                                                              <HBox alignment="TOP_CENTER" VBox.vgrow="ALWAYS">
+                                                                              <HBox alignment="TOP_CENTER">
                                                                                  <children>
-                                                                                    <JFXTextField prefHeight="25.0" prefWidth="183.0" promptText="Type a word..." />
-                                                                                    <Glyph prefHeight="25.0" prefWidth="25.0" />
+                                                                                    <JFXTextField fx:id="wordSearch" promptText="Type a word..." />
+                                                                                    <JFXButton id="search-btn" fx:id="searchBtn" onAction="#requestWordStat" />
                                                                                  </children>
                                                                                  <padding>
                                                                                     <Insets top="10.0" />
                                                                                  </padding>
                                                                               </HBox>
-                                                                              <Label text="Found games">
+                                                                              <Label fx:id="gListTitle" text="Found games">
                                                                                  <VBox.margin>
                                                                                     <Insets left="10.0" right="10.0" top="20.0" />
                                                                                  </VBox.margin>
                                                                               </Label>
-                                                                              <JFXListView>
+                                                                              <JFXListView fx:id="gList" styleClass="playerslistview">
                                                                                  <VBox.margin>
                                                                                     <Insets bottom="10.0" left="10.0" right="10.0" top="5.0" />
                                                                                  </VBox.margin>
@@ -496,7 +517,7 @@
                                                          </children>
                                                       </StackPane>
                                                    </children>
-                                                </FlowPane>
+                                                </JFXMasonryPane>
                                              </children>
                                           </AnchorPane>
                                       </content>
@@ -510,7 +531,104 @@
                                  <children>
                                     <ScrollPane fitToWidth="true" prefHeight="200.0" prefWidth="200.0" styleClass="stats-scroll-pane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="10.0">
                                       <content>
-                                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="200.0" prefWidth="200.0" />
+                                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="200.0" prefWidth="200.0">
+                                             <children>
+                                                <JFXMasonryPane fx:id="wordStatsMasonry" HSpacing="10.0" VSpacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                                                   <children>
+                                                      <StackPane styleClass="stats-card">
+                                                         <children>
+                                                            <VBox alignment="TOP_CENTER" StackPane.alignment="TOP_CENTER">
+                                                               <children>
+                                                                  <AnchorPane styleClass="card-header">
+                                                                     <children>
+                                                                        <Label fx:id="titleCard1w" text="%stats_w_rank_valid" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Glyph fx:id="infoCard11" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                     </children>
+                                                                  </AnchorPane>
+                                                                  <StackPane styleClass="card-body">
+                                                                     <padding>
+                                                                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                                                     </padding>
+                                                                     <children>
+                                                                        <TableView fx:id="wTable1">
+                                                                           <columns>
+                                                                              <TableColumn fx:id="wCol1" editable="false" prefWidth="75.0" sortable="false" text="%word_col" />
+                                                                              <TableColumn fx:id="occCol1" prefWidth="75.0" text="%occurr_col" />
+                                                                           </columns>
+                                                                           <columnResizePolicy>
+                                                                              <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                                                           </columnResizePolicy>
+                                                                        </TableView>
+                                                                     </children>
+                                                                  </StackPane>
+                                                               </children>
+                                                            </VBox>
+                                                         </children>
+                                                      </StackPane>
+                                                      <StackPane layoutX="10.0" layoutY="10.0" styleClass="stats-card">
+                                                         <children>
+                                                            <VBox alignment="TOP_CENTER" StackPane.alignment="TOP_CENTER">
+                                                               <children>
+                                                                  <AnchorPane styleClass="card-header">
+                                                                     <children>
+                                                                        <Label fx:id="titleCard2w" text="%stats_w_rank_requested" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Glyph fx:id="infoCard12" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                     </children>
+                                                                  </AnchorPane>
+                                                                  <StackPane styleClass="card-body">
+                                                                     <padding>
+                                                                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                                                     </padding>
+                                                                     <children>
+                                                                        <TableView fx:id="wTable2">
+                                                                           <columns>
+                                                                              <TableColumn fx:id="wCol2" editable="false" prefWidth="75.0" sortable="false" text="%word_col" />
+                                                                              <TableColumn fx:id="occCol2" prefWidth="75.0" text="%occurr_col" />
+                                                                           </columns>
+                                                                           <columnResizePolicy>
+                                                                              <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                                                           </columnResizePolicy>
+                                                                        </TableView>
+                                                                     </children>
+                                                                  </StackPane>
+                                                               </children>
+                                                            </VBox>
+                                                         </children>
+                                                      </StackPane>
+                                                      <StackPane layoutX="330.0" layoutY="10.0" styleClass="stats-card">
+                                                         <children>
+                                                            <VBox alignment="TOP_CENTER" StackPane.alignment="TOP_CENTER">
+                                                               <children>
+                                                                  <AnchorPane styleClass="card-header">
+                                                                     <children>
+                                                                        <Label fx:id="titleCard3w" text="%stats_w_points" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                        <Glyph fx:id="infoCard13" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="10.0" />
+                                                                     </children>
+                                                                  </AnchorPane>
+                                                                  <StackPane styleClass="card-body">
+                                                                     <padding>
+                                                                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                                                     </padding>
+                                                                     <children>
+                                                                        <TableView fx:id="wTable3" prefWidth="450.0">
+                                                                           <columns>
+                                                                              <TableColumn fx:id="wCol3" editable="false" prefWidth="75.0" sortable="false" text="%word_col" />
+                                                                              <TableColumn fx:id="scoreColw1" prefWidth="75.0" text="%score_col" />
+                                                                              <TableColumn fx:id="gameCol1" prefWidth="75.0" text="%game_col" />
+                                                                           </columns>
+                                                                           <columnResizePolicy>
+                                                                              <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                                                           </columnResizePolicy>
+                                                                        </TableView>
+                                                                     </children>
+                                                                  </StackPane>
+                                                               </children>
+                                                            </VBox>
+                                                         </children>
+                                                      </StackPane>
+                                                   </children>
+                                                </JFXMasonryPane>
+                                             </children></AnchorPane>
                                       </content>
                                     </ScrollPane>
                                  </children>

@@ -1,9 +1,9 @@
 package uninsubria.client.roomserver;
 
+import javafx.application.Platform;
 import uninsubria.client.guicontrollers.HomeController;
 import uninsubria.utils.connection.CommProtocolCommands;
 import uninsubria.utils.managersAPI.ProxySkeletonInterface;
-import uninsubria.utils.managersAPI.RoomProxyInterface;
 
 import java.io.*;
 import java.net.Socket;
@@ -14,7 +14,7 @@ import java.util.Objects;
  * A thread that serves as Skeleton for the lobby.
  *
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  */
 public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
     /*---Fields---*/
@@ -22,6 +22,9 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private HomeController homeController;
+    private String[] currentGridFaces;
+    private Integer[] currentGridNumbers;
+    private Instant timerStartingTime;
 
     /*---Constructors---*/
     public RoomSkeleton(Socket roomClient, HomeController homeController) {
@@ -43,7 +46,6 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
             }
             terminate();
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
             terminate();
             RoomCentralManager.stopRoom();
         }
@@ -70,11 +72,17 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
         }
         CommProtocolCommands com = CommProtocolCommands.getByCommand(command);
         switch (Objects.requireNonNull(com)) {
+            case GAME_STARTING -> {
+                currentGridFaces = (String[]) in.readObject();
+                currentGridNumbers = (Integer[]) in.readObject();
+                writeCommand(CommProtocolCommands.GAME_STARTING);
+            }
             case SET_SYNC -> {
-                RoomProxyInterface.TimerType timerType = (RoomProxyInterface.TimerType) in.readObject();
-                writeCommand(CommProtocolCommands.SET_SYNC);
-                Instant future = (Instant) in.readObject();
-                //do other stuff TODO
+                timerStartingTime = (Instant) in.readObject();
+                Platform.runLater(() -> homeController.gameStarting(currentGridFaces, currentGridNumbers, timerStartingTime));
+            }
+            case INTERRUPT_GAME -> {
+                //interr
             }
         }
     }
@@ -87,7 +95,8 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
             }
         }
         try {
-            out.close();
+            if (out != null)
+                out.close();
         } catch (IOException ignored) {
         }
         try {
