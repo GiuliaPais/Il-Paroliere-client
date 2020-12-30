@@ -128,6 +128,9 @@ public class HomeController extends AbstractMainController {
     private ObservableList<WGPTuple> wordGamePointsList;
     private XYChart.Series<String, Number> turnSeries1, turnSeries2, turnSeries3;
 
+    private String[] matchGridF;
+    private Integer[] matchGridN;
+
     //+++ Services, tasks, loading +++//
     //only one task at time
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
@@ -506,13 +509,14 @@ public class HomeController extends AbstractMainController {
         this.activeLobby.set(lobby);
     }
 
-    public void gameStarting(String[] gridF, Integer[] gridN, Instant startingTime) {
+    public void gameStarting(Instant startingTime) {
         gameLoadingService.progressProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue.longValue() == 1) {
+            if (newValue.intValue() == 1) {
                 MatchController controller = new MatchController();
                 controller.setActiveRoom(activeLobby.get());
-                controller.setGridFaces(gridF);
-                controller.setGridNumb(gridN);
+                controller.setGridFaces(getMatchGridF());
+                controller.setGridNumb(getMatchGridN());
+                RoomCentralManager.setMatchController(controller);
                 Parent parent;
                 try {
                     parent = requestParent(ControllerType.MATCH, controller);
@@ -524,6 +528,11 @@ public class HomeController extends AbstractMainController {
         });
         long delay = Instant.now().until(startingTime, ChronoUnit.MILLIS);
         executorService.schedule(gameLoadingService, delay, TimeUnit.MILLISECONDS);
+    }
+
+    public void setGrid(String[] matchGridF, Integer[] matchGridN) {
+        this.matchGridF = matchGridF;
+        this.matchGridN = matchGridN;
     }
 
     /*----------- Private methods for initialization and scaling -----------*/
@@ -1388,11 +1397,8 @@ public class HomeController extends AbstractMainController {
 
     private void initGameLoadingService() {
         gameLoadingService = new Task<>() {
-            private StackPane overlay;
-            private Timeline timeline;
-
             @Override
-            protected Void call() throws Exception {
+            protected Void call() {
                 StackPane over = new StackPane();
                 over.setId("bg-loading");
                 over.setAlignment(Pos.CENTER);
@@ -1405,7 +1411,6 @@ public class HomeController extends AbstractMainController {
                 vBox.getChildren().addAll(progressBar, msg);
                 over.getChildren().add(vBox);
                 progressBar.progressProperty().setValue(0);
-                overlay = over;
                 java.time.Duration preGameTimer = activeLobby.get().getRuleset().getTimeToStart();
                 Timeline tl = new Timeline(
                         new KeyFrame(Duration.seconds(preGameTimer.getSeconds()),
@@ -1413,18 +1418,35 @@ public class HomeController extends AbstractMainController {
                 );
                 tl.setCycleCount(1);
                 tl.setOnFinished(e -> updateProgress(1, 1));
-                timeline = tl;
+                Platform.runLater(() -> root.getChildren().add(over));
+                tl.play();
                 return null;
             }
-
-            @Override
-            protected void scheduled() {
-                super.scheduled();
-                Platform.runLater(() -> {
-                    root.getChildren().add(overlay);
-                });
-                timeline.play();
-            }
         };
+    }
+
+    private String[] getMatchGridF() {
+        return matchGridF;
+    }
+
+    private Integer[] getMatchGridN() {
+        return matchGridN;
+    }
+
+    @FXML void matchDemo() {
+        ObservableLobby demoLobby = ObservableLobby.toObservableLobby(new Lobby("Lobby", 2, Language.ITALIAN, Ruleset.STANDARD, Lobby.LobbyStatus.CLOSED));
+        String[] gridLett = {"R", "T", "E", "T", "M", "L", "R", "Z", "O", "R", "I", "I", "E", "P", "E", "R"};
+        Integer[] gridN = {4, 6, 14, 13, 1, 2, 7, 11, 9, 16, 12, 10, 8, 15, 3, 5};
+        MatchController controller = new MatchController();
+        controller.setActiveRoom(demoLobby);
+        controller.setGridFaces(gridLett);
+        controller.setGridNumb(gridN);
+        Parent parent;
+        try {
+            parent = requestParent(ControllerType.MATCH, controller);
+            sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

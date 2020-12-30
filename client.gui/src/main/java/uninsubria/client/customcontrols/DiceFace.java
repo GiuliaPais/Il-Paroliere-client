@@ -3,6 +3,8 @@ package uninsubria.client.customcontrols;
 import com.jfoenix.controls.JFXToggleNode;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.BooleanPropertyBase;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.css.PseudoClass;
 import javafx.event.ActionEvent;
 import javafx.geometry.Pos;
@@ -14,7 +16,7 @@ import javafx.scene.layout.StackPane;
  * Custom jfx control representing a selectable dice in the game grid.
  *
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  */
 public class DiceFace extends JFXToggleNode {
     /*---Fields---*/
@@ -37,6 +39,7 @@ public class DiceFace extends JFXToggleNode {
     private Label diceNumber, diceFace, selectedNumber;
     private BooleanProperty selectable, deselectable;
     private GameGrid.GridIndex indexInGrid;
+    private DoubleProperty fontSize;
 
     /*---Constructors---*/
     public DiceFace() {
@@ -56,6 +59,7 @@ public class DiceFace extends JFXToggleNode {
         this.diceNumber = new Label();
         this.diceFace = new Label();
         this.selectedNumber = new Label();
+        this.fontSize = new SimpleDoubleProperty(18);
         this.selectable = new BooleanPropertyBase(true) {
 
             @Override
@@ -100,8 +104,16 @@ public class DiceFace extends JFXToggleNode {
         this.getStyleClass().add(DEFAULT_STYLE_CLASS);
         diceBase.getStyleClass().add(BASE_STYLE_CLASS);
         diceFace.getStyleClass().add(FACE_LABEL_CLASS);
+        diceFace.setStyle("-fx-font-size: " + fontSize.get() + ";");
         diceNumber.getStyleClass().add(NUM_LABEL_CLASS);
+        diceNumber.setStyle("-fx-font-size: " + (fontSize.get() - 4) + ";");
         selectedNumber.getStyleClass().add(SELECTED_NUM_LABEL_CLASS);
+        selectedNumber.setStyle("-fx-font-size: " + (fontSize.get() - 4) + ";");
+        fontSize.addListener((observable, oldValue, newValue) -> {
+            diceFace.setStyle("-fx-font-size: " + fontSize.get() + ";");
+            diceNumber.setStyle("-fx-font-size: " + (fontSize.get() - 4) + ";");
+            selectedNumber.setStyle("-fx-font-size: " + (fontSize.get() - 4) + ";");
+        });
         this.setSelectable(true);
         this.setDeselectable(true);
     }
@@ -210,5 +222,17 @@ public class DiceFace extends JFXToggleNode {
 
     public void setSelectedNumber(String sn) {
         selectedNumber.setText(sn);
+    }
+
+    public double getFontSize() {
+        return fontSize.get();
+    }
+
+    public DoubleProperty fontSizeProperty() {
+        return fontSize;
+    }
+
+    public void setFontSize(double fontSize) {
+        this.fontSize.set(fontSize);
     }
 }

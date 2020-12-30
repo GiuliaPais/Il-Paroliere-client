@@ -9,7 +9,7 @@ import java.util.stream.Stream;
  * Should cover 90-95% of common resolutions for monitors.
  * 
  * @author Giulia Pais
- * @version 0.9.6
+ * @version 0.9.7
  */
 public enum AspectRatio {
 	/*---Enum constants---*/
@@ -78,7 +78,12 @@ public enum AspectRatio {
 						new AbstractMap.SimpleImmutableEntry<>("HOME_TURNSCARDTBL_H", 160.0),
 						new AbstractMap.SimpleImmutableEntry<>("HOME_WPTABLE_W", 450.0),
 						new AbstractMap.SimpleImmutableEntry<>("HOME_GRAPH_H", 420.0),
-						new AbstractMap.SimpleImmutableEntry<>("HOME_GRAPH_W", 620.0))
+						new AbstractMap.SimpleImmutableEntry<>("HOME_GRAPH_W", 620.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_HEADER_H", 95.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_GRID_DIM", 450.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_FOUNDW_W", 350.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_SIDEPANEL_W", 250.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_BTN_DIM", 100.0))
 				  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))), 
 	RATIO_16_9(16.0 / 9.0, 
 				Arrays.asList(1280.0, 1366.0, 1920.0),
@@ -145,7 +150,12 @@ public enum AspectRatio {
 						new AbstractMap.SimpleImmutableEntry<>("HOME_TURNSCARDTBL_H", 160.0),
 						new AbstractMap.SimpleImmutableEntry<>("HOME_WPTABLE_W", 450.0),
 						new AbstractMap.SimpleImmutableEntry<>("HOME_GRAPH_H", 420.0),
-						new AbstractMap.SimpleImmutableEntry<>("HOME_GRAPH_W", 620.0))
+						new AbstractMap.SimpleImmutableEntry<>("HOME_GRAPH_W", 620.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_HEADER_H", 95.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_GRID_DIM", 550.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_FOUNDW_W", 350.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_SIDEPANEL_W", 320.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_BTN_DIM", 100.0))
 				  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))), 
 	RATIO_16_10(16.0 / 10.0, 
 				Arrays.asList(1440.0, 1680.0, 1920.0),
@@ -212,7 +222,12 @@ public enum AspectRatio {
 						new AbstractMap.SimpleImmutableEntry<>("HOME_TURNSCARDTBL_H", 160.0),
 						new AbstractMap.SimpleImmutableEntry<>("HOME_WPTABLE_W", 450.0),
 						new AbstractMap.SimpleImmutableEntry<>("HOME_GRAPH_H", 420.0),
-						new AbstractMap.SimpleImmutableEntry<>("HOME_GRAPH_W", 620.0))
+						new AbstractMap.SimpleImmutableEntry<>("HOME_GRAPH_W", 620.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_HEADER_H", 95.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_GRID_DIM", 500.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_FOUNDW_W", 350.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_SIDEPANEL_W", 300.0),
+						new AbstractMap.SimpleImmutableEntry<>("MATCH_BTN_DIM", 100.0))
 				  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 	
 	/*---Fields---*/

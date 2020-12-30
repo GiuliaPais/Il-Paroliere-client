@@ -3,9 +3,11 @@ package uninsubria.client.customcontrols;
 import com.jfoenix.controls.JFXToggleNode;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 /**
@@ -36,15 +38,20 @@ public class DiceFaceDemo extends Application {
                 "13", "14", "15", "16"
         };
         AnchorPane anchorPane = new AnchorPane();
-        anchorPane.getStylesheets().add(getClass().getResource("/css/night_sky.css").toExternalForm());
         anchorPane.setPrefSize(400, 400);
         GameGrid gameGrid = new GameGrid(faces, dn);
+        Button button = new Button("Clear");
+        button.setOnAction(e -> gameGrid.clearSelection());
         anchorPane.getChildren().add(gameGrid);
         AnchorPane.setLeftAnchor(gameGrid, 0.0);
         AnchorPane.setRightAnchor(gameGrid, 0.0);
         AnchorPane.setTopAnchor(gameGrid, 0.0);
         AnchorPane.setBottomAnchor(gameGrid, 0.0);
-        Scene scene = new Scene(anchorPane, 600, 600);
+        VBox box = new VBox();
+        box.getChildren().add(anchorPane);
+        box.getChildren().add(button);
+        box.getStylesheets().add(getClass().getResource("/css/night_sky.css").toExternalForm());
+        Scene scene = new Scene(box, 600, 600);
         primaryStage.setScene(scene);
         primaryStage.show();
     }

@@ -250,6 +250,40 @@
 	-fx-font-family: "Arial";
 }
 
+.match-timer{
+	-fx-background-color: dark-transparent-2;
+	-fx-border-color: main-text-color;
+	-fx-border-style: solid;
+	-fx-border-width: 1px;
+	-fx-background-radius: 5px;
+	-fx-border-radius: 5px;
+}
+
+.match-header-tile{
+	-fx-background-color: white-transparent-1;
+	-fx-border-color: light3;
+	-fx-border-style: solid;
+	-fx-border-width: 1px;
+	-fx-background-radius: 5px;
+	-fx-border-radius: 5px;
+	
+}
+
+.instruction-panel{
+	-fx-background-color: dark-transparent-2;
+	-fx-background-radius: 5px;
+	-fx-padding: 20 20 20 20;
+}
+
+.instruction{
+	-fx-fill: main-text-color;
+	-fx-text-fill: main-text-color;
+}
+
+.pre-match-countdown{
+	-fx-background-color: dark-transparent-1;
+}
+
 /* Labels */
 .label{
 	-fx-text-fill: main-text-color;
@@ -274,6 +308,22 @@
 	-fx-text-fill: main-text-color;
 	-fx-font-size: 21px;
 	-fx-effect: dropshadow(one-pass-box, darkest, 10, 0.4, 2, 2);
+}
+
+.match-header-tile-value{
+	-fx-text-fill: light3;
+	-fx-fill: light3;
+}
+
+.found-word{
+	-fx-padding: 10 10 10 10;
+	-fx-background-color: dark-transparent-2;
+	-fx-background-radius: 5px;
+}
+
+.count-down-init{
+	-fx-font-size: 40px;
+	-fx-effect: dropshadow(one-pass-box, light3, 10, 0.4, 2, 2);
 }
 
 /* Glyphs fontawsomefx */
@@ -464,6 +514,39 @@
 	-jfx-rippler-fill: light1;
 }
 
+.words-listview{
+	-fx-background-color: dark-transparent-2;
+	-fx-font-family: "Arial";
+}
+
+.words-listview .cell{
+	-fx-content-display: graphic-only;
+	-fx-background-color: dark-transparent-2;
+	-fx-text-fill: main-text-color;
+}
+
+.words-listview .cell .jfx-button,
+.words-listview.cell .jfx-button:hover {
+	-fx-background-color: transparent;
+	-fx-border-width: 0;
+	-fx-background-radius: 0;
+	-fx-border-radius: 0;
+	-fx-content-display: graphic-only;
+	-fx-alignment: center;
+	-fx-text-alignment: center;
+}
+
+.words-listview .cell .label {
+	-fx-padding: 0 0 0 10;
+}
+.words-listview .cell .jfx-button:hover .glyph-font{
+	-fx-text-fill: light3;
+}
+
+.words-listview .jfx-rippler{
+	-jfx-rippler-fill: light1;
+}
+
 /* Snackbar */
 .jfx-snackbar-content {
     -fx-background-color: lightest;
@@ -632,7 +715,7 @@
 }
 
 /* Grid view game */
-.game-grid{
+.ip-game-grid{
 	-fx-background-color: dark-transparent-1;
 	-fx-background-radius: 5px;
 	-fx-border-color: main-text-color;

@@ -1,6 +1,7 @@
 package uninsubria.client.roomserver;
 
 import uninsubria.client.guicontrollers.HomeController;
+import uninsubria.client.guicontrollers.MatchController;
 import uninsubria.utils.connection.CommHolder;
 
 import java.io.IOException;
@@ -12,7 +13,7 @@ import java.net.Socket;
  * from rooms.
  *
  * @author Giulia Pais
- * @version 0.9.2
+ * @version 0.9.3
  */
 public class RoomServer extends Thread {
     /*---Fields---*/
@@ -65,6 +66,12 @@ public class RoomServer extends Thread {
             serverSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void setMatchController(MatchController controller) {
+        if (activeRoom != null) {
+            activeRoom.setMatchController(controller);
         }
     }
 }
