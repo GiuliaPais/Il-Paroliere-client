@@ -1,21 +1,24 @@
 package uninsubria.client.customcontrols;
 
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.layout.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.*;
 
 /**
  * Custom control that represents the game grid with selectable
  * dices and custom behaviour.
  *
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  */
 public class GameGrid extends GridPane {
     /*---Fields---*/
@@ -55,16 +58,35 @@ public class GameGrid extends GridPane {
 
     private final HashMap<GridIndex, DiceFace> dicePosition;
     private final HashMap<GridIndex, List<GridIndex>> adjacentNodes;
-    private ConcurrentLinkedDeque<DiceFace> selectedDices;
+    private ObservableList<DiceFace> selectedDices;
     private int last_selected_index = 0;
+    private DoubleProperty fontSize;
+    private StringProperty formedWord;
 
     /*---Constructors---*/
     public GameGrid() {
         super();
         this.dicePosition = new HashMap<>();
         this.adjacentNodes = new HashMap<>();
-        this.selectedDices = new ConcurrentLinkedDeque<>();
+        this.selectedDices = FXCollections.synchronizedObservableList(FXCollections.observableList(new LinkedList<>()));
+        this.fontSize = new SimpleDoubleProperty(18.0);
+        this.formedWord = new SimpleStringProperty("");
         initialize();
+    }
+
+    public GameGrid(String[] faces, Integer[] diceNumbers) {
+        this();
+        assert faces.length == 16 & diceNumbers.length == 16;
+        for (int i = 0; i < 16; i++) {
+            int rowIndex = i/4;
+            int columnIndex = i % 4;
+            GridIndex index = new GridIndex(rowIndex, columnIndex);
+            String face = faces[i];
+            String diceN = Integer.toString(diceNumbers[i]);
+            DiceFace df = dicePosition.get(index);
+            df.setDiceFace(face);
+            df.setDiceNumber(diceN);
+        }
     }
 
     public GameGrid(String[] faces, String[] diceNumbers) {
@@ -85,6 +107,7 @@ public class GameGrid extends GridPane {
     /*---Methods---*/
     private void initialize() {
         this.getStyleClass().add(DEFAULT_STYLE_CLASS);
+        //Initializes columns and rows of the grid
         for (int i = 0; i < 4; i++) {
             ColumnConstraints column = new ColumnConstraints();
             column.setPercentWidth(25);
@@ -97,10 +120,12 @@ public class GameGrid extends GridPane {
             row.setVgrow(Priority.ALWAYS);
             this.getRowConstraints().add(row);
         }
+        //Generates a dice face for every grid cell
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 AnchorPane anchorPane = new AnchorPane();
                 DiceFace dice = new DiceFace();
+                dice.fontSizeProperty().bind(this.fontSize);
                 anchorPane.getChildren().add(dice);
                 AnchorPane.setBottomAnchor(dice, 5.0);
                 AnchorPane.setTopAnchor(dice, 5.0);
@@ -113,6 +138,7 @@ public class GameGrid extends GridPane {
                 dice.setIndexInGrid(index);
                 dicePosition.put(index, dice);
                 List<GridIndex> adjacent = new ArrayList<>();
+                //Generates adjacency list for every position
                 switch(i) {
                      case 0 -> {
                          switch(j) {
@@ -222,15 +248,24 @@ public class GameGrid extends GridPane {
                                  adjacent.add(a5);
                                  adjacentNodes.put(index, adjacent);
                              }
+                             case 3 -> {
+                                 GridIndex a1 = new GridIndex(3, 2);
+                                 GridIndex a2 = new GridIndex(2,2);
+                                 GridIndex a3 = new GridIndex(2,3);
+                                 adjacent.add(a1);
+                                 adjacent.add(a2);
+                                 adjacent.add(a3);
+                                 adjacentNodes.put(index, adjacent);
+                             }
                          }
                      }
                 }
                 dice.selectedProperty().addListener((observable, oldValue, newValue) -> {
                     if (newValue) {
                         if (!selectedDices.isEmpty()) {
-                            selectedDices.peekFirst().setDeselectable(false);
+                            selectedDices.get(selectedDices.size()-1).setDeselectable(false);
                         }
-                        selectedDices.addFirst(dice);
+                        selectedDices.add(dice);
                         dice.setSelectedNumber(Integer.toString(++last_selected_index));
                         for (GridIndex ind : adjacentNodes.keySet()) {
                             if (!adjacentNodes.get(dice.getIndexInGrid()).contains(ind) & !ind.equals(dice.getIndexInGrid())) {
@@ -240,11 +275,11 @@ public class GameGrid extends GridPane {
                             }
                         }
                     } else if (dice.isDeselectable()) {
-                        selectedDices.removeFirst();
+                        selectedDices.remove(selectedDices.size()-1);
                         dice.setSelectedNumber("");
                         last_selected_index--;
                         if (!selectedDices.isEmpty()) {
-                            DiceFace last = selectedDices.peekFirst();
+                            DiceFace last = selectedDices.get(selectedDices.size()-1);
                             last.setDeselectable(true);
                             for (GridIndex ind : adjacentNodes.keySet()) {
                                 if (!adjacentNodes.get(last.getIndexInGrid()).contains(ind) & !ind.equals(last.getIndexInGrid())) {
@@ -262,6 +297,22 @@ public class GameGrid extends GridPane {
                 });
             }
         }
+        selectedDices.addListener((ListChangeListener<DiceFace>) c -> {
+            StringBuilder stringBuilder = new StringBuilder(formedWord.get());
+            while (c.next()) {
+                if (c.wasAdded()) {
+                    for (DiceFace df : c.getAddedSubList()) {
+                        stringBuilder.append(df.getDiceFace().getText());
+                    }
+                }
+                if (c.wasRemoved()) {
+                    for (DiceFace df : c.getRemoved()) {
+                        stringBuilder.delete((stringBuilder.length()) - df.getDiceFace().getText().length(), stringBuilder.length());
+                    }
+                }
+            }
+            formedWord.set(stringBuilder.toString().toUpperCase());
+        });
     }
 
     @Override
@@ -269,7 +320,31 @@ public class GameGrid extends GridPane {
         return this.getClass().getResource("/css/ip-game-grid.css").toExternalForm();
     }
 
-    public ConcurrentLinkedDeque<DiceFace> getSelectedDices() {
-        return selectedDices;
+    public String getFormedWord() {
+        return formedWord.get();
+    }
+
+    public StringProperty formedWordProperty() {
+        return formedWord;
+    }
+
+    public double getFontSize() {
+        return fontSize.get();
+    }
+
+    public DoubleProperty fontSizeProperty() {
+        return fontSize;
+    }
+
+    public void setFontSize(double fontSize) {
+        this.fontSize.set(fontSize);
+    }
+
+    public void clearSelection() {
+         List<DiceFace> copyOfSelected = List.copyOf(selectedDices);
+         ListIterator<DiceFace> iterator = copyOfSelected.listIterator(copyOfSelected.size());
+         while (iterator.hasPrevious()) {
+             iterator.previous().setSelected(false);
+         }
     }
 }

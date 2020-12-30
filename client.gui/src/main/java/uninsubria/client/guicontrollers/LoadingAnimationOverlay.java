@@ -10,7 +10,7 @@ import javafx.scene.layout.VBox;
 /**
  * Helper class for showing an overlay with a spinner animation while a background task is being executed.
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  */
 public class LoadingAnimationOverlay {
     /*---Fields---*/
@@ -43,6 +43,7 @@ public class LoadingAnimationOverlay {
         JFXSpinner spinner = new JFXSpinner();
         spinner.setRadius(200);
         Label label = new Label(lbl);
+        label.getStyleClass().add("game-loading-msg");
         vbox.getChildren().addAll(spinner, label);
         vbox.setAlignment(Pos.CENTER);
         vbox.setFillWidth(true);

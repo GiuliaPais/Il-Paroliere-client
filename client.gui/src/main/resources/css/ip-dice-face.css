@@ -14,17 +14,14 @@
 
 .ip-dice-face .face-label{
 	-fx-font-family: "Arial Black";
-	-fx-font-size: 18px;
 }
 
 .ip-dice-face .number-label{
 	-fx-font-family: "Arial";
-	-fx-font-size: 14px;
 }
 
 .ip-dice-face .selected-number-label{
 	-fx-font-family: "Arial Black";
-	-fx-font-size: 14px;
 }
 
 .ip-dice-face .dice-base{

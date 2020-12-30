@@ -48,6 +48,7 @@
                               <Glyph fx:id="settingsIcon" alignment="CENTER" contentDisplay="CENTER" layoutX="10.0" layoutY="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#showSettings" prefHeight="30.0" prefWidth="30.0" />
                               <Glyph fx:id="tutorialIcon" alignment="CENTER" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="30.0" />
                               <Glyph fx:id="hamburger" alignment="CENTER" contentDisplay="CENTER" layoutX="55.0" layoutY="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="30.0" />
+                              <JFXButton onAction="#matchDemo" text="MatchDemo" />
                            </children>
                         </HBox>
                         <StackPane id="profile-image" fx:id="profImage" layoutX="20.0" layoutY="20.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="100.0" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="25.0">
