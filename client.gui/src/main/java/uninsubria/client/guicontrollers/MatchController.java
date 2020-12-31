@@ -33,7 +33,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Controller for the match view.
  *
  * @author Giulia Pais
- * @version 0.9.3
+ * @version 0.9.4
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
@@ -166,7 +166,7 @@ public class MatchController extends AbstractMainController {
     public void setMatchGrid(String[] gridFaces, Integer[] gridNumb) {
         matchGrid.resetGrid(gridFaces, gridNumb);
         newMatchAvailable = true;
-        matchTimerDuration.set(activeRoom.getRuleset().getTimeToMatch());
+        timerTimeout.cancel();
     }
 
     public void setParticipants(List<String> participants) {
@@ -199,7 +199,6 @@ public class MatchController extends AbstractMainController {
     }
 
     public void setTimerMatchTimeout() {
-        timeoutTimerDuration.set(activeRoom.getRuleset().getTimeToWaitFromMatchToMatch());
         loadingScores.stopAnimation();
         readyBtn.setDisable(false);
         requestBtn.setDisable(false);
@@ -224,18 +223,12 @@ public class MatchController extends AbstractMainController {
         secondsPart.set(matchTimerDuration.getValue().toSecondsPart());
         timerMinutes.setText(minutesPart.asString("%02d").getValue());
         timerSeconds.setText(secondsPart.asString("%02d").getValue());
-        timerCountDownService.lastValueProperty().addListener((observable, oldValue, newValue) -> {
-            matchTimerDuration.set(newValue);
-        });
         matchTimerDuration.addListener((observable, oldValue, newValue) -> {
             secondsPart.set(newValue.toSecondsPart());
             minutesPart.set(newValue.toMinutesPart());
         });
         timerSeconds.textProperty().bind(secondsPart.asString("%02d"));
         timerMinutes.textProperty().bind(minutesPart.asString("%02d"));
-        timerTimeout.lastValueProperty().addListener((observable, oldValue, newValue) -> {
-            timeoutTimerDuration.set(newValue);
-        });
         timeoutTimerDuration.addListener((observable, oldValue, newValue) -> {
             timeoutSec.set(newValue.toSecondsPart());
             timeoutMin.set(newValue.toMinutesPart());
@@ -398,7 +391,9 @@ public class MatchController extends AbstractMainController {
     }
 
     //++ Initialize services ++//
+    //Service for the match timer
     private void initTimerService() {
+        matchTimerDuration.set(activeRoom.getRuleset().getTimeToMatch());
         ScheduledService<Duration> service = new ScheduledService<>() {
             @Override
             protected Task<Duration> createTask() {
@@ -428,15 +423,24 @@ public class MatchController extends AbstractMainController {
                     this.cancel();
                 }
             }
+
+            @Override
+            public boolean cancel() {
+                super.cancel();
+                loadingScores.playAnimation();
+                return true;
+            }
         };
-        service.setOnCancelled(event -> loadingScores.playAnimation());
         service.setPeriod(javafx.util.Duration.seconds(1));
         service.setDelay(javafx.util.Duration.seconds(0));
         service.setExecutor(scheduledExecutorService);
         timerCountDownService = service;
+        timerCountDownService.lastValueProperty().addListener((observable, oldValue, newValue) -> matchTimerDuration.set(newValue));
     }
 
+    //Service for the timeout timer
     private void initTimerTimeoutService() {
+        timeoutTimerDuration.set(activeRoom.getRuleset().getTimeToWaitFromMatchToMatch());
         ScheduledService<Duration> service = new ScheduledService<>() {
             @Override
             protected Task<Duration> createTask() {
@@ -466,20 +470,31 @@ public class MatchController extends AbstractMainController {
                     this.cancel();
                 }
             }
-        };
-        service.setOnCancelled(event -> {
-            if (newMatchAvailable == true) {
-                scoresOverlay.setVisible(false);
-                startingOverlay.setVisible(true);
-                startingCountDownService.start();
-            } else {
-                System.out.println("Match not set yet");
+
+            @Override
+            public boolean cancel() {
+                super.cancel();
+                if (newMatchAvailable) {
+                    scoresOverlay.setVisible(false);
+                    startingOverlay.setVisible(true);
+                    switch (startingCountDownService.getState()) {
+                        case FAILED, CANCELLED, SUCCEEDED -> {
+                            initPreCountDownService();
+                            startingCountDownService.start();
+                        }
+                        case READY, SCHEDULED -> startingCountDownService.start();
+                    }
+                } else {
+                    System.out.println("Match not set yet");
+                }
+                return true;
             }
-        });
+        };
         service.setPeriod(javafx.util.Duration.seconds(1));
         service.setDelay(javafx.util.Duration.seconds(0));
         service.setExecutor(scheduledExecutorService);
         timerTimeout = service;
+        timerTimeout.lastValueProperty().addListener((observable, oldValue, newValue) -> timeoutTimerDuration.set(newValue));
     }
 
     private void initPreCountDownService() {
@@ -525,14 +540,24 @@ public class MatchController extends AbstractMainController {
                     this.cancel();
                 }
             }
+
+            @Override
+            public boolean cancel() {
+                super.cancel();
+                startingOverlay.setVisible(false);
+                newMatchAvailable = false;
+                switch (timerCountDownService.getState()) {
+                    case FAILED, CANCELLED, SUCCEEDED -> {
+                        initTimerService();
+                        timerCountDownService.start();
+                    }
+                    case READY, SCHEDULED -> timerCountDownService.start();
+                }
+                return true;
+            }
         };
         service.setPeriod(javafx.util.Duration.seconds(1));
         service.setDelay(javafx.util.Duration.seconds(1));
-        service.setOnCancelled(event -> {
-            startingOverlay.setVisible(false);
-            newMatchAvailable = false;
-            timerCountDownService.start();
-        });
         service.setExecutor(scheduledExecutorService);
         service.lastValueProperty().addListener((observable, oldValue, newValue) -> startingCountDown.setText(newValue));
         startingCountDownService = service;
