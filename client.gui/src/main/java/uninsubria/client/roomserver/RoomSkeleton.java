@@ -3,6 +3,7 @@ package uninsubria.client.roomserver;
 import javafx.application.Platform;
 import uninsubria.client.guicontrollers.HomeController;
 import uninsubria.client.guicontrollers.MatchController;
+import uninsubria.utils.business.GameScore;
 import uninsubria.utils.connection.CommProtocolCommands;
 import uninsubria.utils.managersAPI.ProxySkeletonInterface;
 
@@ -15,7 +16,7 @@ import java.util.Objects;
  * A thread that serves as Skeleton for the lobby.
  *
  * @author Giulia Pais
- * @version 0.9.3
+ * @version 0.9.4
  */
 public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
     /*---Fields---*/
@@ -83,11 +84,29 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                 //interr
             }
             case NEW_MATCH -> {
-                System.out.println("New Match received");
                 String[] gameF = (String[]) in.readObject();
                 Integer[] gameN = (Integer[]) in.readObject();
-                homeController.setGrid(gameF, gameN);
-                System.out.println("Grid set");
+                matchController.setMatchGrid(gameF, gameN);
+            }
+            case SEND_WORDS -> {
+                String[] words = matchController.getFoundWords();
+                writeCommand(CommProtocolCommands.SEND_WORDS, words);
+            }
+            case SEND_SCORE -> {
+                GameScore scores = (GameScore) in.readObject();
+                matchController.setMatchScores(scores);
+            }
+            case TIMEOUT_MATCH -> {
+                Boolean monitor = null;
+                matchController.setTimerMatch(monitor);
+                synchronized (monitor) {
+                    try {
+                        wait(matchController.getTimeoutDuration().minusSeconds(1).toMillis());
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                writeCommand(CommProtocolCommands.TIMEOUT_MATCH);
             }
         }
     }

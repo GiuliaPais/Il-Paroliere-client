@@ -16,6 +16,7 @@
 	lightest: #FFFFFF;
 	dark-transparent-1: rgba(0,0,0,0.4);
 	dark-transparent-2: rgba(0,0,0,0.2);
+	dark-transparent-3: rgba(0,0,0,0.8);
 	white-transparent-1: rgba(255, 255, 255, 0.1);
 	white-transparent-2: rgba(255, 255, 255, 0.2);
 	color-bar-0: light3;
@@ -284,6 +285,10 @@
 	-fx-background-color: dark-transparent-1;
 }
 
+.game-scores{
+	-fx-background-color: dark-transparent-3;
+}
+
 /* Labels */
 .label{
 	-fx-text-fill: main-text-color;
@@ -325,6 +330,7 @@
 	-fx-font-size: 40px;
 	-fx-effect: dropshadow(one-pass-box, light3, 10, 0.4, 2, 2);
 }
+
 
 /* Glyphs fontawsomefx */
 .glyph-font{
@@ -976,4 +982,90 @@
 /* Progress bar */
 .jfx-progress-bar .bar{
 	-fx-background-color: light3;
+}
+
+/* Player score tiles */
+.player-score-tile{
+	-fx-background-color: transparent;
+}
+
+.player-score-tile .tile-header{
+	-fx-background-color: light2;
+	-fx-background-radius: 5 5 0 0;
+}
+
+.player-score-tile .list-view{
+	-fx-background-color: dark-transparent-1;
+}
+
+.player-score-tile .list-view .check-box-list-cell:even:filled{
+	-fx-background-color: dark-transparent-1;
+	-fx-font-family: "Arial";
+}
+
+.player-score-tile .list-view .check-box-list-cell:odd:filled{
+	-fx-background-color: dark-transparent-2;
+}
+
+.player-score-tile .list-view .check-box-list-cell:empty{
+	-fx-background-color: transparent;
+}
+
+.player-score-tile .list-view .check-box-list-cell .check-box .box{
+	-fx-background-color: dark-transparent-1;
+}
+
+.player-score-tile .list-view .check-box-list-cell .check-box:selected .box{
+	-fx-background-color: light2;
+}
+
+.player-score-tile .list-view .check-box-list-cell .check-box:selected .mark{
+	-fx-background-color: main-text-color;
+}
+
+.player-score-tile .scores{
+	-fx-background-color: dark-transparent-1;
+}
+
+/* Players scores table */
+.current-scores.table-view{
+	-fx-background-color: dark-transparent-1;
+}
+
+.current-scores.table-view .column-header-background .nested-column-header .column-header,
+.current-scores.table-view .column-header-background .nested-column-header,
+.current-scores.table-view .column-header-background .filler {
+	-fx-background-color: derive(light3, -10%);
+}
+
+.current-scores.table-view .table-cell:filled{
+	-fx-padding: 10 10 10 10;
+	-fx-background-color: transparent;
+	-fx-border-color: transparent;
+	-fx-text-fill: main-text-color;
+	-fx-font-family: "Arial";
+	-fx-alignment: center;
+	-fx-text-alignment: center;
+}
+
+
+.current-scores.table-view .table-row-cell,
+.current-scores.table-view .virtual-flow .clipped-container .sheet{
+	-fx-background-color: transparent;
+	-fx-alignment: center;
+}
+
+
+.current-scores.table-view .table-row-cell:filled:even{
+	-fx-background-color: white-transparent-1;
+}
+
+
+.current-scores.table-view .table-row-cell:filled:hover{
+	-fx-background-color: white-transparent-2;
+}
+
+.current-scores.table-view .table-cell:empty{
+	-fx-background-color: transparent;
+	-fx-border-color: transparent;
 }

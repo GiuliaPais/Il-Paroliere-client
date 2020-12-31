@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
  * Controller for the home view.
  *
  * @author Giulia Pais
- * @version 0.9.8
+ * @version 0.9.9
  */
 public class HomeController extends AbstractMainController {
     /*---Fields---*/
@@ -514,8 +514,10 @@ public class HomeController extends AbstractMainController {
             if (newValue.intValue() == 1) {
                 MatchController controller = new MatchController();
                 controller.setActiveRoom(activeLobby.get());
-                controller.setGridFaces(getMatchGridF());
-                controller.setGridNumb(getMatchGridN());
+                List<String> participants = observablePlayerList.stream()
+                        .map(l -> l.getText())
+                        .collect(Collectors.toList());
+                controller.setParticipants(participants);
                 RoomCentralManager.setMatchController(controller);
                 Parent parent;
                 try {
@@ -528,11 +530,6 @@ public class HomeController extends AbstractMainController {
         });
         long delay = Instant.now().until(startingTime, ChronoUnit.MILLIS);
         executorService.schedule(gameLoadingService, delay, TimeUnit.MILLISECONDS);
-    }
-
-    public void setGrid(String[] matchGridF, Integer[] matchGridN) {
-        this.matchGridF = matchGridF;
-        this.matchGridN = matchGridN;
     }
 
     /*----------- Private methods for initialization and scaling -----------*/
@@ -1433,20 +1430,20 @@ public class HomeController extends AbstractMainController {
         return matchGridN;
     }
 
-    @FXML void matchDemo() {
-        ObservableLobby demoLobby = ObservableLobby.toObservableLobby(new Lobby("Lobby", 2, Language.ITALIAN, Ruleset.STANDARD, Lobby.LobbyStatus.CLOSED));
-        String[] gridLett = {"R", "T", "E", "T", "M", "L", "R", "Z", "O", "R", "I", "I", "E", "P", "E", "R"};
-        Integer[] gridN = {4, 6, 14, 13, 1, 2, 7, 11, 9, 16, 12, 10, 8, 15, 3, 5};
-        MatchController controller = new MatchController();
-        controller.setActiveRoom(demoLobby);
-        controller.setGridFaces(gridLett);
-        controller.setGridNumb(gridN);
-        Parent parent;
-        try {
-            parent = requestParent(ControllerType.MATCH, controller);
-            sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+//    @FXML void matchDemo() {
+//        ObservableLobby demoLobby = ObservableLobby.toObservableLobby(new Lobby("Lobby", 2, Language.ITALIAN, Ruleset.STANDARD, Lobby.LobbyStatus.CLOSED));
+//        String[] gridLett = {"R", "T", "E", "T", "M", "L", "R", "Z", "O", "R", "I", "I", "E", "P", "E", "R"};
+//        Integer[] gridN = {4, 6, 14, 13, 1, 2, 7, 11, 9, 16, 12, 10, 8, 15, 3, 5};
+//        MatchController controller = new MatchController();
+//        controller.setActiveRoom(demoLobby);
+//        controller.setGridFaces(gridLett);
+//        controller.setGridNumb(gridN);
+//        Parent parent;
+//        try {
+//            parent = requestParent(ControllerType.MATCH, controller);
+//            sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 }
