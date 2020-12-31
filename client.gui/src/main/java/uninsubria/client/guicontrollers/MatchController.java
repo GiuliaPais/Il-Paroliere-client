@@ -17,11 +17,13 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import uninsubria.client.customcontrols.GameGrid;
-import uninsubria.client.customcontrols.PlayerScoreTile;
+import uninsubria.client.gui.Launcher;
 import uninsubria.client.gui.ObservableLobby;
+import uninsubria.client.roomserver.TimeoutMonitor;
 import uninsubria.utils.business.GameScore;
 import uninsubria.utils.business.Word;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -31,7 +33,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Controller for the match view.
  *
  * @author Giulia Pais
- * @version 0.9.2
+ * @version 0.9.3
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
@@ -69,7 +71,7 @@ public class MatchController extends AbstractMainController {
     private StringProperty winnerName;
 
     //++ For timeout synch ++//
-    private Boolean monitor;
+    private TimeoutMonitor monitor;
 
     /*---Constructors---*/
     public MatchController() {
@@ -104,14 +106,18 @@ public class MatchController extends AbstractMainController {
         initZeroScores();
         initGameGrid();
         initTimerService();
+        initTimerTimeoutService();
         initTimerBindings();
         initHeaderLabels();
         bindLocalizedLabels();
         initWordsList();
         initInstructions();
         initPreCountDownService();
-        initScoresOverlay();
-        initTimerTimeoutService();
+        try {
+            initScoresOverlay();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         startingCountDownService.start();
     }
 
@@ -130,9 +136,7 @@ public class MatchController extends AbstractMainController {
     }
 
     @FXML void setReady() {
-        synchronized (monitor) {
-            notify();
-        }
+        monitor.signalReady();
         readyBtn.setDisable(true);
         requestBtn.setDisable(true);
     }
@@ -153,6 +157,10 @@ public class MatchController extends AbstractMainController {
 
     public void setActiveRoom(ObservableLobby activeRoom) {
         this.activeRoom = activeRoom;
+    }
+
+    public void setMonitor(TimeoutMonitor monitor) {
+        this.monitor = monitor;
     }
 
     public void setMatchGrid(String[] gridFaces, Integer[] gridNumb) {
@@ -190,13 +198,23 @@ public class MatchController extends AbstractMainController {
         winnerName.set(gameScore.getWinner());
     }
 
-    public void setTimerMatch(Boolean monitor) {
-        this.monitor = monitor;
+    public void setTimerMatchTimeout() {
+        timeoutTimerDuration.set(activeRoom.getRuleset().getTimeToWaitFromMatchToMatch());
+        loadingScores.stopAnimation();
+        readyBtn.setDisable(false);
+        requestBtn.setDisable(false);
+        scoresOverlay.setVisible(true);
         timerTimeout.start();
     }
 
     public Duration getTimeoutDuration() {
         return activeRoom.getRuleset().getTimeToWaitFromMatchToMatch();
+    }
+
+    @Override
+    protected void scaleFontSize(double after) {
+        super.scaleFontSize(after);
+        scoresOverlay.setStyle("-fx-font-size: "+ currentFontSize.get() + "px;");
     }
 
     /*----------- Private methods for initialization and scaling -----------*/
@@ -215,6 +233,9 @@ public class MatchController extends AbstractMainController {
         });
         timerSeconds.textProperty().bind(secondsPart.asString("%02d"));
         timerMinutes.textProperty().bind(minutesPart.asString("%02d"));
+        timerTimeout.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+            timeoutTimerDuration.set(newValue);
+        });
         timeoutTimerDuration.addListener((observable, oldValue, newValue) -> {
             timeoutSec.set(newValue.toSecondsPart());
             timeoutMin.set(newValue.toMinutesPart());
@@ -293,15 +314,31 @@ public class MatchController extends AbstractMainController {
         proposedMatchWords = zeroWords;
     }
 
-    private void initScoresOverlay() {
+    private void initScoresOverlay() throws IOException {
         for (String player :  participants) {
             PlayerScoreTile tile = new PlayerScoreTile();
             tile.setFontSize(currentFontSize.get());
+            currentFontSize.addListener((observable, oldValue, newValue) -> {
+                tile.setFontSize(newValue.doubleValue());
+            });
             tile.setPlayer(player);
-            tile.gameScoreProperty().bind(gameScores.get(player));
-            tile.wordListProperty().bind(proposedMatchWords.get(player));
-            tile.matchScoreProperty().bind(lastMatchScores.get(player));
-            tilePane.getChildren().add(tile);
+            gameScores.get(player).addListener((observable, oldValue, newValue) -> {
+                tile.setGameScore(newValue.intValue());
+            });
+            proposedMatchWords.get(player).addListener((observable, oldValue, newValue) -> {
+                tile.setWordList(newValue);
+            });
+            lastMatchScores.get(player).addListener((observable, oldValue, newValue) -> {
+                tile.setMatchScore(newValue.intValue());
+            });
+            StackPane tileRoot = newPlayerScoreTile(tile);
+            tilePane.prefTileHeightProperty().addListener((observable, oldValue, newValue) -> {
+                tileRoot.setPrefHeight(newValue.doubleValue());
+            });
+            tilePane.prefTileWidthProperty().addListener((observable, oldValue, newValue) -> {
+                tileRoot.setPrefWidth(newValue.doubleValue());
+            });
+            tilePane.getChildren().add(tileRoot);
         }
     }
 
@@ -356,6 +393,10 @@ public class MatchController extends AbstractMainController {
         clearBtn.textProperty().bind(clearTxt);
     }
 
+    private StackPane newPlayerScoreTile(PlayerScoreTile tileController) throws IOException {
+        return Launcher.contrManager.loadPlayerScoreTile(ControllerType.SCORE_TILE.getFile(), tileController);
+    }
+
     //++ Initialize services ++//
     private void initTimerService() {
         ScheduledService<Duration> service = new ScheduledService<>() {
@@ -389,9 +430,6 @@ public class MatchController extends AbstractMainController {
             }
         };
         service.setOnCancelled(event -> loadingScores.playAnimation());
-        service.setOnScheduled(event -> {
-            newMatchAvailable = false;
-        });
         service.setPeriod(javafx.util.Duration.seconds(1));
         service.setDelay(javafx.util.Duration.seconds(0));
         service.setExecutor(scheduledExecutorService);
@@ -437,13 +475,6 @@ public class MatchController extends AbstractMainController {
             } else {
                 System.out.println("Match not set yet");
             }
-        });
-        service.setOnScheduled(event -> {
-            timeoutTimerDuration.set(activeRoom.getRuleset().getTimeToWaitFromMatchToMatch());
-            loadingScores.stopAnimation();
-            readyBtn.setDisable(false);
-            requestBtn.setDisable(false);
-            scoresOverlay.setVisible(true);
         });
         service.setPeriod(javafx.util.Duration.seconds(1));
         service.setDelay(javafx.util.Duration.seconds(0));
@@ -499,6 +530,7 @@ public class MatchController extends AbstractMainController {
         service.setDelay(javafx.util.Duration.seconds(1));
         service.setOnCancelled(event -> {
             startingOverlay.setVisible(false);
+            newMatchAvailable = false;
             timerCountDownService.start();
         });
         service.setExecutor(scheduledExecutorService);

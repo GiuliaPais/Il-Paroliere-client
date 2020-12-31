@@ -1,34 +1,26 @@
-package uninsubria.client.customcontrols;
+package uninsubria.client.guicontrollers;
 
+import com.jfoenix.controls.JFXListView;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
-import org.controlsfx.control.CheckListView;
-import uninsubria.client.gui.Launcher;
-import uninsubria.client.guicontrollers.ControllerType;
+import uninsubria.client.gui.Controller;
 import uninsubria.utils.business.Word;
-import uninsubria.utils.languages.Language;
-import uninsubria.utils.languages.LanguageManager;
 
-import java.io.IOException;
-import java.net.URL;
+import java.util.ResourceBundle;
 
 /**
  * Custom object that represents a tile for displaying the score of a player.
  *
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  */
-public class PlayerScoreTile extends StackPane {
+public class PlayerScoreTile implements Controller {
     /*---Fields---*/
-    private final URL fxmlFile = getClass().getResource("/fxml/" + ControllerType.SCORE_TILE.getFile());
-
     @FXML Label playerID, matchScoreTitle, gameScoreTitle, matchScoreValue, gameScoreValue;
-    @FXML CheckListView<Word> wordListView;
+    @FXML JFXListView<Word> wordListView;
 
     private ListProperty<Word> wordList;
     private IntegerProperty matchScore, gameScore;
@@ -46,20 +38,20 @@ public class PlayerScoreTile extends StackPane {
 
     /*---Methods---*/
     public void initialize() {
-        loadFxml();
         playerID.setText(player.get());
+        playerID.setStyle("-fx-font-size: " + (fontSize.doubleValue() + 5) + ";");
         playerID.textProperty().bind(player);
         matchScoreValue.textProperty().bind(matchScore.asString());
         gameScoreValue.textProperty().bind(gameScore.asString());
         fontSize.addListener((observable, oldValue, newValue) -> {
-            playerID.setStyle("-fx-font-size: " + (newValue.doubleValue() + 3) + ";");
-            matchScoreValue.setStyle("-fx-font-size: " + newValue.doubleValue()+ ";");
-            gameScoreValue.setStyle("-fx-font-size: " + newValue.doubleValue()+ ";");
-            matchScoreTitle.setStyle("-fx-font-size: " + newValue.doubleValue()+ ";");
-            gameScoreTitle.setStyle("-fx-font-size: " + newValue.doubleValue()+ ";");
-            wordListView.setStyle("-fx-font-size: " + newValue.doubleValue()+ ";");
+            playerID.setStyle("-fx-font-size: " + (newValue.doubleValue() + 5) + ";");
         });
         wordListView.itemsProperty().bind(wordList);
+        wordListView.setCellFactory(param -> {
+            ScoreWordsListCell cell = new ScoreWordsListCell();
+            cell.fontSizeProperty().bind(fontSize);
+            return cell;
+        });
     }
 
     public ObservableList<Word> getWordList() {
@@ -122,18 +114,12 @@ public class PlayerScoreTile extends StackPane {
         this.fontSize.set(fontSize);
     }
 
-    public CheckListView<Word> getWordListView() {
+    public JFXListView<Word> getWordListView() {
         return wordListView;
     }
 
-    private void loadFxml() {
-        FXMLLoader loader = new FXMLLoader(fxmlFile, Launcher.contrManager.getBundleValue());
-        loader.setRoot(this);
-        loader.setController(this);
-        try {
-            loader.load();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    @Override
+    public void setTextResources(ResourceBundle resBundle) {
+
     }
 }

@@ -8,6 +8,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Screen;
 import uninsubria.client.guicontrollers.ControllerType;
 import uninsubria.client.guicontrollers.Theme;
@@ -23,7 +24,7 @@ import java.util.prefs.Preferences;
 /**
  * Central class for coordinating GUI controllers.
  * @author Giulia Pais
- * @version 0.9.3
+ * @version 0.9.4
  *
  */
 public class ControllerManager {
@@ -161,7 +162,27 @@ public class ControllerManager {
 		root.getStylesheets().add(theme);
 		return root;
 	}
-	
+
+	/**
+	 * Loads a player tile fxml with the given controller.
+	 *
+	 * @param fxmlPath   the fxml path
+	 * @param controller the controller
+	 * @return the stack pane
+	 * @throws IOException the io exception
+	 */
+	public StackPane loadPlayerScoreTile(String fxmlPath, Controller controller) throws IOException {
+		StackPane stackPane = new StackPane();
+		FXMLLoader loader = new FXMLLoader(getClass().getResource(FXML_PATH + fxmlPath), bundle.get());
+		loader.setController(controller);
+		loader.setRoot(stackPane);
+		StackPane root = loader.load();
+		String theme = getAppTheme();
+		root.getStylesheets().clear();
+		root.getStylesheets().add(theme);
+		return root;
+	}
+
 	/**
 	 * Writes preferences in store.
 	 * @throws BackingStoreException
