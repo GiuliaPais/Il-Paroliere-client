@@ -10,6 +10,7 @@ import uninsubria.utils.managersAPI.ProxySkeletonInterface;
 import java.io.*;
 import java.net.Socket;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Objects;
 
 /**
@@ -96,11 +97,12 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                 }
             }
             case SEND_WORDS -> {
-                String[] words = matchController.getFoundWords();
+                ArrayList<String> words = matchController.getFoundWords();
                 writeCommand(CommProtocolCommands.SEND_WORDS, words);
             }
             case SEND_SCORE -> {
                 GameScore scores = (GameScore) in.readObject();
+                System.out.println("Scores read from socket");
                 matchController.setMatchScores(scores);
             }
             case TIMEOUT_MATCH -> {

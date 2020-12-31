@@ -23,10 +23,7 @@ import uninsubria.utils.business.GameScore;
 import uninsubria.utils.business.Word;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -173,8 +170,10 @@ public class MatchController extends AbstractMainController {
         this.gridNumb = gridNumb;
     }
 
-    public String[] getFoundWords() {
-        return wordFoundList.toArray(new String[wordFoundList.size()]);
+    public ArrayList<String> getFoundWords() {
+        ArrayList<String> words = new ArrayList<>();
+        words.addAll(wordFoundList.get());
+        return words;
     }
 
     public void setMatchScores(GameScore gameScore) {
