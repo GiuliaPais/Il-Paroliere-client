@@ -128,8 +128,7 @@ public class HomeController extends AbstractMainController {
     private ObservableList<WGPTuple> wordGamePointsList;
     private XYChart.Series<String, Number> turnSeries1, turnSeries2, turnSeries3;
 
-    private String[] matchGridF;
-    private Integer[] matchGridN;
+    private MatchController nextGameController;
 
     //+++ Services, tasks, loading +++//
     //only one task at time
@@ -512,16 +511,13 @@ public class HomeController extends AbstractMainController {
     public void gameStarting(Instant startingTime) {
         gameLoadingService.progressProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue.intValue() == 1) {
-                MatchController controller = new MatchController();
-                controller.setActiveRoom(activeLobby.get());
                 List<String> participants = observablePlayerList.stream()
                         .map(l -> l.getText())
                         .collect(Collectors.toList());
-                controller.setParticipants(participants);
-                RoomCentralManager.setMatchController(controller);
+                nextGameController.setParticipants(participants);
                 Parent parent;
                 try {
-                    parent = requestParent(ControllerType.MATCH, controller);
+                    parent = requestParent(ControllerType.MATCH, nextGameController);
                     sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -531,6 +527,15 @@ public class HomeController extends AbstractMainController {
         long delay = Instant.now().until(startingTime, ChronoUnit.MILLIS);
         executorService.schedule(gameLoadingService, delay, TimeUnit.MILLISECONDS);
     }
+
+    public void setNewGameController(MatchController matchController) {
+        this.nextGameController = matchController;
+    }
+
+    public ObservableLobby getActiveLobby() {
+        return activeLobby.get();
+    }
+
 
     /*----------- Private methods for initialization and scaling -----------*/
     @Override

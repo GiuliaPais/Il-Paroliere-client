@@ -17,6 +17,6 @@ module uninsubria.client.gui {
 
     opens uninsubria.client.gui to javafx.fxml;
     opens uninsubria.client.guicontrollers to javafx.fxml;
-    opens uninsubria.client.customcontrols to javafx.graphics;
-    exports uninsubria.client.gui;
+	opens uninsubria.client.customcontrols to javafx.graphics, javafx.fxml;
+	exports uninsubria.client.gui;
 }

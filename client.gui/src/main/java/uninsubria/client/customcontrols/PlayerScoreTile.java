@@ -11,6 +11,8 @@ import org.controlsfx.control.CheckListView;
 import uninsubria.client.gui.Launcher;
 import uninsubria.client.guicontrollers.ControllerType;
 import uninsubria.utils.business.Word;
+import uninsubria.utils.languages.Language;
+import uninsubria.utils.languages.LanguageManager;
 
 import java.io.IOException;
 import java.net.URL;
@@ -25,8 +27,8 @@ public class PlayerScoreTile extends StackPane {
     /*---Fields---*/
     private final URL fxmlFile = getClass().getResource("/fxml/" + ControllerType.SCORE_TILE.getFile());
 
-    @FXML private Label playerID, matchScoreTitle, gameScoreTitle, matchScoreValue, gameScoreValue;
-    @FXML private CheckListView<Word> wordListView;
+    @FXML Label playerID, matchScoreTitle, gameScoreTitle, matchScoreValue, gameScoreValue;
+    @FXML CheckListView<Word> wordListView;
 
     private ListProperty<Word> wordList;
     private IntegerProperty matchScore, gameScore;
@@ -35,16 +37,17 @@ public class PlayerScoreTile extends StackPane {
 
     /*---Constructors---*/
     public PlayerScoreTile() {
-        loadFxml();
         wordList = new SimpleListProperty<>(FXCollections.observableArrayList());
-        player = new SimpleStringProperty();
-        matchScore = new SimpleIntegerProperty();
-        gameScore = new SimpleIntegerProperty();
+        player = new SimpleStringProperty("player");
+        matchScore = new SimpleIntegerProperty(0);
+        gameScore = new SimpleIntegerProperty(0);
         fontSize = new SimpleDoubleProperty(16.0);
     }
 
     /*---Methods---*/
     public void initialize() {
+        loadFxml();
+        playerID.setText(player.get());
         playerID.textProperty().bind(player);
         matchScoreValue.textProperty().bind(matchScore.asString());
         gameScoreValue.textProperty().bind(gameScore.asString());

@@ -86,7 +86,14 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
             case NEW_MATCH -> {
                 String[] gameF = (String[]) in.readObject();
                 Integer[] gameN = (Integer[]) in.readObject();
-                matchController.setMatchGrid(gameF, gameN);
+                if (this.matchController == null) {
+                    matchController = new MatchController();
+                    matchController.setActiveRoom(homeController.getActiveLobby());
+                    matchController.setFirstMatchGrid(gameF, gameN);
+                    homeController.setNewGameController(matchController);
+                } else{
+                    matchController.setMatchGrid(gameF, gameN);
+                }
             }
             case SEND_WORDS -> {
                 String[] words = matchController.getFoundWords();

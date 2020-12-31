@@ -159,14 +159,18 @@ public class MatchController extends AbstractMainController {
     }
 
     public void setMatchGrid(String[] gridFaces, Integer[] gridNumb) {
-        this.gridFaces = gridFaces;
-        this.gridNumb = gridNumb;
         matchGrid.resetGrid(gridFaces, gridNumb);
         newMatchAvailable = true;
+        matchTimerDuration.set(activeRoom.getRuleset().getTimeToMatch());
     }
 
     public void setParticipants(List<String> participants) {
         this.participants = participants;
+    }
+
+    public void setFirstMatchGrid(String[] gridFaces, Integer[] gridNumb) {
+        this.gridFaces = gridFaces;
+        this.gridNumb = gridNumb;
     }
 
     public String[] getFoundWords() {
@@ -221,8 +225,7 @@ public class MatchController extends AbstractMainController {
     }
 
     private void initGameGrid() {
-//        matchGrid = new GameGrid(gridFaces, gridNumb);
-        matchGrid = new GameGrid();
+        matchGrid = new GameGrid(gridFaces, gridNumb);
         matchGrid.setFontSize(currentFontSize.get());
         matchGrid.fontSizeProperty().bind(currentFontSize);
         gameGrid.getChildren().add(matchGrid);
@@ -388,7 +391,6 @@ public class MatchController extends AbstractMainController {
         };
         service.setOnCancelled(event -> loadingScores.playAnimation());
         service.setOnScheduled(event -> {
-            matchTimerDuration.set(activeRoom.getRuleset().getTimeToMatch());
             newMatchAvailable = false;
         });
         service.setPeriod(javafx.util.Duration.seconds(1));
