@@ -1422,28 +1422,4 @@ public class HomeController extends AbstractMainController {
         };
     }
 
-    private String[] getMatchGridF() {
-        return matchGridF;
-    }
-
-    private Integer[] getMatchGridN() {
-        return matchGridN;
-    }
-
-//    @FXML void matchDemo() {
-//        ObservableLobby demoLobby = ObservableLobby.toObservableLobby(new Lobby("Lobby", 2, Language.ITALIAN, Ruleset.STANDARD, Lobby.LobbyStatus.CLOSED));
-//        String[] gridLett = {"R", "T", "E", "T", "M", "L", "R", "Z", "O", "R", "I", "I", "E", "P", "E", "R"};
-//        Integer[] gridN = {4, 6, 14, 13, 1, 2, 7, 11, 9, 16, 12, 10, 8, 15, 3, 5};
-//        MatchController controller = new MatchController();
-//        controller.setActiveRoom(demoLobby);
-//        controller.setGridFaces(gridLett);
-//        controller.setGridNumb(gridN);
-//        Parent parent;
-//        try {
-//            parent = requestParent(ControllerType.MATCH, controller);
-//            sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
 }
