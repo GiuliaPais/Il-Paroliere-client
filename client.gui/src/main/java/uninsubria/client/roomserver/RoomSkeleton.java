@@ -17,7 +17,7 @@ import java.util.Objects;
  * A thread that serves as Skeleton for the lobby.
  *
  * @author Giulia Pais
- * @version 0.9.7
+ * @version 0.9.8
  */
 public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
     /*---Fields---*/
@@ -84,7 +84,7 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                 Platform.runLater(() -> homeController.gameStarting(timerStartingTime));
             }
             case INTERRUPT_GAME -> {
-                //interr
+                matchController.interruptGame();
             }
             case NEW_MATCH -> {
                 String[] gameF = (String[]) in.readObject();

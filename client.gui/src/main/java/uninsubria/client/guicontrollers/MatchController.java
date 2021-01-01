@@ -22,6 +22,7 @@ import javafx.scene.text.TextFlow;
 import uninsubria.client.customcontrols.GameGrid;
 import uninsubria.client.gui.Launcher;
 import uninsubria.client.gui.ObservableLobby;
+import uninsubria.client.roomserver.RoomCentralManager;
 import uninsubria.client.roomserver.TimeoutMonitor;
 import uninsubria.utils.business.GameScore;
 import uninsubria.utils.business.Word;
@@ -31,12 +32,13 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Controller for the match view.
  *
  * @author Giulia Pais
- * @version 0.9.6
+ * @version 0.9.7
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
@@ -64,7 +66,7 @@ public class MatchController extends AbstractMainController {
     private IntegerProperty minutesPart, secondsPart, playerScore, matchNumber, timeoutMin, timeoutSec;
     private ScheduledService<Duration> timerCountDownService, timerTimeout;
     private StringProperty currScoreTxt, wordListTxt, leaveGameTxt, insertTxt, clearTxt, instr1, instr2, instr3, instr4,
-                            loadingScoresTxt;
+                            loadingScoresTxt, gameInterrBody;
     private ListProperty<String> wordFoundList;
     private ScheduledService<String> startingCountDownService;
     private ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
@@ -78,6 +80,9 @@ public class MatchController extends AbstractMainController {
 
     //++ For timeout synch ++//
     private TimeoutMonitor monitor;
+
+    //++ For interrupt ++//
+    private boolean interrupted = false;
 
     /*---Constructors---*/
     public MatchController() {
@@ -103,6 +108,7 @@ public class MatchController extends AbstractMainController {
         this.timeoutSec = new SimpleIntegerProperty();
         this.gameScores = new SimpleMapProperty<>();
         this.scoresListTable = new SimpleListProperty<>();
+        this.gameInterrBody = new SimpleStringProperty();
     }
 
     /*---Methods---*/
@@ -163,6 +169,7 @@ public class MatchController extends AbstractMainController {
         instr3.set("\u2727 " + resBundle.getString("instructions_clear") + "\n\n");
         instr4.set("\u2727 " + resBundle.getString("instructions_delete") + "\n\n");
         loadingScoresTxt.set(resBundle.getString("loading_scores"));
+        gameInterrBody.set(resBundle.getString("game_interr_body"));
     }
 
     public void setActiveRoom(ObservableLobby activeRoom) {
@@ -242,6 +249,28 @@ public class MatchController extends AbstractMainController {
 
     public void setHomeReference(HomeController homeReference) {
         this.homeReference = homeReference;
+    }
+
+    @FXML void leaveGame() throws IOException {
+        Launcher.manager.leaveRoom(activeRoom.getRoomId());
+        RoomCentralManager.stopRoom();
+        RoomCentralManager.stopRoomServer();
+        HomeController home = new HomeController();
+        Parent parent = requestParent(ControllerType.HOME_VIEW, home);
+        sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM);
+    }
+
+    public void interruptGame() {
+        interrupted = true;
+        scheduledExecutorService.shutdown();
+        notification(gameInterrBody.get(), javafx.util.Duration.seconds(5));
+        try {
+            Parent p = requestParent(ControllerType.HOME_VIEW, homeReference);
+            scheduledExecutorService.awaitTermination(5, TimeUnit.SECONDS);
+            sceneTransitionAnimation(p, SlideDirection.TO_BOTTOM);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     /*----------- Private methods for initialization and scaling -----------*/
@@ -470,7 +499,9 @@ public class MatchController extends AbstractMainController {
             @Override
             public boolean cancel() {
                 super.cancel();
-                loadingScoresOverlay.setVisible(true);
+                if (!interrupted) {
+                    loadingScoresOverlay.setVisible(true);
+                }
                 return true;
             }
         };
@@ -517,28 +548,30 @@ public class MatchController extends AbstractMainController {
             @Override
             public boolean cancel() {
                 super.cancel();
-                if (newMatchAvailable) {
-                    scoresOverlay.setVisible(false);
-                    startingOverlay.setVisible(true);
-                    switch (startingCountDownService.getState()) {
-                        case FAILED, CANCELLED, SUCCEEDED -> {
-                            initPreCountDownService();
-                            startingCountDownService.start();
+                if (!interrupted) {
+                    if (newMatchAvailable) {
+                        scoresOverlay.setVisible(false);
+                        startingOverlay.setVisible(true);
+                        switch (startingCountDownService.getState()) {
+                            case FAILED, CANCELLED, SUCCEEDED -> {
+                                initPreCountDownService();
+                                startingCountDownService.start();
+                            }
+                            case READY, SCHEDULED -> startingCountDownService.start();
                         }
-                        case READY, SCHEDULED -> startingCountDownService.start();
-                    }
-                } else {
-                    winnerOverlay.setVisible(true);
-                    try {
-                        Thread.sleep(Duration.ofSeconds(10).toMillis());
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        Parent parent = requestParent(ControllerType.HOME_VIEW, homeReference);
-                        sceneTransitionAnimation(parent, SlideDirection.TO_RIGHT);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    } else {
+                        winnerOverlay.setVisible(true);
+                        try {
+                            Thread.sleep(Duration.ofSeconds(10).toMillis());
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            Parent parent = requestParent(ControllerType.HOME_VIEW, homeReference);
+                            sceneTransitionAnimation(parent, SlideDirection.TO_RIGHT);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
                 return true;
@@ -598,14 +631,16 @@ public class MatchController extends AbstractMainController {
             @Override
             public boolean cancel() {
                 super.cancel();
-                startingOverlay.setVisible(false);
-                newMatchAvailable = false;
-                switch (timerCountDownService.getState()) {
-                    case FAILED, CANCELLED, SUCCEEDED -> {
-                        initTimerService();
-                        timerCountDownService.start();
+                if (!interrupted) {
+                    startingOverlay.setVisible(false);
+                    newMatchAvailable = false;
+                    switch (timerCountDownService.getState()) {
+                        case FAILED, CANCELLED, SUCCEEDED -> {
+                            initTimerService();
+                            timerCountDownService.start();
+                        }
+                        case READY, SCHEDULED -> timerCountDownService.start();
                     }
-                    case READY, SCHEDULED -> timerCountDownService.start();
                 }
                 return true;
             }

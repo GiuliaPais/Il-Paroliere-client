@@ -10,7 +10,7 @@ import java.net.Socket;
  * Manager for communication with the room.
  *
  * @author Giulia Pais
- * @version 0.9.3
+ * @version 0.9.4
  */
 public class RoomCentralManager {
     /*---Fields---*/
@@ -32,6 +32,9 @@ public class RoomCentralManager {
     public static void startRoomServer(HomeController controller) throws IOException {
         if (getInstance().roomServer == null) {
             getInstance().roomServer = new RoomServer(controller);
+        } else {
+            getInstance().roomServer.setHomeController(controller);
+            getInstance().roomServer.setMatchController(null);
         }
     }
 
