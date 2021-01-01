@@ -3,19 +3,21 @@ package uninsubria.client.roomserver;
 import javafx.application.Platform;
 import uninsubria.client.guicontrollers.HomeController;
 import uninsubria.client.guicontrollers.MatchController;
+import uninsubria.utils.business.GameScore;
 import uninsubria.utils.connection.CommProtocolCommands;
 import uninsubria.utils.managersAPI.ProxySkeletonInterface;
 
 import java.io.*;
 import java.net.Socket;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Objects;
 
 /**
  * A thread that serves as Skeleton for the lobby.
  *
  * @author Giulia Pais
- * @version 0.9.3
+ * @version 0.9.6
  */
 public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
     /*---Fields---*/
@@ -25,11 +27,13 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
     private HomeController homeController;
     private MatchController matchController;
     private Instant timerStartingTime;
+    private TimeoutMonitor timeoutMonitor;
 
     /*---Constructors---*/
     public RoomSkeleton(Socket roomClient, HomeController homeController) {
         this.roomClient = roomClient;
         this.homeController = homeController;
+        this.timeoutMonitor = new TimeoutMonitor();
         start();
     }
 
@@ -83,11 +87,35 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                 //interr
             }
             case NEW_MATCH -> {
-                System.out.println("New Match received");
                 String[] gameF = (String[]) in.readObject();
                 Integer[] gameN = (Integer[]) in.readObject();
-                homeController.setGrid(gameF, gameN);
-                System.out.println("Grid set");
+                if (this.matchController == null) {
+                    matchController = new MatchController();
+                    matchController.setActiveRoom(homeController.getActiveLobby());
+                    matchController.setFirstMatchGrid(gameF, gameN);
+                    matchController.setMonitor(timeoutMonitor);
+                    homeController.setNewGameController(matchController);
+                } else{
+                    Platform.runLater(() -> matchController.setMatchGrid(gameF, gameN));
+                    timeoutMonitor.reset();
+                }
+            }
+            case SEND_WORDS -> {
+                ArrayList<String> words = matchController.getFoundWords();
+                writeCommand(CommProtocolCommands.SEND_WORDS, words);
+            }
+            case SEND_SCORE -> {
+                GameScore scores = (GameScore) in.readObject();
+                Platform.runLater(() -> matchController.setMatchScores(scores));
+            }
+            case TIMEOUT_MATCH -> {
+                Platform.runLater(() -> matchController.setTimerMatchTimeout());
+                try {
+                    timeoutMonitor.isReady(matchController.getTimeoutDuration().minusSeconds(2));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                writeCommand(CommProtocolCommands.TIMEOUT_MATCH);
             }
         }
     }

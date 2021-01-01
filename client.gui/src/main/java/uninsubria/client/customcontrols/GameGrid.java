@@ -18,7 +18,7 @@ import java.util.*;
  * dices and custom behaviour.
  *
  * @author Giulia Pais
- * @version 0.9.2
+ * @version 0.9.3
  */
 public class GameGrid extends GridPane {
     /*---Fields---*/
@@ -77,16 +77,7 @@ public class GameGrid extends GridPane {
     public GameGrid(String[] faces, Integer[] diceNumbers) {
         this();
         assert faces.length == 16 & diceNumbers.length == 16;
-        for (int i = 0; i < 16; i++) {
-            int rowIndex = i/4;
-            int columnIndex = i % 4;
-            GridIndex index = new GridIndex(rowIndex, columnIndex);
-            String face = faces[i];
-            String diceN = Integer.toString(diceNumbers[i]);
-            DiceFace df = dicePosition.get(index);
-            df.setDiceFace(face);
-            df.setDiceNumber(diceN);
-        }
+        resetGrid(faces, diceNumbers);
     }
 
     public GameGrid(String[] faces, String[] diceNumbers) {
@@ -346,5 +337,19 @@ public class GameGrid extends GridPane {
          while (iterator.hasPrevious()) {
              iterator.previous().setSelected(false);
          }
+    }
+
+    public void resetGrid(String[] faces, Integer[] numbers) {
+        assert faces.length == 16 & numbers.length == 16;
+        for (int i = 0; i < 16; i++) {
+            int rowIndex = i/4;
+            int columnIndex = i % 4;
+            GridIndex index = new GridIndex(rowIndex, columnIndex);
+            String face = faces[i];
+            String diceN = Integer.toString(numbers[i]);
+            DiceFace df = dicePosition.get(index);
+            df.setDiceFace(face);
+            df.setDiceNumber(diceN);
+        }
     }
 }

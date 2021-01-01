@@ -15,7 +15,7 @@ import org.controlsfx.glyphfont.Glyph;
  * Represents the list cell for the word list in match view.
  *
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  */
 public class WordListCell extends JFXListCell<String> {
     /*---Fields---*/
@@ -47,11 +47,11 @@ public class WordListCell extends JFXListCell<String> {
     }
 
     @Override
-    protected void updateItem(String address, boolean empty) {
-        super.updateItem(address, empty);
+    protected void updateItem(String word, boolean empty) {
+        super.updateItem(word, empty);
         setText(null);
-        if (address != null && !empty) {
-            content.setText(address);
+        if (word != null && !empty) {
+            content.setText(word);
             setGraphic(anchorPane);
         } else {
             setGraphic(null);
