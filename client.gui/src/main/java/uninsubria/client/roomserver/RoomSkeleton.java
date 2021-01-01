@@ -84,6 +84,7 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                 Platform.runLater(() -> homeController.gameStarting(timerStartingTime));
             }
             case INTERRUPT_GAME -> {
+                System.out.println("Interrupt received");
                 matchController.interruptGame();
             }
             case NEW_MATCH -> {
@@ -111,6 +112,7 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                 Platform.runLater(() -> matchController.setMatchScores(scores));
             }
             case TIMEOUT_MATCH -> {
+                System.out.println("Received timeout");
                 Platform.runLater(() -> matchController.setTimerMatchTimeout());
                 try {
                     timeoutMonitor.isReady(matchController.getTimeoutDuration().minusSeconds(2));

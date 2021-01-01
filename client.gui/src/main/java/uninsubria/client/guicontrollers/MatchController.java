@@ -2,10 +2,12 @@ package uninsubria.client.guicontrollers;
 
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXListView;
+import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.concurrent.ScheduledService;
+import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
@@ -83,6 +85,7 @@ public class MatchController extends AbstractMainController {
 
     //++ For interrupt ++//
     private boolean interrupted = false;
+    private boolean leaving = false;
 
     /*---Constructors---*/
     public MatchController() {
@@ -251,16 +254,13 @@ public class MatchController extends AbstractMainController {
         this.homeReference = homeReference;
     }
 
-    @FXML void leaveGame() throws IOException {
-        Launcher.manager.leaveRoom(activeRoom.getRoomId());
-        RoomCentralManager.stopRoom();
-        RoomCentralManager.stopRoomServer();
-        HomeController home = new HomeController();
-        Parent parent = requestParent(ControllerType.HOME_VIEW, home);
-        sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM);
+    @FXML void leaveGame() {
+        leaving = true;
+        timerCountDownService.cancel();
     }
 
     public void interruptGame() {
+        System.out.println("Entered interrupt");
         interrupted = true;
         scheduledExecutorService.shutdown();
         notification(gameInterrBody.get(), javafx.util.Duration.seconds(5));
@@ -499,8 +499,31 @@ public class MatchController extends AbstractMainController {
             @Override
             public boolean cancel() {
                 super.cancel();
-                if (!interrupted) {
+                if (!interrupted & !leaving) {
                     loadingScoresOverlay.setVisible(true);
+                } else if (leaving) {
+                    try {
+                        Launcher.manager.leaveGame(activeRoom.getRoomId());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    Platform.runLater(() -> {
+                        RoomCentralManager.stopRoom();
+                        RoomCentralManager.stopRoomServer();
+                        HomeController home = new HomeController();
+                        System.out.println("New home controller");
+                        Parent parent = null;
+                        try {
+                            parent = requestParent(ControllerType.HOME_VIEW, home);
+                            System.out.println("Parent requested");
+//                            sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM);
+                            rootContainer.getChildren().clear();
+                            rootContainer.getChildren().add(parent);
+                            System.out.println("Parent added to root");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
                 }
                 return true;
             }
@@ -548,7 +571,7 @@ public class MatchController extends AbstractMainController {
             @Override
             public boolean cancel() {
                 super.cancel();
-                if (!interrupted) {
+                if (!interrupted & !leaving) {
                     if (newMatchAvailable) {
                         scoresOverlay.setVisible(false);
                         startingOverlay.setVisible(true);
@@ -573,6 +596,17 @@ public class MatchController extends AbstractMainController {
                             e.printStackTrace();
                         }
                     }
+                } else if (leaving) {
+                    RoomCentralManager.stopRoom();
+                    RoomCentralManager.stopRoomServer();
+                    HomeController home = new HomeController();
+                    Parent parent = null;
+                    try {
+                        parent = requestParent(ControllerType.HOME_VIEW, home);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM);
                 }
                 return true;
             }
