@@ -4,10 +4,12 @@ import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXListView;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
 import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.AnchorPane;
@@ -33,7 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Controller for the match view.
  *
  * @author Giulia Pais
- * @version 0.9.4
+ * @version 0.9.5
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
@@ -46,7 +48,9 @@ public class MatchController extends AbstractMainController {
     @FXML JFXListView<String> wordsListView;
     @FXML TextFlow instructions;
     @FXML TilePane tilePane;
-    @FXML TableView<?> playersTable;
+    @FXML TableView<Map.Entry<StringProperty, IntegerProperty>> playersTable;
+    @FXML TableColumn<Map.Entry<StringProperty, IntegerProperty>, String> playeridCol;
+    @FXML TableColumn<Map.Entry<StringProperty, IntegerProperty>, Integer> scoreCol;
 
     private ObservableLobby activeRoom;
     private List<String> participants;
@@ -65,10 +69,11 @@ public class MatchController extends AbstractMainController {
     private LoadingAnimationOverlay loadingScores;
 
     //++ Internals for keeping scores ++//
-    private HashMap<String, IntegerProperty> gameScores;
+    private MapProperty<StringProperty, IntegerProperty> gameScores;
     private HashMap<String, IntegerProperty> lastMatchScores;
     private HashMap<String, ListProperty<Word>> proposedMatchWords;
     private StringProperty winnerName;
+    private ListProperty<Map.Entry<StringProperty, IntegerProperty>> scoresListTable;
 
     //++ For timeout synch ++//
     private TimeoutMonitor monitor;
@@ -95,6 +100,8 @@ public class MatchController extends AbstractMainController {
         this.winnerName = new SimpleStringProperty();
         this.timeoutMin = new SimpleIntegerProperty();
         this.timeoutSec = new SimpleIntegerProperty();
+        this.gameScores = new SimpleMapProperty<>();
+        this.scoresListTable = new SimpleListProperty<>();
     }
 
     /*---Methods---*/
@@ -104,6 +111,7 @@ public class MatchController extends AbstractMainController {
         startingOverlay.setVisible(true);
         loadingScores = new LoadingAnimationOverlay(root, loadingScoresTxt.get());
         initZeroScores();
+        initTable();
         initGameGrid();
         initTimerService();
         initTimerTimeoutService();
@@ -166,6 +174,7 @@ public class MatchController extends AbstractMainController {
     public void setMatchGrid(String[] gridFaces, Integer[] gridNumb) {
         matchGrid.resetGrid(gridFaces, gridNumb);
         newMatchAvailable = true;
+        wordFoundList.clear();
         timerTimeout.cancel();
     }
 
@@ -188,7 +197,9 @@ public class MatchController extends AbstractMainController {
         gameScore.getScores().entrySet().stream()
                 .forEach(entry -> {
                     lastMatchScores.get(entry.getKey()).set(entry.getValue()[0]);
-                    gameScores.get(entry.getKey()).set(entry.getValue()[1]);
+                    gameScores.entrySet().stream()
+                            .filter(e -> e.getKey().get().equals(entry.getKey()))
+                            .forEach(e -> e.getValue().set(entry.getValue()[1]));
                 });
         gameScore.getMatchWords().entrySet().stream()
                 .forEach(entry -> {
@@ -203,7 +214,13 @@ public class MatchController extends AbstractMainController {
         readyBtn.setDisable(false);
         requestBtn.setDisable(false);
         scoresOverlay.setVisible(true);
-        timerTimeout.start();
+        switch (timerTimeout.getState()) {
+            case FAILED, CANCELLED, SUCCEEDED -> {
+                initTimerTimeoutService();
+                timerTimeout.start();
+            }
+            case READY, SCHEDULED -> timerTimeout.start();
+        }
     }
 
     public Duration getTimeoutDuration() {
@@ -293,10 +310,10 @@ public class MatchController extends AbstractMainController {
     }
 
     private void initZeroScores() {
-        HashMap<String, IntegerProperty> zeroGameScores = new HashMap<>();
+        HashMap<StringProperty, IntegerProperty> zeroGameScores = new HashMap<>();
         participants.stream()
-                .forEach(p -> zeroGameScores.put(p, new SimpleIntegerProperty(0)));
-        gameScores = zeroGameScores;
+                .forEach(p -> zeroGameScores.put(new SimpleStringProperty(p), new SimpleIntegerProperty(0)));
+        gameScores.set(FXCollections.observableMap(zeroGameScores));
         HashMap<String, IntegerProperty> zeroMatchScores = new HashMap<>();
         participants.stream()
                 .forEach(p -> zeroMatchScores.put(p, new SimpleIntegerProperty(0)));
@@ -315,9 +332,9 @@ public class MatchController extends AbstractMainController {
                 tile.setFontSize(newValue.doubleValue());
             });
             tile.setPlayer(player);
-            gameScores.get(player).addListener((observable, oldValue, newValue) -> {
-                tile.setGameScore(newValue.intValue());
-            });
+            gameScores.entrySet().stream()
+                    .filter(entry -> entry.getKey().get().equals(player))
+                    .forEach(entry -> entry.getValue().addListener((observable, oldValue, newValue) -> tile.setGameScore(newValue.intValue())));
             proposedMatchWords.get(player).addListener((observable, oldValue, newValue) -> {
                 tile.setWordList(newValue);
             });
@@ -333,6 +350,18 @@ public class MatchController extends AbstractMainController {
             });
             tilePane.getChildren().add(tileRoot);
         }
+    }
+
+    private void initTable() {
+        List<Map.Entry<StringProperty, IntegerProperty>> entries = new ArrayList<>(gameScores.entrySet());
+        scoresListTable.set(FXCollections.observableArrayList(entries));
+        gameScores.addListener((MapChangeListener<StringProperty, IntegerProperty>) change -> {
+            List<Map.Entry<StringProperty, IntegerProperty>> ent = new ArrayList<>(gameScores.entrySet());
+            scoresListTable.set(FXCollections.observableArrayList(ent));
+        });
+        playeridCol.setCellValueFactory(param -> param.getValue().getKey());
+        scoreCol.setCellValueFactory(param -> param.getValue().getValue().asObject());
+        playersTable.itemsProperty().bind(scoresListTable);
     }
 
     @Override

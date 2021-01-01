@@ -94,8 +94,8 @@
                                     <JFXListView fx:id="wordsListView" styleClass="words-listview" VBox.vgrow="ALWAYS" />
                                     <TableView fx:id="playersTable" styleClass="current-scores">
                                       <columns>
-                                        <TableColumn prefWidth="75.0" text="PlayerID" />
-                                        <TableColumn prefWidth="75.0" text="%score_col" />
+                                        <TableColumn fx:id="playeridCol" prefWidth="75.0" text="PlayerID" />
+                                        <TableColumn fx:id="scoreCol" prefWidth="75.0" text="%score_col" />
                                       </columns>
                                        <columnResizePolicy>
                                           <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
