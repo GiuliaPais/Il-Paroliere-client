@@ -8,6 +8,7 @@ import javafx.collections.MapChangeListener;
 import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -35,14 +36,14 @@ import java.util.concurrent.ScheduledExecutorService;
  * Controller for the match view.
  *
  * @author Giulia Pais
- * @version 0.9.5
+ * @version 0.9.6
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
-    @FXML StackPane gameGrid, startingOverlay, scoresOverlay;
+    @FXML StackPane gameGrid, startingOverlay, scoresOverlay, winnerOverlay;
     @FXML AnchorPane header;
     @FXML Label timerSeconds, timerMinutes, matchNumLbl, currScoreLbl, currScoreValueLbl, foundWord, wordListLbl, startingCountDown,
-            scoresSecLbl, scoresMinLbl, scoresTitle;
+            scoresSecLbl, scoresMinLbl, scoresTitle, winnerLbl, winnerTitle;
     @FXML VBox instructionSidePanel, wordsSidePanel;
     @FXML JFXButton leaveGameBtn, insertBtn, clearBtn, readyBtn, requestBtn;
     @FXML JFXListView<String> wordsListView;
@@ -52,6 +53,7 @@ public class MatchController extends AbstractMainController {
     @FXML TableColumn<Map.Entry<StringProperty, IntegerProperty>, String> playeridCol;
     @FXML TableColumn<Map.Entry<StringProperty, IntegerProperty>, Integer> scoreCol;
 
+    private HomeController homeReference;
     private ObservableLobby activeRoom;
     private List<String> participants;
     private String[] gridFaces;
@@ -109,6 +111,7 @@ public class MatchController extends AbstractMainController {
     public void initialize() {
         super.initialize();
         startingOverlay.setVisible(true);
+        winnerOverlay.setVisible(false);
         loadingScores = new LoadingAnimationOverlay(root, loadingScoresTxt.get());
         initZeroScores();
         initTable();
@@ -175,6 +178,7 @@ public class MatchController extends AbstractMainController {
         matchGrid.resetGrid(gridFaces, gridNumb);
         newMatchAvailable = true;
         wordFoundList.clear();
+        matchGrid.clearSelection();
         timerTimeout.cancel();
     }
 
@@ -223,6 +227,10 @@ public class MatchController extends AbstractMainController {
         }
     }
 
+    public void setEndGame() {
+        timerTimeout.cancel();
+    }
+
     public Duration getTimeoutDuration() {
         return activeRoom.getRuleset().getTimeToWaitFromMatchToMatch();
     }
@@ -231,6 +239,10 @@ public class MatchController extends AbstractMainController {
     protected void scaleFontSize(double after) {
         super.scaleFontSize(after);
         scoresOverlay.setStyle("-fx-font-size: "+ currentFontSize.get() + "px;");
+    }
+
+    public void setHomeReference(HomeController homeReference) {
+        this.homeReference = homeReference;
     }
 
     /*----------- Private methods for initialization and scaling -----------*/
@@ -350,6 +362,7 @@ public class MatchController extends AbstractMainController {
             });
             tilePane.getChildren().add(tileRoot);
         }
+        winnerName.addListener((observable, oldValue, newValue) -> winnerLbl.setText(newValue));
     }
 
     private void initTable() {
@@ -405,6 +418,8 @@ public class MatchController extends AbstractMainController {
         double btnW = (after*ref.getReferences().get("SCORES_BTN_DIM")) / ref.getReferences().get("REF_RESOLUTION");
         readyBtn.setPrefWidth(btnW);
         requestBtn.setPrefWidth(btnW);
+        winnerLbl.setStyle("-fx-font-size: " + (currentFontSize.get() + 20) + ";");
+        winnerTitle.setStyle("-fx-font-size: " + (currentFontSize.get() + 20) + ";");
     }
 
     private void bindLocalizedLabels() {
@@ -514,7 +529,18 @@ public class MatchController extends AbstractMainController {
                         case READY, SCHEDULED -> startingCountDownService.start();
                     }
                 } else {
-                    System.out.println("Match not set yet");
+                    winnerOverlay.setVisible(true);
+                    try {
+                        Thread.sleep(Duration.ofSeconds(10).toMillis());
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        Parent parent = requestParent(ControllerType.HOME_VIEW, homeReference);
+                        sceneTransitionAnimation(parent, SlideDirection.TO_RIGHT);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
                 return true;
             }
