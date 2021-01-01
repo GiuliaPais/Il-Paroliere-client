@@ -96,12 +96,11 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                     matchController.setMonitor(timeoutMonitor);
                     matchController.setHomeReference(homeController);
                     homeController.setNewGameController(matchController);
-                    writeCommand(CommProtocolCommands.NEW_MATCH);
                 } else{
                     Platform.runLater(() -> matchController.setMatchGrid(gameF, gameN));
                     timeoutMonitor.reset();
-                    writeCommand(CommProtocolCommands.NEW_MATCH);
                 }
+                writeCommand(CommProtocolCommands.NEW_MATCH);
             }
             case SEND_WORDS -> {
                 ArrayList<String> words = matchController.getFoundWords();

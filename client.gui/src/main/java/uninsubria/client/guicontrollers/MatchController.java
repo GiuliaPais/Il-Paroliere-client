@@ -40,7 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
-    @FXML StackPane gameGrid, startingOverlay, scoresOverlay, winnerOverlay;
+    @FXML StackPane gameGrid, startingOverlay, scoresOverlay, winnerOverlay, loadingScoresOverlay;
     @FXML AnchorPane header;
     @FXML Label timerSeconds, timerMinutes, matchNumLbl, currScoreLbl, currScoreValueLbl, foundWord, wordListLbl, startingCountDown,
             scoresSecLbl, scoresMinLbl, scoresTitle, winnerLbl, winnerTitle;
@@ -68,7 +68,6 @@ public class MatchController extends AbstractMainController {
     private ListProperty<String> wordFoundList;
     private ScheduledService<String> startingCountDownService;
     private ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-    private LoadingAnimationOverlay loadingScores;
 
     //++ Internals for keeping scores ++//
     private MapProperty<StringProperty, IntegerProperty> gameScores;
@@ -112,7 +111,7 @@ public class MatchController extends AbstractMainController {
         super.initialize();
         startingOverlay.setVisible(true);
         winnerOverlay.setVisible(false);
-        loadingScores = new LoadingAnimationOverlay(root, loadingScoresTxt.get());
+        loadingScoresOverlay.setVisible(false);
         initZeroScores();
         initTable();
         initGameGrid();
@@ -214,7 +213,7 @@ public class MatchController extends AbstractMainController {
     }
 
     public void setTimerMatchTimeout() {
-        loadingScores.stopAnimation();
+        loadingScoresOverlay.setVisible(false);
         readyBtn.setDisable(false);
         requestBtn.setDisable(false);
         scoresOverlay.setVisible(true);
@@ -471,7 +470,7 @@ public class MatchController extends AbstractMainController {
             @Override
             public boolean cancel() {
                 super.cancel();
-                loadingScores.playAnimation();
+                loadingScoresOverlay.setVisible(true);
                 return true;
             }
         };

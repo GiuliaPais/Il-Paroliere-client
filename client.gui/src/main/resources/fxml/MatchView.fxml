@@ -2,6 +2,7 @@
 
 <?import com.jfoenix.controls.JFXButton?>
 <?import com.jfoenix.controls.JFXListView?>
+<?import com.jfoenix.controls.JFXSpinner?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
@@ -146,7 +147,7 @@
             </VBox>
          </children>
       </StackPane>
-      <StackPane fx:id="winnerOverlay" styleClass="game-scores" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <StackPane fx:id="winnerOverlay" styleClass="game-scores" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
             <VBox alignment="CENTER" StackPane.alignment="CENTER">
                <children>
@@ -156,6 +157,20 @@
                      </padding>
                   </Label>
                   <Label fx:id="winnerLbl" text="Label" VBox.vgrow="ALWAYS">
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </Label>
+               </children>
+            </VBox>
+         </children>
+      </StackPane>
+      <StackPane id="bg-loading" fx:id="loadingScoresOverlay" layoutX="10.0" layoutY="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <VBox alignment="CENTER" StackPane.alignment="CENTER">
+               <children>
+                  <JFXSpinner />
+                  <Label fx:id="loadingMsg" styleClass="game-loading-msg" text="%loading_scores" VBox.vgrow="ALWAYS">
                      <padding>
                         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                      </padding>
