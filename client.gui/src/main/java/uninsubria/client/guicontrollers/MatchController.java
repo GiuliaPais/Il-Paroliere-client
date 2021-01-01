@@ -7,7 +7,6 @@ import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.concurrent.ScheduledService;
-import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
@@ -256,20 +255,30 @@ public class MatchController extends AbstractMainController {
 
     @FXML void leaveGame() {
         leaving = true;
+        RoomCentralManager.stopRoom();
+        RoomCentralManager.stopRoomServer();
         timerCountDownService.cancel();
     }
 
     public void interruptGame() {
-        System.out.println("Entered interrupt");
-        interrupted = true;
-        scheduledExecutorService.shutdown();
-        notification(gameInterrBody.get(), javafx.util.Duration.seconds(5));
-        try {
-            Parent p = requestParent(ControllerType.HOME_VIEW, homeReference);
-            scheduledExecutorService.awaitTermination(5, TimeUnit.SECONDS);
-            sceneTransitionAnimation(p, SlideDirection.TO_BOTTOM);
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+        if (!leaving) {
+            interrupted = true;
+            scheduledExecutorService.shutdown();
+            notification(gameInterrBody.get(), javafx.util.Duration.seconds(5));
+            try {
+                scheduledExecutorService.awaitTermination(5, TimeUnit.SECONDS);
+                Platform.runLater(() -> {
+                    Parent p = null;
+                    try {
+                        p = requestParent(ControllerType.HOME_VIEW, homeReference);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    sceneTransitionAnimation(p, SlideDirection.TO_BOTTOM);
+                });
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -508,18 +517,12 @@ public class MatchController extends AbstractMainController {
                         e.printStackTrace();
                     }
                     Platform.runLater(() -> {
-                        RoomCentralManager.stopRoom();
-                        RoomCentralManager.stopRoomServer();
                         HomeController home = new HomeController();
                         System.out.println("New home controller");
                         Parent parent = null;
                         try {
                             parent = requestParent(ControllerType.HOME_VIEW, home);
-                            System.out.println("Parent requested");
-//                            sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM);
-                            rootContainer.getChildren().clear();
-                            rootContainer.getChildren().add(parent);
-                            System.out.println("Parent added to root");
+                            sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -597,16 +600,18 @@ public class MatchController extends AbstractMainController {
                         }
                     }
                 } else if (leaving) {
-                    RoomCentralManager.stopRoom();
-                    RoomCentralManager.stopRoomServer();
-                    HomeController home = new HomeController();
-                    Parent parent = null;
-                    try {
-                        parent = requestParent(ControllerType.HOME_VIEW, home);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM);
+                    Platform.runLater(() -> {
+                        RoomCentralManager.stopRoom();
+                        RoomCentralManager.stopRoomServer();
+                        HomeController home = new HomeController();
+                        Parent parent = null;
+                        try {
+                            parent = requestParent(ControllerType.HOME_VIEW, home);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
+                    });
                 }
                 return true;
             }

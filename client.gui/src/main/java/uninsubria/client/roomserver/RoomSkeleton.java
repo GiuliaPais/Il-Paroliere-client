@@ -85,7 +85,9 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
             }
             case INTERRUPT_GAME -> {
                 System.out.println("Interrupt received");
-                matchController.interruptGame();
+                if (matchController != null) {
+                    matchController.interruptGame();
+                }
             }
             case NEW_MATCH -> {
                 String[] gameF = (String[]) in.readObject();
