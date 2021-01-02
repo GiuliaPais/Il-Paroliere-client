@@ -36,7 +36,7 @@ import uninsubria.client.settings.SettingDefaults;
 /**
  * Controller class for the options menu screen.
  * @author Giulia Pais
- * @version 0.9.2
+ * @version 0.9.3
  *
  */
 public class OptionsController extends AbstractMainController {
@@ -200,7 +200,7 @@ public class OptionsController extends AbstractMainController {
 			return;
 		}
 		if (requestOrigin instanceof HomeController) {
-			applicant = requestParent(ControllerType.HOME_VIEW);
+			applicant = requestParent(ControllerType.HOME_VIEW, requestOrigin);
 			Timeline anim = sceneTransitionAnimation(applicant, SlideDirection.TO_BOTTOM);
 			anim.play();
 			return;
@@ -223,7 +223,7 @@ public class OptionsController extends AbstractMainController {
 			return;
 		}
 		if (requestOrigin instanceof HomeController) {
-			applicant = requestParent(ControllerType.HOME_VIEW);
+			applicant = requestParent(ControllerType.HOME_VIEW, requestOrigin);
 			Timeline anim = sceneTransitionAnimation(applicant, SlideDirection.TO_BOTTOM);
 			anim.play();
 			return;
