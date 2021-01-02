@@ -523,7 +523,6 @@ public class CentralManager {
 	 * @throws IOException the io exception
 	 */
 	public void leaveGame(UUID roomID) throws IOException {
-		System.out.println("Central manager: entered leave game");
 		proxy.get().leaveGame(roomID);
 	}
 

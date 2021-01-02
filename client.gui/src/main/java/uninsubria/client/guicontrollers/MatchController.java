@@ -300,7 +300,9 @@ public class MatchController extends AbstractMainController {
                 if (newValue.equals(Duration.ZERO)) {
                     Parent p;
                     try {
-                        p = requestParent(ControllerType.HOME_VIEW, homeReference);
+                        HomeController homeView = new HomeController();
+                        homeView.setActiveLobby(activeRoom);
+                        p = requestParent(ControllerType.HOME_VIEW, homeView);
                         sceneTransitionAnimation(p, SlideDirection.TO_BOTTOM).play();
                     } catch (IOException e) {
                         e.printStackTrace();

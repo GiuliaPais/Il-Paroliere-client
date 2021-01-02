@@ -519,6 +519,7 @@ public class HomeController extends AbstractMainController {
     }
 
     public void gameStarting(Instant startingTime) {
+        lobbiesRefresher.cancel();
         gameLoadingService.progressProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue.intValue() == 1) {
                 List<String> participants = observablePlayerList.stream()
@@ -1346,6 +1347,12 @@ public class HomeController extends AbstractMainController {
                     }
                 };
             }
+
+            @Override
+            public void restart() {
+                super.restart();
+                System.out.println("Room refresher restarted");
+            }
         };
         service.setExecutor(executorService);
         service.setPeriod(Duration.seconds(5));
@@ -1393,9 +1400,15 @@ public class HomeController extends AbstractMainController {
                     }
                 };
             }
+
+            @Override
+            public void restart() {
+                super.restart();
+                System.out.println("Players updater ready");
+            }
         };
         service.setExecutor(executorService);
-        service.setPeriod(Duration.ZERO);
+        service.setPeriod(Duration.seconds(1));
         roomPlayersUpdater = service;
         roomPlayersUpdater.lastValueProperty().addListener((observable, oldValue, newValue) -> {
             List<Label> labels = new ArrayList<>();
@@ -1431,6 +1444,12 @@ public class HomeController extends AbstractMainController {
                 Platform.runLater(() -> root.getChildren().add(over));
                 tl.play();
                 return null;
+            }
+
+            @Override
+            protected void scheduled() {
+                super.scheduled();
+                Platform.runLater(() -> roomPlayersUpdater.cancel());
             }
         };
     }

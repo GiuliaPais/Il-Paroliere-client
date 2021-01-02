@@ -84,7 +84,6 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                 Platform.runLater(() -> homeController.gameStarting(timerStartingTime));
             }
             case INTERRUPT_GAME -> {
-                System.out.println("Interrupt received");
                 if (matchController != null) {
                     Platform.runLater(() -> matchController.interruptGame());
                 }
