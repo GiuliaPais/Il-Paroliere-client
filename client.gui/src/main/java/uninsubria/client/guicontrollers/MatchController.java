@@ -2,12 +2,14 @@ package uninsubria.client.guicontrollers;
 
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXListView;
+import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -21,6 +23,7 @@ import javafx.scene.text.TextFlow;
 import uninsubria.client.customcontrols.GameGrid;
 import uninsubria.client.gui.Launcher;
 import uninsubria.client.gui.ObservableLobby;
+import uninsubria.client.roomserver.RoomCentralManager;
 import uninsubria.client.roomserver.TimeoutMonitor;
 import uninsubria.utils.business.GameScore;
 import uninsubria.utils.business.Word;
@@ -30,19 +33,20 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Controller for the match view.
  *
  * @author Giulia Pais
- * @version 0.9.5
+ * @version 0.9.7
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
-    @FXML StackPane gameGrid, startingOverlay, scoresOverlay;
+    @FXML StackPane gameGrid, startingOverlay, scoresOverlay, winnerOverlay, loadingScoresOverlay;
     @FXML AnchorPane header;
     @FXML Label timerSeconds, timerMinutes, matchNumLbl, currScoreLbl, currScoreValueLbl, foundWord, wordListLbl, startingCountDown,
-            scoresSecLbl, scoresMinLbl, scoresTitle;
+            scoresSecLbl, scoresMinLbl, scoresTitle, winnerLbl, winnerTitle;
     @FXML VBox instructionSidePanel, wordsSidePanel;
     @FXML JFXButton leaveGameBtn, insertBtn, clearBtn, readyBtn, requestBtn;
     @FXML JFXListView<String> wordsListView;
@@ -52,6 +56,7 @@ public class MatchController extends AbstractMainController {
     @FXML TableColumn<Map.Entry<StringProperty, IntegerProperty>, String> playeridCol;
     @FXML TableColumn<Map.Entry<StringProperty, IntegerProperty>, Integer> scoreCol;
 
+    private HomeController homeReference;
     private ObservableLobby activeRoom;
     private List<String> participants;
     private String[] gridFaces;
@@ -62,11 +67,10 @@ public class MatchController extends AbstractMainController {
     private IntegerProperty minutesPart, secondsPart, playerScore, matchNumber, timeoutMin, timeoutSec;
     private ScheduledService<Duration> timerCountDownService, timerTimeout;
     private StringProperty currScoreTxt, wordListTxt, leaveGameTxt, insertTxt, clearTxt, instr1, instr2, instr3, instr4,
-                            loadingScoresTxt;
+                            loadingScoresTxt, gameInterrBody;
     private ListProperty<String> wordFoundList;
     private ScheduledService<String> startingCountDownService;
     private ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-    private LoadingAnimationOverlay loadingScores;
 
     //++ Internals for keeping scores ++//
     private MapProperty<StringProperty, IntegerProperty> gameScores;
@@ -77,6 +81,10 @@ public class MatchController extends AbstractMainController {
 
     //++ For timeout synch ++//
     private TimeoutMonitor monitor;
+
+    //++ For interrupt ++//
+    private boolean interrupted = false;
+    private boolean leaving = false;
 
     /*---Constructors---*/
     public MatchController() {
@@ -102,6 +110,7 @@ public class MatchController extends AbstractMainController {
         this.timeoutSec = new SimpleIntegerProperty();
         this.gameScores = new SimpleMapProperty<>();
         this.scoresListTable = new SimpleListProperty<>();
+        this.gameInterrBody = new SimpleStringProperty();
     }
 
     /*---Methods---*/
@@ -109,7 +118,8 @@ public class MatchController extends AbstractMainController {
     public void initialize() {
         super.initialize();
         startingOverlay.setVisible(true);
-        loadingScores = new LoadingAnimationOverlay(root, loadingScoresTxt.get());
+        winnerOverlay.setVisible(false);
+        loadingScoresOverlay.setVisible(false);
         initZeroScores();
         initTable();
         initGameGrid();
@@ -161,6 +171,7 @@ public class MatchController extends AbstractMainController {
         instr3.set("\u2727 " + resBundle.getString("instructions_clear") + "\n\n");
         instr4.set("\u2727 " + resBundle.getString("instructions_delete") + "\n\n");
         loadingScoresTxt.set(resBundle.getString("loading_scores"));
+        gameInterrBody.set(resBundle.getString("game_interr_body"));
     }
 
     public void setActiveRoom(ObservableLobby activeRoom) {
@@ -175,6 +186,7 @@ public class MatchController extends AbstractMainController {
         matchGrid.resetGrid(gridFaces, gridNumb);
         newMatchAvailable = true;
         wordFoundList.clear();
+        matchGrid.clearSelection();
         timerTimeout.cancel();
     }
 
@@ -210,7 +222,7 @@ public class MatchController extends AbstractMainController {
     }
 
     public void setTimerMatchTimeout() {
-        loadingScores.stopAnimation();
+        loadingScoresOverlay.setVisible(false);
         readyBtn.setDisable(false);
         requestBtn.setDisable(false);
         scoresOverlay.setVisible(true);
@@ -223,6 +235,10 @@ public class MatchController extends AbstractMainController {
         }
     }
 
+    public void setEndGame() {
+        timerTimeout.cancel();
+    }
+
     public Duration getTimeoutDuration() {
         return activeRoom.getRuleset().getTimeToWaitFromMatchToMatch();
     }
@@ -231,6 +247,39 @@ public class MatchController extends AbstractMainController {
     protected void scaleFontSize(double after) {
         super.scaleFontSize(after);
         scoresOverlay.setStyle("-fx-font-size: "+ currentFontSize.get() + "px;");
+    }
+
+    public void setHomeReference(HomeController homeReference) {
+        this.homeReference = homeReference;
+    }
+
+    @FXML void leaveGame() {
+        leaving = true;
+        RoomCentralManager.stopRoom();
+        RoomCentralManager.stopRoomServer();
+        timerCountDownService.cancel();
+    }
+
+    public void interruptGame() {
+        if (!leaving) {
+            interrupted = true;
+            scheduledExecutorService.shutdown();
+            notification(gameInterrBody.get(), javafx.util.Duration.seconds(5));
+            try {
+                scheduledExecutorService.awaitTermination(5, TimeUnit.SECONDS);
+                Platform.runLater(() -> {
+                    Parent p = null;
+                    try {
+                        p = requestParent(ControllerType.HOME_VIEW, homeReference);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    sceneTransitionAnimation(p, SlideDirection.TO_BOTTOM);
+                });
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     /*----------- Private methods for initialization and scaling -----------*/
@@ -350,6 +399,7 @@ public class MatchController extends AbstractMainController {
             });
             tilePane.getChildren().add(tileRoot);
         }
+        winnerName.addListener((observable, oldValue, newValue) -> winnerLbl.setText(newValue));
     }
 
     private void initTable() {
@@ -405,6 +455,8 @@ public class MatchController extends AbstractMainController {
         double btnW = (after*ref.getReferences().get("SCORES_BTN_DIM")) / ref.getReferences().get("REF_RESOLUTION");
         readyBtn.setPrefWidth(btnW);
         requestBtn.setPrefWidth(btnW);
+        winnerLbl.setStyle("-fx-font-size: " + (currentFontSize.get() + 20) + ";");
+        winnerTitle.setStyle("-fx-font-size: " + (currentFontSize.get() + 20) + ";");
     }
 
     private void bindLocalizedLabels() {
@@ -456,7 +508,26 @@ public class MatchController extends AbstractMainController {
             @Override
             public boolean cancel() {
                 super.cancel();
-                loadingScores.playAnimation();
+                if (!interrupted & !leaving) {
+                    loadingScoresOverlay.setVisible(true);
+                } else if (leaving) {
+                    try {
+                        Launcher.manager.leaveGame(activeRoom.getRoomId());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    Platform.runLater(() -> {
+                        HomeController home = new HomeController();
+                        System.out.println("New home controller");
+                        Parent parent = null;
+                        try {
+                            parent = requestParent(ControllerType.HOME_VIEW, home);
+                            sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+                }
                 return true;
             }
         };
@@ -503,18 +574,44 @@ public class MatchController extends AbstractMainController {
             @Override
             public boolean cancel() {
                 super.cancel();
-                if (newMatchAvailable) {
-                    scoresOverlay.setVisible(false);
-                    startingOverlay.setVisible(true);
-                    switch (startingCountDownService.getState()) {
-                        case FAILED, CANCELLED, SUCCEEDED -> {
-                            initPreCountDownService();
-                            startingCountDownService.start();
+                if (!interrupted & !leaving) {
+                    if (newMatchAvailable) {
+                        scoresOverlay.setVisible(false);
+                        startingOverlay.setVisible(true);
+                        switch (startingCountDownService.getState()) {
+                            case FAILED, CANCELLED, SUCCEEDED -> {
+                                initPreCountDownService();
+                                startingCountDownService.start();
+                            }
+                            case READY, SCHEDULED -> startingCountDownService.start();
                         }
-                        case READY, SCHEDULED -> startingCountDownService.start();
+                    } else {
+                        winnerOverlay.setVisible(true);
+                        try {
+                            Thread.sleep(Duration.ofSeconds(10).toMillis());
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            Parent parent = requestParent(ControllerType.HOME_VIEW, homeReference);
+                            sceneTransitionAnimation(parent, SlideDirection.TO_RIGHT);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
-                } else {
-                    System.out.println("Match not set yet");
+                } else if (leaving) {
+                    Platform.runLater(() -> {
+                        RoomCentralManager.stopRoom();
+                        RoomCentralManager.stopRoomServer();
+                        HomeController home = new HomeController();
+                        Parent parent = null;
+                        try {
+                            parent = requestParent(ControllerType.HOME_VIEW, home);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
+                    });
                 }
                 return true;
             }
@@ -573,14 +670,16 @@ public class MatchController extends AbstractMainController {
             @Override
             public boolean cancel() {
                 super.cancel();
-                startingOverlay.setVisible(false);
-                newMatchAvailable = false;
-                switch (timerCountDownService.getState()) {
-                    case FAILED, CANCELLED, SUCCEEDED -> {
-                        initTimerService();
-                        timerCountDownService.start();
+                if (!interrupted) {
+                    startingOverlay.setVisible(false);
+                    newMatchAvailable = false;
+                    switch (timerCountDownService.getState()) {
+                        case FAILED, CANCELLED, SUCCEEDED -> {
+                            initTimerService();
+                            timerCountDownService.start();
+                        }
+                        case READY, SCHEDULED -> timerCountDownService.start();
                     }
-                    case READY, SCHEDULED -> timerCountDownService.start();
                 }
                 return true;
             }

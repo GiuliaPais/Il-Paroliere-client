@@ -17,7 +17,7 @@ import java.util.Objects;
  * A thread that serves as Skeleton for the lobby.
  *
  * @author Giulia Pais
- * @version 0.9.6
+ * @version 0.9.8
  */
 public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
     /*---Fields---*/
@@ -84,7 +84,10 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                 Platform.runLater(() -> homeController.gameStarting(timerStartingTime));
             }
             case INTERRUPT_GAME -> {
-                //interr
+                System.out.println("Interrupt received");
+                if (matchController != null) {
+                    matchController.interruptGame();
+                }
             }
             case NEW_MATCH -> {
                 String[] gameF = (String[]) in.readObject();
@@ -94,11 +97,13 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                     matchController.setActiveRoom(homeController.getActiveLobby());
                     matchController.setFirstMatchGrid(gameF, gameN);
                     matchController.setMonitor(timeoutMonitor);
+                    matchController.setHomeReference(homeController);
                     homeController.setNewGameController(matchController);
                 } else{
                     Platform.runLater(() -> matchController.setMatchGrid(gameF, gameN));
                     timeoutMonitor.reset();
                 }
+                writeCommand(CommProtocolCommands.NEW_MATCH);
             }
             case SEND_WORDS -> {
                 ArrayList<String> words = matchController.getFoundWords();
@@ -109,6 +114,7 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                 Platform.runLater(() -> matchController.setMatchScores(scores));
             }
             case TIMEOUT_MATCH -> {
+                System.out.println("Received timeout");
                 Platform.runLater(() -> matchController.setTimerMatchTimeout());
                 try {
                     timeoutMonitor.isReady(matchController.getTimeoutDuration().minusSeconds(2));
@@ -116,6 +122,9 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                     e.printStackTrace();
                 }
                 writeCommand(CommProtocolCommands.TIMEOUT_MATCH);
+            }
+            case END_GAME -> {
+                matchController.setEndGame();
             }
         }
     }

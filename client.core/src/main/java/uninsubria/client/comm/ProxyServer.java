@@ -6,7 +6,6 @@ import uninsubria.utils.connection.CommHolder;
 import uninsubria.utils.connection.CommProtocolCommands;
 import uninsubria.utils.managersAPI.PlayerManagerInterface;
 import uninsubria.utils.managersAPI.ProxySkeletonInterface;
-import uninsubria.utils.serviceResults.ServiceResult;
 import uninsubria.utils.serviceResults.ServiceResultInterface;
 
 import java.io.*;
@@ -21,7 +20,7 @@ import java.util.UUID;
  * The class is mainly responsible for writing on or reading from the socket.
  *
  * @author Giulia Pais
- * @version 0.9.8
+ * @version 0.9.9
  *
  */
 public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterface {
@@ -269,6 +268,11 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
         ServiceResultInterface res = serviceResultList.get(serviceResultList.size()-1);
         serviceResultList.remove(res);
         return res;
+    }
+
+    @Override
+    public void leaveGame(UUID roomID) throws IOException {
+        writeCommand(CommProtocolCommands.LEAVE_GAME, roomID);
     }
 
     @Override

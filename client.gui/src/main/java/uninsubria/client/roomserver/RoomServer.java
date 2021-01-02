@@ -13,7 +13,7 @@ import java.net.Socket;
  * from rooms.
  *
  * @author Giulia Pais
- * @version 0.9.3
+ * @version 0.9.4
  */
 public class RoomServer extends Thread {
     /*---Fields---*/
@@ -73,5 +73,9 @@ public class RoomServer extends Thread {
         if (activeRoom != null) {
             activeRoom.setMatchController(controller);
         }
+    }
+
+    public void setHomeController(HomeController controller) {
+        this.controller = controller;
     }
 }

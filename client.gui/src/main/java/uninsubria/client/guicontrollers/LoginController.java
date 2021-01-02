@@ -37,8 +37,7 @@ import java.util.prefs.BackingStoreException;
 /**
  * Controller class for the login screen.
  * @author Giulia Pais
- * @version 0.9.4
- *
+ * @version 0.9.5
  */
 public class LoginController extends AbstractMainController {
 	/*---Fields---*/
@@ -178,7 +177,7 @@ public class LoginController extends AbstractMainController {
 					Platform.runLater(() -> {
 						Parent p;
 						try {
-							p = requestParent(ControllerType.HOME_VIEW);
+							p = requestParent(ControllerType.HOME_VIEW, new HomeController());
 							Timeline anim = sceneTransitionAnimation(p, SlideDirection.TO_LEFT);
 							anim.play();
 						} catch (IOException e) {

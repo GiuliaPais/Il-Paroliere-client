@@ -32,7 +32,7 @@ import java.util.prefs.Preferences;
  * Class responsible for central communication between client and server. Also manages preferences at start up.
  *
  * @author Giulia Pais
- * @version 0.9.7
+ * @version 0.9.8
  */
 public class CentralManager {
 	/*---Fields---*/
@@ -514,6 +514,17 @@ public class CentralManager {
 	 */
 	public void leaveRoom(UUID roomID) throws IOException {
 		proxy.get().leaveRoom(roomID);
+	}
+
+	/**
+	 * Leave game.
+	 *
+	 * @param roomID the room id
+	 * @throws IOException the io exception
+	 */
+	public void leaveGame(UUID roomID) throws IOException {
+		System.out.println("Central manager: entered leave game");
+		proxy.get().leaveGame(roomID);
 	}
 
 	/**
