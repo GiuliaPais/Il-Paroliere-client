@@ -59,15 +59,14 @@ import java.util.stream.Collectors;
  * Controller for the home view.
  *
  * @author Giulia Pais
- * @version 0.9.9
+ * @version 0.9.11
  */
 public class HomeController extends AbstractMainController {
     /*---Fields---*/
-    @FXML AnchorPane headerPane;
     @FXML StackPane profImage;
     @FXML VBox profInfo;
-    @FXML Label userLabel, emailLabel, lobbyPlayer_lbl, lobbyLang_lbl, lobbyRule_lbl, lobbyPlayer_cont, lobbyLang_cont,
-            lobbyRule_cont, playerList_lbl, titleCard1p, titleCard2p, titleCard3p, titleCard4p, titleCard5p,
+    @FXML Label userLabel, emailLabel, lobbyPlayer_cont, lobbyLang_cont,
+            lobbyRule_cont, titleCard1p, titleCard2p, titleCard3p, titleCard4p, titleCard5p,
             titleCard6p, titleCard7p, titleCard1g, titleCard2g, titleCard3g, gListTitle, titleCard1w, titleCard2w,
             titleCard3w;
     @FXML JFXTabPane tabPane;
@@ -117,7 +116,6 @@ public class HomeController extends AbstractMainController {
     private ObjectProperty<Background> imgBackground;
     private MapProperty<UUID, ObservableLobby> lobbyMap;
     private ObservableList<ObservableLobby> lobbiesList;
-    private ScheduledService<Void> lobbiesRefresher, roomPlayersUpdater;
     private ObjectProperty<ObservableLobby> activeLobby;
     private ListProperty<Label> observablePlayerList;
     private ObservableList<Label> observableGlist;
@@ -132,6 +130,8 @@ public class HomeController extends AbstractMainController {
 
     //+++ Services, tasks, loading +++//
     //only one task at time
+    private ScheduledService<ArrayList<String>> roomPlayersUpdater;
+    private ScheduledService<Map<UUID, Lobby>> lobbiesRefresher;
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private LoadingAnimationOverlay generalLoadingOverlay;
     private Service<ObservableLobby> activeLobbyService;
@@ -161,7 +161,7 @@ public class HomeController extends AbstractMainController {
         this.langLobby_lbltext = new SimpleStringProperty();
         this.ruleLobby_lbltext = new SimpleStringProperty();
         this.playerList_lbltext = new SimpleStringProperty();
-        this.observablePlayerList = new SimpleListProperty<>();
+        this.observablePlayerList = new SimpleListProperty<>(FXCollections.observableArrayList());
         this.notif_connection_loss = new SimpleStringProperty();
         this.bestPlayerGame = FXCollections.observableArrayList();
         this.bestPlayerMatch = FXCollections.observableArrayList();
@@ -241,10 +241,20 @@ public class HomeController extends AbstractMainController {
         join_room_btn.setDisable(true);
         lobbyView.setVisible(false);
         loadStatistics();
-        activeLobbyService.setExecutor(executorService);
-        activeLobbyService.valueProperty().addListener((observable, oldValue, newValue) -> activeLobby.set(newValue));
-        lobbiesRefresher = getRoomReferesherService();
-        lobbiesRefresher.start();
+        if (activeLobby.get() == null) {
+            lobbiesRefresher.start();
+        } else {
+            lobbyView.setText(activeLobby.get().getRoomName());
+            lobbyPlayer_cont.setText(String.valueOf(activeLobby.get().getNumPlayers()));
+            lobbyLang_cont.setText(activeLobby.get().getLanguage().name());
+            lobbyRule_cont.setText(activeLobby.get().getRuleset().name());
+            create_room_btn.setDisable(true);
+            join_room_btn.setDisable(true);
+            roomList.setDisable(true);
+            lobbyView.setVisible(true);
+            lobbiesRefresher.cancel();
+            roomPlayersUpdater.start();
+        }
     }
 
     @Override
@@ -337,7 +347,7 @@ public class HomeController extends AbstractMainController {
     }
 
     @FXML void joinRoom() {
-        activeLobbyService.start();
+        activeLobbyService.restart();
     }
 
     @FXML void loadStatistics() {
@@ -509,6 +519,7 @@ public class HomeController extends AbstractMainController {
     }
 
     public void gameStarting(Instant startingTime) {
+        lobbiesRefresher.cancel();
         gameLoadingService.progressProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue.intValue() == 1) {
                 List<String> participants = observablePlayerList.stream()
@@ -546,75 +557,6 @@ public class HomeController extends AbstractMainController {
         rescaleIcons(after);
         rescaleButton(after);
         rescaleMasonry(after);
-    }
-
-    private ScheduledService<Void> getRoomReferesherService() {
-        ScheduledService<Void> service = new ScheduledService<>() {
-            @Override
-            protected Task<Void> createTask() {
-                return new Task<>() {
-                    @Override
-                    protected Void call() {
-                        try {
-                            Map<UUID, Lobby> map = Launcher.manager.requestRoomUpdate();
-                            /* Keys that are present in both maps (either room hasn't changed or only it's status has changed */
-                            List<UUID> alreadyPresentKeys = lobbyMap.keySet().stream()
-                                    .filter(k -> map.containsKey(k))
-                                    .collect(Collectors.toList());
-                            /* Keys that are present in the map on the client side but are not present in the updated map
-                            * received. It means the keys were removed and the room associated does not exist anymore. */
-                            List<UUID> removedKeys = lobbyMap.keySet().stream()
-                                    .filter(k -> !map.containsKey(k))
-                                    .collect(Collectors.toList());
-                            /* Keys that are present in the new received map but not in the map on the client side.
-                            * It means the keys were added. */
-                            List<UUID> addedKeys = map.keySet().stream()
-                                    .filter(k -> !lobbyMap.containsKey(k))
-                                    .collect(Collectors.toList());
-                            for (UUID k : alreadyPresentKeys) {
-                                if (!lobbyMap.get(k).getStatus().equals(map.get(k).getStatus())) {
-                                    lobbyMap.get(k).setStatus(map.get(k).getStatus());
-                                }
-                            }
-                            for (UUID k : removedKeys) {
-                                lobbyMap.remove(k, lobbyMap.get(k));
-                            }
-                            for (UUID k : addedKeys) {
-                                lobbyMap.put(k, ObservableLobby.toObservableLobby(map.get(k)));
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (ClassNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                        return null;
-                    }
-                };
-            }
-        };
-        service.setPeriod(Duration.seconds(5));
-        service.setRestartOnFailure(true);
-        return service;
-    }
-
-    private ScheduledService<Void> getRoomPlayersService() {
-        return new ScheduledService<>() {
-            @Override
-            protected Task<Void> createTask() {
-                Task<Void> service = new Task<>() {
-                    @Override
-                    protected Void call() throws Exception {
-                        ArrayList<String> received = Launcher.manager.requestPlayerList(activeLobby.get().getRoomId());
-                        List<Label> labels = new ArrayList<>();
-                        received.stream()
-                                .forEach(s -> labels.add(new Label(s)));
-                        observablePlayerList.set(FXCollections.observableArrayList(labels));
-                        return null;
-                    }
-                };
-                return service;
-            }
-        };
     }
 
     private void initIcons() {
@@ -1066,12 +1008,9 @@ public class HomeController extends AbstractMainController {
         leaveIcon.setFontFamily("FontAwesome");
         leaveIcon.setIcon(FontAwesome.Glyph.SIGN_OUT);
         leaveIcon.setFontSize(currentFontSize.get());
-        currentFontSize.addListener((observable, oldValue, newValue) -> {
-            leaveIcon.setFontSize(newValue.doubleValue());
-        });
-        observablePlayerList.addListener((observable, oldValue, newValue) -> {
-            Platform.runLater(() -> playersList.setItems(newValue));
-        });
+        currentFontSize.addListener((observable, oldValue, newValue) -> leaveIcon.setFontSize(newValue.doubleValue()));
+        playersList.setItems(observablePlayerList.get());
+        playersList.itemsProperty().bind(observablePlayerList);
         activeLobby.addListener((observable, oldValue, newValue) -> {
             Platform.runLater(() -> {
                 if (newValue == null) {
@@ -1081,9 +1020,7 @@ public class HomeController extends AbstractMainController {
                     join_room_btn.setDisable(false);
                     roomList.setDisable(false);
                     roomPlayersUpdater.cancel();
-                    roomPlayersUpdater = null;
-                    lobbiesRefresher = getRoomReferesherService();
-                    lobbiesRefresher.start();
+                    lobbiesRefresher.restart();
                     return;
                 }
                 lobbyView.setText(newValue.getRoomName());
@@ -1094,12 +1031,8 @@ public class HomeController extends AbstractMainController {
                 join_room_btn.setDisable(true);
                 roomList.setDisable(true);
                 lobbyView.setVisible(true);
-//                if (lobbiesRefresher != null) {
-                    lobbiesRefresher.cancel();
-                    lobbiesRefresher = null;
-//                }
-                roomPlayersUpdater = getRoomPlayersService();
-                roomPlayersUpdater.start();
+                lobbiesRefresher.cancel();
+                roomPlayersUpdater.restart();
             });
         });
     }
@@ -1313,6 +1246,8 @@ public class HomeController extends AbstractMainController {
 
     private void initServicesAndTasks() {
         initLoadingAnim();
+        initRoomRefresherService();
+        initRoomPlayersService();
         initActiveLobbyService();
         initGameLoadingService();
     }
@@ -1395,6 +1330,83 @@ public class HomeController extends AbstractMainController {
                 return task;
             }
         };
+        activeLobbyService.setExecutor(executorService);
+        activeLobbyService.valueProperty().addListener((observable, oldValue, newValue) -> activeLobby.set(newValue));
+    }
+
+    private void initRoomRefresherService() {
+        ScheduledService<Map<UUID, Lobby>> service = new ScheduledService<>() {
+            @Override
+            protected Task<Map<UUID, Lobby>> createTask() {
+                return new Task<>() {
+                    @Override
+                    protected Map<UUID, Lobby> call() throws Exception {
+                        Map<UUID, Lobby> map = Launcher.manager.requestRoomUpdate();
+                        updateValue(map);
+                        return map;
+                    }
+                };
+            }
+        };
+        service.setExecutor(executorService);
+        service.setPeriod(Duration.seconds(5));
+        service.setRestartOnFailure(true);
+        service.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null) {
+                return;
+            }
+            /* Keys that are present in both maps (either room hasn't changed or only it's status has changed */
+            List<UUID> alreadyPresentKeys = lobbyMap.keySet().stream()
+                    .filter(newValue::containsKey)
+                    .collect(Collectors.toList());
+            /* Keys that are present in the map on the client side but are not present in the updated map
+             * received. It means the keys were removed and the room associated does not exist anymore. */
+            List<UUID> removedKeys = lobbyMap.keySet().stream()
+                    .filter(k -> !newValue.containsKey(k))
+                    .collect(Collectors.toList());
+            /* Keys that are present in the new received map but not in the map on the client side.
+             * It means the keys were added. */
+            List<UUID> addedKeys = newValue.keySet().stream()
+                    .filter(k -> !lobbyMap.containsKey(k))
+                    .collect(Collectors.toList());
+            for (UUID k : alreadyPresentKeys) {
+                if (!lobbyMap.get(k).getStatus().equals(newValue.get(k).getStatus())) {
+                    lobbyMap.get(k).setStatus(newValue.get(k).getStatus());
+                }
+            }
+            for (UUID k : removedKeys) {
+                lobbyMap.remove(k, lobbyMap.get(k));
+            }
+            for (UUID k : addedKeys) {
+                lobbyMap.put(k, ObservableLobby.toObservableLobby(newValue.get(k)));
+            }
+        });
+        lobbiesRefresher = service;
+    }
+
+    private void initRoomPlayersService() {
+        ScheduledService<ArrayList<String>> service = new ScheduledService<>() {
+            @Override
+            protected Task<ArrayList<String>> createTask() {
+                return new Task<>() {
+                    @Override
+                    protected ArrayList<String> call() throws Exception {
+                        ArrayList<String> received = Launcher.manager.requestPlayerList(activeLobby.get().getRoomId());
+                        updateValue(received);
+                        return received;
+                    }
+                };
+            }
+        };
+        service.setExecutor(executorService);
+        service.setPeriod(Duration.seconds(1));
+        roomPlayersUpdater = service;
+        roomPlayersUpdater.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+            List<Label> labels = new ArrayList<>();
+            newValue.forEach(s -> labels.add(new Label(s)));
+            observablePlayerList.clear();
+            observablePlayerList.addAll(labels);
+        });
     }
 
     private void initGameLoadingService() {
@@ -1423,6 +1435,12 @@ public class HomeController extends AbstractMainController {
                 Platform.runLater(() -> root.getChildren().add(over));
                 tl.play();
                 return null;
+            }
+
+            @Override
+            protected void scheduled() {
+                super.scheduled();
+                Platform.runLater(() -> roomPlayersUpdater.cancel());
             }
         };
     }

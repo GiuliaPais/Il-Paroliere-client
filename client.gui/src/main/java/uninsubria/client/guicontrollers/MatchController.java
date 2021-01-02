@@ -33,13 +33,12 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Controller for the match view.
  *
  * @author Giulia Pais
- * @version 0.9.7
+ * @version 0.9.9
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
@@ -185,6 +184,7 @@ public class MatchController extends AbstractMainController {
     public void setMatchGrid(String[] gridFaces, Integer[] gridNumb) {
         matchGrid.resetGrid(gridFaces, gridNumb);
         newMatchAvailable = true;
+        matchNumber.set(matchNumber.get() + 1);
         wordFoundList.clear();
         matchGrid.clearSelection();
         timerTimeout.cancel();
@@ -213,6 +213,8 @@ public class MatchController extends AbstractMainController {
                             .filter(e -> e.getKey().get().equals(entry.getKey()))
                             .forEach(e -> e.getValue().set(entry.getValue()[1]));
                 });
+        Integer score = gameScore.getScores().get(Launcher.manager.getProfile().getPlayerID())[1];
+        playerScore.set(score);
         gameScore.getMatchWords().entrySet().stream()
                 .forEach(entry -> {
                     proposedMatchWords.get(entry.getKey()).clear();
@@ -263,22 +265,57 @@ public class MatchController extends AbstractMainController {
     public void interruptGame() {
         if (!leaving) {
             interrupted = true;
-            scheduledExecutorService.shutdown();
-            notification(gameInterrBody.get(), javafx.util.Duration.seconds(5));
-            try {
-                scheduledExecutorService.awaitTermination(5, TimeUnit.SECONDS);
-                Platform.runLater(() -> {
-                    Parent p = null;
+            ScheduledService<Duration> service5sec = new ScheduledService<>() {
+                private Duration notifDuration = Duration.ofSeconds(5);
+
+                @Override
+                protected Task<Duration> createTask() {
+                    return new Task<>() {
+                        @Override
+                        protected Duration call() {
+                            Duration decrement = notifDuration.minusSeconds(1);
+                            notifDuration = decrement;
+                            updateValue(decrement);
+                            return decrement;
+                        }
+                    };
+                }
+
+                @Override
+                protected void succeeded() {
+                    super.succeeded();
+                    if (getLastValue().equals(Duration.ZERO)) {
+                        this.cancel();
+                    }
+                }
+
+                @Override
+                protected void failed() {
+                    super.failed();
+                    if (getLastValue().equals(Duration.ZERO)) {
+                        this.cancel();
+                    }
+                }
+            };
+            service5sec.setDelay(javafx.util.Duration.seconds(1));
+            service5sec.setExecutor(scheduledExecutorService);
+            service5sec.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+                if (newValue.equals(Duration.ZERO)) {
+                    Parent p;
                     try {
-                        p = requestParent(ControllerType.HOME_VIEW, homeReference);
+                        HomeController homeView = new HomeController();
+                        homeView.setActiveLobby(activeRoom);
+                        p = requestParent(ControllerType.HOME_VIEW, homeView);
+                        sceneTransitionAnimation(p, SlideDirection.TO_BOTTOM).play();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    sceneTransitionAnimation(p, SlideDirection.TO_BOTTOM);
-                });
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                }
+            });
+            timerCountDownService.cancel();
+            timerTimeout.cancel();
+            notification(gameInterrBody.get(), javafx.util.Duration.seconds(5));
+            service5sec.start();
         }
     }
 
@@ -518,7 +555,6 @@ public class MatchController extends AbstractMainController {
                     }
                     Platform.runLater(() -> {
                         HomeController home = new HomeController();
-                        System.out.println("New home controller");
                         Parent parent = null;
                         try {
                             parent = requestParent(ControllerType.HOME_VIEW, home);
