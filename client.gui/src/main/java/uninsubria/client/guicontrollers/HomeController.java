@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
  * Controller for the home view.
  *
  * @author Giulia Pais
- * @version 0.9.10
+ * @version 0.9.11
  */
 public class HomeController extends AbstractMainController {
     /*---Fields---*/
@@ -1347,17 +1347,14 @@ public class HomeController extends AbstractMainController {
                     }
                 };
             }
-
-            @Override
-            public void restart() {
-                super.restart();
-                System.out.println("Room refresher restarted");
-            }
         };
         service.setExecutor(executorService);
         service.setPeriod(Duration.seconds(5));
         service.setRestartOnFailure(true);
         service.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null) {
+                return;
+            }
             /* Keys that are present in both maps (either room hasn't changed or only it's status has changed */
             List<UUID> alreadyPresentKeys = lobbyMap.keySet().stream()
                     .filter(newValue::containsKey)
@@ -1399,12 +1396,6 @@ public class HomeController extends AbstractMainController {
                         return received;
                     }
                 };
-            }
-
-            @Override
-            public void restart() {
-                super.restart();
-                System.out.println("Players updater ready");
             }
         };
         service.setExecutor(executorService);
