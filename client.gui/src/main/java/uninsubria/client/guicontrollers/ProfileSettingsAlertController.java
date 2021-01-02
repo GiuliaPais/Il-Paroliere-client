@@ -33,7 +33,7 @@ import java.util.ResourceBundle;
  * Controller for the profile settings.
  *
  * @author Giulia Pais
- * @version 0.9.0
+ * @version 0.9.1
  */
 public class ProfileSettingsAlertController extends AbstractCustomAlertController {
     /*---Fields---*/
@@ -82,7 +82,7 @@ public class ProfileSettingsAlertController extends AbstractCustomAlertControlle
         stackPaneAlert.setStyle("-fx-font-size: " + fontSize + ";");
         profileOptTitle.setStyle("-fx-font-size: " + (fontSize + 2) + ";");
         bgColor = new SimpleObjectProperty<>(Color.valueOf(Launcher.manager.getProfile().getBgColor()));
-        imgColor = new SimpleObjectProperty<>(Color.valueOf(Launcher.manager.getProfile().getImgColor()));
+        imgColor = new SimpleObjectProperty<>(Color.valueOf(Launcher.manager.getProfile().getImgColor().trim()));
         background = new SimpleObjectProperty<>(new Background(
                 new BackgroundFill(bgColor.get(), new CornerRadii(0.0),
                         new Insets(0,0,0,0))));
