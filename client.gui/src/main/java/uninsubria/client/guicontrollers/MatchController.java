@@ -38,7 +38,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Controller for the match view.
  *
  * @author Giulia Pais
- * @version 0.9.8
+ * @version 0.9.9
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
@@ -184,6 +184,7 @@ public class MatchController extends AbstractMainController {
     public void setMatchGrid(String[] gridFaces, Integer[] gridNumb) {
         matchGrid.resetGrid(gridFaces, gridNumb);
         newMatchAvailable = true;
+        matchNumber.set(matchNumber.get() + 1);
         wordFoundList.clear();
         matchGrid.clearSelection();
         timerTimeout.cancel();
@@ -212,6 +213,8 @@ public class MatchController extends AbstractMainController {
                             .filter(e -> e.getKey().get().equals(entry.getKey()))
                             .forEach(e -> e.getValue().set(entry.getValue()[1]));
                 });
+        Integer score = gameScore.getScores().get(Launcher.manager.getProfile().getPlayerID())[1];
+        playerScore.set(score);
         gameScore.getMatchWords().entrySet().stream()
                 .forEach(entry -> {
                     proposedMatchWords.get(entry.getKey()).clear();
