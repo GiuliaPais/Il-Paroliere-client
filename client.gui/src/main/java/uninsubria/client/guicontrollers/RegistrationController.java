@@ -36,7 +36,7 @@ import java.util.ResourceBundle;
 /**
  * Controller class for the registration screen.
  * @author Giulia Pais
- * @version 0.9.3
+ * @version 0.9.4
  *
  */
 public class RegistrationController extends AbstractMainController {
@@ -413,7 +413,7 @@ public class RegistrationController extends AbstractMainController {
 			if (Launcher.manager.getProfile() != null) {
 				Parent mainMenu;
 				try {
-					mainMenu = requestParent(ControllerType.HOME_VIEW);
+					mainMenu = requestParent(ControllerType.HOME_VIEW, new HomeController());
 					Timeline transition = sceneTransitionAnimation(mainMenu, SlideDirection.TO_LEFT);
 					transition.play();
 				} catch (IOException ioException) {
