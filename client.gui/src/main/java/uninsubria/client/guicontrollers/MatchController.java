@@ -37,7 +37,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Controller for the match view.
  *
  * @author Giulia Pais
- * @version 0.9.10
+ * @version 0.9.11
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
@@ -149,11 +149,6 @@ public class MatchController extends AbstractMainController {
         super.initialize();
         timeoutMonitor = new TimeoutMonitor(activeRoom.getRuleset().getTimeToWaitFromMatchToMatch().toMillis());
         Launcher.manager.setMatchMonitors(sendWordsMonitor, timeoutMonitor, gameScoresMonitor, endGameMonitor);
-        leavingOrInterrupting.addListener((observable, oldValue, newValue) -> {
-            if (newValue) {
-                backgroundExecutorService.shutdownNow();
-            }
-        });
         Task<Boolean> interruptListenerTask = listenForInterruptTask();
         parallelExecutorService.execute(interruptListenerTask);
         try {
@@ -244,7 +239,8 @@ public class MatchController extends AbstractMainController {
     }
 
     @FXML void leaveGame() {
-        leaving.set(true);
+        generateYNDialog((StackPane) root, root.getWidth()/3, leavingHead.get(), leavingBody.get(),
+                event -> leaving.set(true), null).show();
     }
 
     @FXML void requestDefinitions() {
@@ -457,17 +453,13 @@ public class MatchController extends AbstractMainController {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                generateYNDialog((StackPane) root, root.getWidth()/3, leavingHead.get(), leavingBody.get(),
-                        event -> {
-                            HomeController homeController = new HomeController();
-                            try {
-                                Parent parent = requestParent(ControllerType.HOME_VIEW, homeController);
-                                sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM);
-                                parallelExecutorService.shutdownNow();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }, null).show();
+                HomeController homeController = new HomeController();
+                try {
+                    Parent parent = requestParent(ControllerType.HOME_VIEW, homeController);
+                    sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
@@ -680,7 +672,6 @@ public class MatchController extends AbstractMainController {
                             homeView.setActiveLobby(activeRoom);
                             p = requestParent(ControllerType.HOME_VIEW, homeView);
                             sceneTransitionAnimation(p, SlideDirection.TO_BOTTOM).play();
-                            parallelExecutorService.shutdownNow();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -907,8 +898,6 @@ public class MatchController extends AbstractMainController {
                         try {
                             Parent parent = requestParent(ControllerType.HOME_VIEW, home);
                             sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
-                            backgroundExecutorService.shutdownNow();
-                            parallelExecutorService.shutdownNow();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -919,5 +908,15 @@ public class MatchController extends AbstractMainController {
             }
         });
         return task;
+    }
+
+    private void cancelAllServices() {
+        timerTimeout.cancel();
+        timerCountDownService.cancel();
+        startingCountDownService.cancel();
+        newMatchListener.cancel();
+        scoresListener.cancel();
+        wordRequestListener.cancel();
+        timeoutListener.cancel();
     }
 }
