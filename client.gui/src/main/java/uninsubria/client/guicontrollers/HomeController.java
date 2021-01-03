@@ -1249,10 +1249,11 @@ public class HomeController extends AbstractMainController {
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             } finally {
-                executorService.shutdownNow();
-                parallelExecutor.shutdownNow();
+//                executorService.shutdownNow();
+//                parallelExecutor.shutdownNow();
             }
         });
+        gameLoadingOverlay.setVisible(true);
         tl.play();
     }
 

@@ -497,6 +497,9 @@ public class MatchController extends AbstractMainController {
             @Override
             protected void succeeded() {
                 super.succeeded();
+                if (getLastValue() != null) {
+                    duration = getLastValue();
+                }
                 if (getLastValue().equals(Duration.ZERO)) {
                     this.cancel();
                 }
@@ -505,6 +508,9 @@ public class MatchController extends AbstractMainController {
             @Override
             protected void failed() {
                 super.failed();
+                if (getLastValue() != null) {
+                    duration = getLastValue();
+                }
                 if (getLastValue().equals(Duration.ZERO)) {
                     this.cancel();
                 }
@@ -553,6 +559,9 @@ public class MatchController extends AbstractMainController {
             @Override
             protected void succeeded() {
                 super.succeeded();
+                if (getLastValue() != null) {
+                    duration = getLastValue();
+                }
                 if (getLastValue().equals(Duration.ZERO)) {
                     this.cancel();
                 }
@@ -561,6 +570,9 @@ public class MatchController extends AbstractMainController {
             @Override
             protected void failed() {
                 super.failed();
+                if (getLastValue() != null) {
+                    duration = getLastValue();
+                }
                 if (getLastValue().equals(Duration.ZERO)) {
                     this.cancel();
                 }
@@ -583,7 +595,7 @@ public class MatchController extends AbstractMainController {
     //Service for the initial countdown (before match)
     private void initPreCountDownService() {
         ScheduledService<Integer> service = new ScheduledService<>() {
-            private int cycleCount = 4;
+            private int cycleCount = 5;
 
             @Override
             protected Task<Integer> createTask() {
