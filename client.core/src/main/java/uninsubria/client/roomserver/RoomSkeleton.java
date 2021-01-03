@@ -82,6 +82,7 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
             this.in = new ObjectInputStream(new BufferedInputStream(roomClient.getInputStream()));
         }
         CommProtocolCommands com = CommProtocolCommands.getByCommand(command);
+        System.out.println(com);
         switch (Objects.requireNonNull(com)) {
             case GAME_STARTING -> {
                 writeCommand(CommProtocolCommands.GAME_STARTING);

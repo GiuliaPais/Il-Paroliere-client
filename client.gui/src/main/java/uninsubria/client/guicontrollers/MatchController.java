@@ -677,6 +677,7 @@ public class MatchController extends AbstractMainController {
                         }
                     }
                 });
+                cancelAllServices();
                 load.start();
                 notification(gameInterrBody.get(), javafx.util.Duration.seconds(5));
             }
@@ -694,7 +695,6 @@ public class MatchController extends AbstractMainController {
                     @Override
                     protected Duration call() {
                         Duration decrement = notifDuration.minusSeconds(1);
-                        notifDuration = decrement;
                         updateValue(decrement);
                         return decrement;
                     }
@@ -704,6 +704,9 @@ public class MatchController extends AbstractMainController {
             @Override
             protected void succeeded() {
                 super.succeeded();
+                if (getLastValue() != null) {
+                    notifDuration = getLastValue();
+                }
                 if (getLastValue().equals(Duration.ZERO)) {
                     this.cancel();
                 }

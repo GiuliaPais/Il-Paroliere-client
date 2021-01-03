@@ -253,8 +253,14 @@ public class HomeController extends AbstractMainController {
         lobbyView.setVisible(false);
         loadStatistics();
         if (activeLobby.get() == null) {
+            System.out.println("Room is null");
+            roomPlayersUpdater.cancel();
+            System.out.println(roomPlayersUpdater.getState());
             lobbiesRefresher.start();
+            System.out.println(roomPlayersUpdater.getState());
+            System.out.println(lobbiesRefresher.getState());
         } else {
+            System.out.println("Room is set");
             lobbyView.setText(activeLobby.get().getRoomName());
             lobbyPlayer_cont.setText(String.valueOf(activeLobby.get().getNumPlayers()));
             lobbyLang_cont.setText(activeLobby.get().getLanguage().name());
@@ -263,7 +269,7 @@ public class HomeController extends AbstractMainController {
             join_room_btn.setDisable(true);
             roomList.setDisable(true);
             lobbyView.setVisible(true);
-            lobbiesRefresher.cancel();
+//            lobbiesRefresher.cancel();
             roomPlayersUpdater.start();
         }
     }
@@ -354,6 +360,7 @@ public class HomeController extends AbstractMainController {
 
     @FXML void leaveRoom() throws IOException {
         Launcher.manager.leaveRoom(activeLobby.get().getRoomId());
+        roomList.getSelectionModel().clearSelection();
         if (activeLobby.get() != null) {
             activeLobby.set(null);
         }
@@ -840,7 +847,6 @@ public class HomeController extends AbstractMainController {
                         Launcher.manager.leaveRoom(activeLobby.get().getRoomId());
                     }
                     Launcher.manager.quit();
-//                    RoomCentralManager.stopRoomServer();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -863,7 +869,6 @@ public class HomeController extends AbstractMainController {
                 }
                 try {
                     Launcher.manager.logout();
-//                    RoomCentralManager.stopRoomServer();
                     Parent mainMenu = requestParent(ControllerType.MAIN_MENU);
                     Timeline anim = sceneTransitionAnimation(mainMenu, SlideDirection.TO_RIGHT);
                     anim.play();
@@ -1374,6 +1379,7 @@ public class HomeController extends AbstractMainController {
         service.setRestartOnFailure(true);
         lobbiesRefresher = service;
         lobbiesRefresher.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+            System.out.println("lobbies refreshed");
             if (newValue == null) {
                 return;
             }
@@ -1427,6 +1433,7 @@ public class HomeController extends AbstractMainController {
         service.setPeriod(Duration.seconds(1));
         roomPlayersUpdater = service;
         roomPlayersUpdater.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+            System.out.println("Players refreshed");
             if (newValue == null || newValue.isEmpty()) {
                 return;
             }
