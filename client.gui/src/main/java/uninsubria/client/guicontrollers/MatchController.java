@@ -519,7 +519,11 @@ public class MatchController extends AbstractMainController {
         service.setDelay(javafx.util.Duration.seconds(0));
         service.setExecutor(backgroundExecutorService);
         timerCountDownService = service;
-        timerCountDownService.lastValueProperty().addListener((observable, oldValue, newValue) -> matchTimerDuration.set(newValue));
+        timerCountDownService.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                matchTimerDuration.set(newValue);
+            }
+        });
         matchTimerDuration.addListener((observable, oldValue, newValue) -> {
             if (newValue.equals(Duration.ZERO) & !leavingOrInterrupting.get()) {
                 loadingScoresOverlay.setVisible(true);
@@ -615,7 +619,7 @@ public class MatchController extends AbstractMainController {
             @Override
             public boolean cancel() {
                 super.cancel();
-                cycleCount = 4;
+                cycleCount = 5;
                 return true;
             }
         };
