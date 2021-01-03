@@ -2,7 +2,7 @@ package uninsubria.client.guicontrollers;
 
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXListView;
-import javafx.application.Platform;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
@@ -23,8 +23,7 @@ import javafx.scene.text.TextFlow;
 import uninsubria.client.customcontrols.GameGrid;
 import uninsubria.client.gui.Launcher;
 import uninsubria.client.gui.ObservableLobby;
-import uninsubria.client.roomserver.RoomCentralManager;
-import uninsubria.client.roomserver.TimeoutMonitor;
+import uninsubria.client.monitors.*;
 import uninsubria.utils.business.GameScore;
 import uninsubria.utils.business.Word;
 
@@ -38,7 +37,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Controller for the match view.
  *
  * @author Giulia Pais
- * @version 0.9.9
+ * @version 0.9.10
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
@@ -55,21 +54,29 @@ public class MatchController extends AbstractMainController {
     @FXML TableColumn<Map.Entry<StringProperty, IntegerProperty>, String> playeridCol;
     @FXML TableColumn<Map.Entry<StringProperty, IntegerProperty>, Integer> scoreCol;
 
-    private HomeController homeReference;
     private ObservableLobby activeRoom;
     private List<String> participants;
-    private String[] gridFaces;
-    private Integer[] gridNumb;
     private GameGrid matchGrid;
-    private Boolean newMatchAvailable = false;
     private ObjectProperty<Duration> matchTimerDuration, timeoutTimerDuration;
     private IntegerProperty minutesPart, secondsPart, playerScore, matchNumber, timeoutMin, timeoutSec;
-    private ScheduledService<Duration> timerCountDownService, timerTimeout;
     private StringProperty currScoreTxt, wordListTxt, leaveGameTxt, insertTxt, clearTxt, instr1, instr2, instr3, instr4,
-                            loadingScoresTxt, gameInterrBody;
+                            loadingScoresTxt, gameInterrBody, leavingHead, leavingBody;
     private ListProperty<String> wordFoundList;
-    private ScheduledService<String> startingCountDownService;
-    private ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+
+    private IntegerProperty preCountDownCycle;
+    private BooleanProperty gameEnded;
+
+    //++ Services and Tasks ++//
+    private ScheduledService<Integer> startingCountDownService;
+    private ScheduledService<Duration> timerCountDownService, timerTimeout;
+    private ScheduledService<MatchGridMonitor.GridWrapper> newMatchListener;
+    private ScheduledService<GameScore> scoresListener;
+    private ScheduledService<Void> wordRequestListener;
+    private ScheduledService<Boolean> timeoutListener;
+
+    //++ Thread Pools ++//
+    private ScheduledExecutorService backgroundExecutorService = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledExecutorService parallelExecutorService = Executors.newScheduledThreadPool(5);
 
     //++ Internals for keeping scores ++//
     private MapProperty<StringProperty, IntegerProperty> gameScores;
@@ -77,13 +84,23 @@ public class MatchController extends AbstractMainController {
     private HashMap<String, ListProperty<Word>> proposedMatchWords;
     private StringProperty winnerName;
     private ListProperty<Map.Entry<StringProperty, IntegerProperty>> scoresListTable;
+    private Set<String> requestedWords;
+    private ObjectProperty<GameScore> lastGameScore;
 
     //++ For timeout synch ++//
-    private TimeoutMonitor monitor;
+    private TimeoutMonitor timeoutMonitor;
+    private MatchGridMonitor matchGridMonitor;
+    private InterruptMonitor interruptMonitor;
+    private SendWordsMonitor sendWordsMonitor;
+    private GameScoresMonitor gameScoresMonitor;
+    private EndGameMonitor endGameMonitor;
 
     //++ For interrupt ++//
-    private boolean interrupted = false;
-    private boolean leaving = false;
+    private BooleanProperty interrupted;
+    private BooleanProperty leaving;
+    private BooleanBinding leavingOrInterrupting;
+    private ObjectProperty<MatchGridMonitor.GridWrapper> newGrid;
+    private BooleanProperty isInTimeout;
 
     /*---Constructors---*/
     public MatchController() {
@@ -110,26 +127,63 @@ public class MatchController extends AbstractMainController {
         this.gameScores = new SimpleMapProperty<>();
         this.scoresListTable = new SimpleListProperty<>();
         this.gameInterrBody = new SimpleStringProperty();
+        this.requestedWords = Collections.synchronizedSet(new HashSet<>());
+        this.interrupted = new SimpleBooleanProperty(false);
+        this.leaving = new SimpleBooleanProperty(false);
+        this.leavingOrInterrupting = interrupted.or(leaving);
+        this.timeoutMonitor = new TimeoutMonitor(activeRoom.getRuleset().getTimeToWaitFromMatchToMatch().toMillis());
+        this.sendWordsMonitor = new SendWordsMonitor();
+        this.gameScoresMonitor = new GameScoresMonitor();
+        this.endGameMonitor = new EndGameMonitor();
+        this.newGrid = new SimpleObjectProperty<>();
+        this.preCountDownCycle = new SimpleIntegerProperty(4);
+        this.lastGameScore = new SimpleObjectProperty<>();
+        this.isInTimeout = new SimpleBooleanProperty(false);
+        this.gameEnded = new SimpleBooleanProperty(false);
+        this.leavingHead = new SimpleStringProperty();
+        this.leavingBody = new SimpleStringProperty();
     }
 
     /*---Methods---*/
     @Override
     public void initialize() {
         super.initialize();
+        Launcher.manager.setMatchMonitors(sendWordsMonitor, timeoutMonitor, gameScoresMonitor, endGameMonitor);
+        leavingOrInterrupting.addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                backgroundExecutorService.shutdownNow();
+            }
+        });
+        Task<Boolean> interruptListenerTask = listenForInterruptTask();
+        parallelExecutorService.execute(interruptListenerTask);
+        try {
+            MatchGridMonitor.GridWrapper gw = matchGridMonitor.waitForMatch();
+            newGrid.set(gw);
+            initGameGrid();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return;
+        }
         startingOverlay.setVisible(true);
         winnerOverlay.setVisible(false);
         loadingScoresOverlay.setVisible(false);
         initZeroScores();
         initTable();
-        initGameGrid();
+        initNewMatchListener();
+        initScoresListener();
+        initWordRequestListener();
+        initTimeoutListener();
         initTimerService();
         initTimerTimeoutService();
+        Task<Boolean> endgame = gameEndListener();
+        parallelExecutorService.execute(endgame);
         initTimerBindings();
         initHeaderLabels();
         bindLocalizedLabels();
         initWordsList();
         initInstructions();
         initPreCountDownService();
+        initLeaveBehaviour();
         try {
             initScoresOverlay();
         } catch (IOException e) {
@@ -153,7 +207,7 @@ public class MatchController extends AbstractMainController {
     }
 
     @FXML void setReady() {
-        monitor.signalReady();
+        timeoutMonitor.signalReady();
         readyBtn.setDisable(true);
         requestBtn.setDisable(true);
     }
@@ -171,78 +225,16 @@ public class MatchController extends AbstractMainController {
         instr4.set("\u2727 " + resBundle.getString("instructions_delete") + "\n\n");
         loadingScoresTxt.set(resBundle.getString("loading_scores"));
         gameInterrBody.set(resBundle.getString("game_interr_body"));
+        leavingHead.set(resBundle.getString("leaving_game_head"));
+        leavingBody.set(resBundle.getString("leaving_game_body"));
     }
 
     public void setActiveRoom(ObservableLobby activeRoom) {
         this.activeRoom = activeRoom;
     }
 
-    public void setMonitor(TimeoutMonitor monitor) {
-        this.monitor = monitor;
-    }
-
-    public void setMatchGrid(String[] gridFaces, Integer[] gridNumb) {
-        matchGrid.resetGrid(gridFaces, gridNumb);
-        newMatchAvailable = true;
-        matchNumber.set(matchNumber.get() + 1);
-        wordFoundList.clear();
-        matchGrid.clearSelection();
-        timerTimeout.cancel();
-    }
-
     public void setParticipants(List<String> participants) {
         this.participants = participants;
-    }
-
-    public void setFirstMatchGrid(String[] gridFaces, Integer[] gridNumb) {
-        this.gridFaces = gridFaces;
-        this.gridNumb = gridNumb;
-    }
-
-    public ArrayList<String> getFoundWords() {
-        ArrayList<String> words = new ArrayList<>();
-        words.addAll(wordFoundList.get());
-        return words;
-    }
-
-    public void setMatchScores(GameScore gameScore) {
-        gameScore.getScores().entrySet().stream()
-                .forEach(entry -> {
-                    lastMatchScores.get(entry.getKey()).set(entry.getValue()[0]);
-                    gameScores.entrySet().stream()
-                            .filter(e -> e.getKey().get().equals(entry.getKey()))
-                            .forEach(e -> e.getValue().set(entry.getValue()[1]));
-                });
-        Integer score = gameScore.getScores().get(Launcher.manager.getProfile().getPlayerID())[1];
-        playerScore.set(score);
-        gameScore.getMatchWords().entrySet().stream()
-                .forEach(entry -> {
-                    proposedMatchWords.get(entry.getKey()).clear();
-                    proposedMatchWords.get(entry.getKey()).addAll(Arrays.asList(entry.getValue()));
-                });
-        winnerName.set(gameScore.getWinner());
-    }
-
-    public void setTimerMatchTimeout() {
-        loadingScoresOverlay.setVisible(false);
-        readyBtn.setDisable(false);
-        requestBtn.setDisable(false);
-        scoresOverlay.setVisible(true);
-        switch (timerTimeout.getState()) {
-            case FAILED, CANCELLED, SUCCEEDED -> {
-                initTimerTimeoutService();
-                timerTimeout.start();
-            }
-            case READY, SCHEDULED -> timerTimeout.start();
-        }
-    }
-
-    public void setEndGame() {
-        timerTimeout.cancel();
-    }
-
-    public Duration getTimeoutDuration() {
-        return activeRoom.getRuleset().getTimeToWaitFromMatchToMatch();
     }
 
     @Override
@@ -251,72 +243,20 @@ public class MatchController extends AbstractMainController {
         scoresOverlay.setStyle("-fx-font-size: "+ currentFontSize.get() + "px;");
     }
 
-    public void setHomeReference(HomeController homeReference) {
-        this.homeReference = homeReference;
-    }
-
     @FXML void leaveGame() {
-        leaving = true;
-        RoomCentralManager.stopRoom();
-        RoomCentralManager.stopRoomServer();
-        timerCountDownService.cancel();
+        leaving.set(true);
     }
 
-    public void interruptGame() {
-        if (!leaving) {
-            interrupted = true;
-            ScheduledService<Duration> service5sec = new ScheduledService<>() {
-                private Duration notifDuration = Duration.ofSeconds(5);
+    @FXML void requestDefinitions() {
 
-                @Override
-                protected Task<Duration> createTask() {
-                    return new Task<>() {
-                        @Override
-                        protected Duration call() {
-                            Duration decrement = notifDuration.minusSeconds(1);
-                            notifDuration = decrement;
-                            updateValue(decrement);
-                            return decrement;
-                        }
-                    };
-                }
+    }
 
-                @Override
-                protected void succeeded() {
-                    super.succeeded();
-                    if (getLastValue().equals(Duration.ZERO)) {
-                        this.cancel();
-                    }
-                }
+    public void setMatchGridMonitor(MatchGridMonitor matchGridMonitor) {
+        this.matchGridMonitor = matchGridMonitor;
+    }
 
-                @Override
-                protected void failed() {
-                    super.failed();
-                    if (getLastValue().equals(Duration.ZERO)) {
-                        this.cancel();
-                    }
-                }
-            };
-            service5sec.setDelay(javafx.util.Duration.seconds(1));
-            service5sec.setExecutor(scheduledExecutorService);
-            service5sec.lastValueProperty().addListener((observable, oldValue, newValue) -> {
-                if (newValue.equals(Duration.ZERO)) {
-                    Parent p;
-                    try {
-                        HomeController homeView = new HomeController();
-                        homeView.setActiveLobby(activeRoom);
-                        p = requestParent(ControllerType.HOME_VIEW, homeView);
-                        sceneTransitionAnimation(p, SlideDirection.TO_BOTTOM).play();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-            timerCountDownService.cancel();
-            timerTimeout.cancel();
-            notification(gameInterrBody.get(), javafx.util.Duration.seconds(5));
-            service5sec.start();
-        }
+    public void setInterruptMonitor(InterruptMonitor interruptMonitor) {
+        this.interruptMonitor = interruptMonitor;
     }
 
     /*----------- Private methods for initialization and scaling -----------*/
@@ -341,7 +281,7 @@ public class MatchController extends AbstractMainController {
     }
 
     private void initGameGrid() {
-        matchGrid = new GameGrid(gridFaces, gridNumb);
+        matchGrid = new GameGrid(newGrid.get().getGridFaces(), newGrid.get().getGridNumbers());
         matchGrid.setFontSize(currentFontSize.get());
         matchGrid.fontSizeProperty().bind(currentFontSize);
         gameGrid.getChildren().add(matchGrid);
@@ -418,6 +358,7 @@ public class MatchController extends AbstractMainController {
                 tile.setFontSize(newValue.doubleValue());
             });
             tile.setPlayer(player);
+            tile.setSelectedWordsSet(this.requestedWords);
             gameScores.entrySet().stream()
                     .filter(entry -> entry.getKey().get().equals(player))
                     .forEach(entry -> entry.getValue().addListener((observable, oldValue, newValue) -> tile.setGameScore(newValue.intValue())));
@@ -508,19 +449,46 @@ public class MatchController extends AbstractMainController {
         return Launcher.contrManager.loadPlayerScoreTile(ControllerType.SCORE_TILE.getFile(), tileController);
     }
 
+    private void initLeaveBehaviour() {
+        leaving.addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                try {
+                    Launcher.manager.leaveGame(activeRoom.getRoomId());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                generateYNDialog((StackPane) root, root.getWidth()/3, leavingHead.get(), leavingBody.get(),
+                        event -> {
+                            HomeController homeController = new HomeController();
+                            try {
+                                Parent parent = requestParent(ControllerType.HOME_VIEW, homeController);
+                                sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM);
+                                parallelExecutorService.shutdownNow();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }, null).show();
+            }
+        });
+    }
+
     //++ Initialize services ++//
     //Service for the match timer
     private void initTimerService() {
-        matchTimerDuration.set(activeRoom.getRuleset().getTimeToMatch());
         ScheduledService<Duration> service = new ScheduledService<>() {
+            private Duration duration = activeRoom.getRuleset().getTimeToMatch();
+
             @Override
             protected Task<Duration> createTask() {
                 Task<Duration> task = new Task<>() {
                     @Override
                     protected Duration call() {
-                        Duration decrement = matchTimerDuration.get().minusSeconds(1);
-                        updateValue(decrement);
-                        return decrement;
+                        if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
+                            Duration decrement = duration.minusSeconds(1);
+                            updateValue(decrement);
+                            return decrement;
+                        }
+                        return null;
                     }
                 };
                 return task;
@@ -545,47 +513,38 @@ public class MatchController extends AbstractMainController {
             @Override
             public boolean cancel() {
                 super.cancel();
-                if (!interrupted & !leaving) {
-                    loadingScoresOverlay.setVisible(true);
-                } else if (leaving) {
-                    try {
-                        Launcher.manager.leaveGame(activeRoom.getRoomId());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    Platform.runLater(() -> {
-                        HomeController home = new HomeController();
-                        Parent parent = null;
-                        try {
-                            parent = requestParent(ControllerType.HOME_VIEW, home);
-                            sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
-                }
+                duration = activeRoom.getRuleset().getTimeToMatch();
                 return true;
             }
         };
         service.setPeriod(javafx.util.Duration.seconds(1));
         service.setDelay(javafx.util.Duration.seconds(0));
-        service.setExecutor(scheduledExecutorService);
+        service.setExecutor(backgroundExecutorService);
         timerCountDownService = service;
         timerCountDownService.lastValueProperty().addListener((observable, oldValue, newValue) -> matchTimerDuration.set(newValue));
+        matchTimerDuration.addListener((observable, oldValue, newValue) -> {
+            if (newValue.equals(Duration.ZERO) & !leavingOrInterrupting.get()) {
+                loadingScoresOverlay.setVisible(true);
+            }
+        });
     }
 
     //Service for the timeout timer
     private void initTimerTimeoutService() {
-        timeoutTimerDuration.set(activeRoom.getRuleset().getTimeToWaitFromMatchToMatch());
         ScheduledService<Duration> service = new ScheduledService<>() {
+            private Duration duration = activeRoom.getRuleset().getTimeToWaitFromMatchToMatch();
+
             @Override
             protected Task<Duration> createTask() {
                 Task<Duration> task = new Task<>() {
                     @Override
                     protected Duration call() {
-                        Duration decrement = timeoutTimerDuration.get().minusSeconds(1);
-                        updateValue(decrement);
-                        return decrement;
+                        if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
+                            Duration decrement = duration.minusSeconds(1);
+                            updateValue(decrement);
+                            return decrement;
+                        }
+                        return null;
                     }
                 };
                 return task;
@@ -610,79 +569,32 @@ public class MatchController extends AbstractMainController {
             @Override
             public boolean cancel() {
                 super.cancel();
-                if (!interrupted & !leaving) {
-                    if (newMatchAvailable) {
-                        scoresOverlay.setVisible(false);
-                        startingOverlay.setVisible(true);
-                        switch (startingCountDownService.getState()) {
-                            case FAILED, CANCELLED, SUCCEEDED -> {
-                                initPreCountDownService();
-                                startingCountDownService.start();
-                            }
-                            case READY, SCHEDULED -> startingCountDownService.start();
-                        }
-                    } else {
-                        winnerOverlay.setVisible(true);
-                        try {
-                            Thread.sleep(Duration.ofSeconds(10).toMillis());
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        try {
-                            Parent parent = requestParent(ControllerType.HOME_VIEW, homeReference);
-                            sceneTransitionAnimation(parent, SlideDirection.TO_RIGHT);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                } else if (leaving) {
-                    Platform.runLater(() -> {
-                        RoomCentralManager.stopRoom();
-                        RoomCentralManager.stopRoomServer();
-                        HomeController home = new HomeController();
-                        Parent parent = null;
-                        try {
-                            parent = requestParent(ControllerType.HOME_VIEW, home);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
-                    });
-                }
+                duration = activeRoom.getRuleset().getTimeToWaitFromMatchToMatch();
                 return true;
             }
         };
         service.setPeriod(javafx.util.Duration.seconds(1));
         service.setDelay(javafx.util.Duration.seconds(0));
-        service.setExecutor(scheduledExecutorService);
+        service.setExecutor(backgroundExecutorService);
         timerTimeout = service;
         timerTimeout.lastValueProperty().addListener((observable, oldValue, newValue) -> timeoutTimerDuration.set(newValue));
     }
 
+    //Service for the initial countdown (before match)
     private void initPreCountDownService() {
-        ScheduledService<String> service = new ScheduledService<>() {
-            private int cycle = 1;
+        ScheduledService<Integer> service = new ScheduledService<>() {
+            private int cycleCount = 4;
 
             @Override
-            protected Task<String> createTask() {
+            protected Task<Integer> createTask() {
                 return new Task<>() {
                     @Override
-                    protected String call() {
-                        String val = switch (cycle) {
-                            case 1 -> "3";
-                            case 2 -> "2";
-                            case 3 -> "1";
-                            case 4 -> "Go!";
-                            default -> null;
-                        };
-                        updateValue(val);
-                        return val;
-                    }
-
-                    @Override
-                    protected void succeeded() {
-                        super.succeeded();
-                        cycle++;
+                    protected Integer call() {
+                        if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
+                            updateValue(cycleCount);
+                            return cycleCount;
+                        }
+                        return null;
                     }
                 };
             }
@@ -690,15 +602,8 @@ public class MatchController extends AbstractMainController {
             @Override
             protected void succeeded() {
                 super.succeeded();
-                if (cycle == 5) {
-                    this.cancel();
-                }
-            }
-
-            @Override
-            protected void failed() {
-                super.failed();
-                if (cycle == 5) {
+                cycleCount--;
+                if (cycleCount == -1) {
                     this.cancel();
                 }
             }
@@ -706,24 +611,301 @@ public class MatchController extends AbstractMainController {
             @Override
             public boolean cancel() {
                 super.cancel();
-                if (!interrupted) {
-                    startingOverlay.setVisible(false);
-                    newMatchAvailable = false;
-                    switch (timerCountDownService.getState()) {
-                        case FAILED, CANCELLED, SUCCEEDED -> {
-                            initTimerService();
-                            timerCountDownService.start();
-                        }
-                        case READY, SCHEDULED -> timerCountDownService.start();
-                    }
-                }
+                cycleCount = 4;
                 return true;
             }
         };
+        service.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                preCountDownCycle.set(newValue);
+            }
+        });
+        preCountDownCycle.addListener((observable, oldValue, newValue) -> {
+            if (newValue.intValue() == 0) {
+                startingOverlay.setVisible(false);
+                timerCountDownService.restart();
+            }
+            String txt = switch (newValue.intValue()) {
+                case 4 -> "3";
+                case 3 -> "2";
+                case 2 -> "1";
+                case 1, 0 -> "Go!";
+                default -> "";
+            };
+            startingCountDown.setText(txt);
+        });
         service.setPeriod(javafx.util.Duration.seconds(1));
         service.setDelay(javafx.util.Duration.seconds(1));
-        service.setExecutor(scheduledExecutorService);
-        service.lastValueProperty().addListener((observable, oldValue, newValue) -> startingCountDown.setText(newValue));
+        service.setExecutor(backgroundExecutorService);
         startingCountDownService = service;
+    }
+
+    private Task<Boolean> listenForInterruptTask() {
+        Task<Boolean> task = new Task<>() {
+            @Override
+            protected Boolean call() throws Exception {
+                if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
+                    interruptMonitor.isInterrupted();
+                    updateValue(true);
+                    return true;
+                }
+                return false;
+            }
+        };
+        task.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                interrupted.set(newValue);
+            }
+        });
+        interrupted.addListener((observable, oldValue, newValue) -> {
+            if (newValue & !leaving.get()) {
+                ScheduledService<Duration> load = leavingGameWaitTask();
+                load.lastValueProperty().addListener((observable1, oldValue1, newValue1) -> {
+                    if (newValue1.equals(Duration.ZERO)) {
+                        Parent p;
+                        try {
+                            HomeController homeView = new HomeController();
+                            homeView.setActiveLobby(activeRoom);
+                            p = requestParent(ControllerType.HOME_VIEW, homeView);
+                            sceneTransitionAnimation(p, SlideDirection.TO_BOTTOM).play();
+                            parallelExecutorService.shutdownNow();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                load.start();
+                notification(gameInterrBody.get(), javafx.util.Duration.seconds(5));
+            }
+        });
+        return task;
+    }
+
+    private ScheduledService<Duration> leavingGameWaitTask() {
+        ScheduledService<Duration> service5sec = new ScheduledService<>() {
+            private Duration notifDuration = Duration.ofSeconds(5);
+
+            @Override
+            protected Task<Duration> createTask() {
+                return new Task<>() {
+                    @Override
+                    protected Duration call() {
+                        Duration decrement = notifDuration.minusSeconds(1);
+                        notifDuration = decrement;
+                        updateValue(decrement);
+                        return decrement;
+                    }
+                };
+            }
+
+            @Override
+            protected void succeeded() {
+                super.succeeded();
+                if (getLastValue().equals(Duration.ZERO)) {
+                    this.cancel();
+                }
+            }
+
+            @Override
+            protected void failed() {
+                super.failed();
+                if (getLastValue().equals(Duration.ZERO)) {
+                    this.cancel();
+                }
+            }
+        };
+        service5sec.setDelay(javafx.util.Duration.seconds(1));
+        service5sec.setExecutor(parallelExecutorService);
+        return service5sec;
+    }
+
+    private void initNewMatchListener() {
+        ScheduledService<MatchGridMonitor.GridWrapper> service = new ScheduledService<>() {
+            @Override
+            protected Task<MatchGridMonitor.GridWrapper> createTask() {
+                return new Task<>() {
+                    @Override
+                    protected MatchGridMonitor.GridWrapper call() throws InterruptedException {
+                        if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
+                            MatchGridMonitor.GridWrapper gw = matchGridMonitor.waitForMatch();
+                            updateValue(gw);
+                            return gw;
+                        }
+                        return null;
+                    }
+                };
+            }
+        };
+        service.setRestartOnFailure(false);
+        service.setExecutor(parallelExecutorService);
+        newMatchListener = service;
+        newMatchListener.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                newGrid.set(newValue);
+            }
+        });
+        newGrid.addListener((observable, oldValue, newValue) -> {
+            matchGrid.resetGrid(newValue.getGridFaces(), newValue.getGridNumbers());
+            matchNumber.set(matchNumber.get() + 1);
+            wordFoundList.clear();
+            matchGrid.clearSelection();
+            matchTimerDuration.set(activeRoom.getRuleset().getTimeToMatch());
+            isInTimeout.set(false);
+        });
+        newMatchListener.start();
+    }
+
+    private void initScoresListener() {
+        ScheduledService<GameScore> service = new ScheduledService<>() {
+            @Override
+            protected Task<GameScore> createTask() {
+                return new Task<>() {
+                    @Override
+                    protected GameScore call() throws Exception {
+                        if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
+                            GameScore gs = gameScoresMonitor.awaitGameScore();
+                            updateValue(gs);
+                            return gs;
+                        }
+                        return null;
+                    }
+                };
+            }
+        };
+        service.setExecutor(parallelExecutorService);
+        scoresListener = service;
+        scoresListener.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                lastGameScore.set(newValue);
+            }
+        });
+        lastGameScore.addListener((observable, oldValue, newValue) -> {
+            newValue.getScores().entrySet().stream()
+                    .forEach(entry -> {
+                        lastMatchScores.get(entry.getKey()).set(entry.getValue()[0]);
+                        gameScores.entrySet().stream()
+                                .filter(e -> e.getKey().get().equals(entry.getKey()))
+                                .forEach(e -> e.getValue().set(entry.getValue()[1]));
+                    });
+            Integer score = newValue.getScores().get(Launcher.manager.getProfile().getPlayerID())[1];
+            playerScore.set(score);
+            newValue.getMatchWords().entrySet().stream()
+                    .forEach(entry -> {
+                        proposedMatchWords.get(entry.getKey()).clear();
+                        proposedMatchWords.get(entry.getKey()).addAll(Arrays.asList(entry.getValue()));
+                    });
+            winnerName.set(newValue.getWinner());
+        });
+        scoresListener.start();
+    }
+
+    private void initWordRequestListener() {
+        ScheduledService<Void> service = new ScheduledService<>() {
+            @Override
+            protected Task<Void> createTask() {
+                return new Task<>() {
+                    @Override
+                    protected Void call() throws Exception {
+                        if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
+                            sendWordsMonitor.wordsRequested();
+                            if (!Thread.currentThread().isInterrupted()) {
+                                ArrayList<String> words = new ArrayList<>();
+                                words.addAll(wordFoundList.get());
+                                sendWordsMonitor.offerWords(words);
+                            }
+                        }
+                        return null;
+                    }
+                };
+            }
+        };
+        service.setExecutor(parallelExecutorService);
+        wordRequestListener = service;
+        wordRequestListener.start();
+    }
+
+    private void initTimeoutListener() {
+        ScheduledService<Boolean> service = new ScheduledService<>() {
+            @Override
+            protected Task<Boolean> createTask() {
+                return new Task<>() {
+                    @Override
+                    protected Boolean call() throws Exception {
+                        if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
+                            timeoutMonitor.isInTimeOut();
+                            if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
+                                updateValue(true);
+                                return true;
+                            }
+                        }
+                        return null;
+                    }
+                };
+            }
+        };
+        service.setExecutor(parallelExecutorService);
+        timeoutListener = service;
+        timeoutListener.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                isInTimeout.set(newValue);
+            }
+        });
+        isInTimeout.addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                timeoutTimerDuration.set(activeRoom.getRuleset().getTimeToWaitFromMatchToMatch());
+                loadingScoresOverlay.setVisible(false);
+                scoresOverlay.setVisible(true);
+                timerTimeout.restart();
+            } else {
+                scoresOverlay.setVisible(false);
+                startingOverlay.setVisible(true);
+                if (timerTimeout.isRunning()) {
+                    timerTimeout.cancel();
+                    startingCountDownService.restart();
+                }
+            }
+        });
+        timeoutListener.start();
+    }
+
+    private Task<Boolean> gameEndListener() {
+        Task<Boolean> task = new Task<>() {
+            @Override
+            protected Boolean call() throws Exception {
+                if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
+                    endGameMonitor.isEnded();
+                    updateValue(true);
+                    return true;
+                }
+                return null;
+            }
+        };
+        task.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                gameEnded.set(newValue);
+            }
+        });
+        gameEnded.addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                ScheduledService<Duration> t = leavingGameWaitTask();
+                t.lastValueProperty().addListener((observable1, oldValue1, newValue1) -> {
+                    if (newValue1.equals(Duration.ZERO)) {
+                        HomeController home = new HomeController();
+                        home.setActiveLobby(activeRoom);
+                        try {
+                            Parent parent = requestParent(ControllerType.HOME_VIEW, home);
+                            sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
+                            backgroundExecutorService.shutdownNow();
+                            parallelExecutorService.shutdownNow();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                winnerOverlay.setVisible(true);
+                t.start();
+            }
+        });
+        return task;
     }
 }

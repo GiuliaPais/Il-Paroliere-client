@@ -3,6 +3,8 @@ package uninsubria.client.centralmanagement;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import uninsubria.client.comm.ProxyServer;
+import uninsubria.client.monitors.*;
+import uninsubria.client.roomserver.RoomCentralManager;
 import uninsubria.client.settings.ConnectionPrefs;
 import uninsubria.client.settings.SettingDefaults;
 import uninsubria.utils.business.Lobby;
@@ -32,7 +34,7 @@ import java.util.prefs.Preferences;
  * Class responsible for central communication between client and server. Also manages preferences at start up.
  *
  * @author Giulia Pais
- * @version 0.9.8
+ * @version 0.9.9
  */
 public class CentralManager {
 	/*---Fields---*/
@@ -524,6 +526,7 @@ public class CentralManager {
 	 */
 	public void leaveGame(UUID roomID) throws IOException {
 		proxy.get().leaveGame(roomID);
+		RoomCentralManager.stopRoom();
 	}
 
 	/**
@@ -578,5 +581,47 @@ public class CentralManager {
 	 */
 	public void logout() throws IOException {
 		proxy.get().logout(profile.get().getPlayerID());
+	}
+
+	/**
+	 * Starts the room server if one is not already active.
+	 *
+	 * @param monitor          monitor for synchronization on game start
+	 * @param matchGridMonitor monitor for synchronization on setting a new grid (match)
+	 * @param interruptMonitor monitor for synchronization on game interruption
+	 */
+	public void setupRoomServer(GameStartMonitor monitor, MatchGridMonitor matchGridMonitor, InterruptMonitor interruptMonitor) {
+		try {
+			RoomCentralManager.startRoomServer(monitor, matchGridMonitor, interruptMonitor);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Signals the server and player manager this player was kicked
+	 * from the game and the room due to connection issues.
+	 */
+	public void iWasKicked() {
+		try {
+			proxy.get().signalWasKicked();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Sets all other monitors on the room skeleton for the match.
+	 *
+	 * @param sendWordsMonitor  the send words monitor
+	 * @param timeoutMonitor    the timeout monitor
+	 * @param gameScoresMonitor the game scores monitor
+	 * @param endGameMonitor    the end game monitor
+	 */
+	public void setMatchMonitors(SendWordsMonitor sendWordsMonitor, TimeoutMonitor timeoutMonitor, GameScoresMonitor gameScoresMonitor, EndGameMonitor endGameMonitor) {
+		RoomCentralManager.setSendWordsMonitor(sendWordsMonitor);
+		RoomCentralManager.setTimeoutMonitor(timeoutMonitor);
+		RoomCentralManager.setGameScoresMonitor(gameScoresMonitor);
+		RoomCentralManager.setEndGameMonitor(endGameMonitor);
 	}
 }

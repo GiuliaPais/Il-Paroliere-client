@@ -3,6 +3,7 @@
 <?import com.jfoenix.controls.JFXButton?>
 <?import com.jfoenix.controls.JFXListView?>
 <?import com.jfoenix.controls.JFXMasonryPane?>
+<?import com.jfoenix.controls.JFXProgressBar?>
 <?import com.jfoenix.controls.JFXTabPane?>
 <?import com.jfoenix.controls.JFXTextField?>
 <?import javafx.geometry.Insets?>
@@ -140,7 +141,7 @@
                                                                         <Label fx:id="playerList_lbl" alignment="CENTER" text="%player_list" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
                                                                      </children>
                                                                   </AnchorPane>
-                                                                  <AnchorPane layoutX="10.0" layoutY="61.0">
+                                                                  <AnchorPane layoutX="10.0" layoutY="61.0" VBox.vgrow="ALWAYS">
                                                                      <children>
                                                                         <JFXListView fx:id="playersList" styleClass="playerslistview" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                                                                      </children>
@@ -637,6 +638,20 @@
                         </Tab>
                      </tabs>
                   </JFXTabPane>
+               </children>
+            </VBox>
+         </children>
+      </StackPane>
+      <StackPane id="bg-loading" fx:id="gameLoadingOverlay" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" spacing="60.0">
+               <children>
+                  <AnchorPane>
+                     <children>
+                        <JFXProgressBar fx:id="progressBar" AnchorPane.leftAnchor="300.0" AnchorPane.rightAnchor="300.0" />
+                     </children>
+                  </AnchorPane>
+                  <Label fx:id="gameLoadingLabel" styleClass="game-loading-msg" text="%game_loading_lbl" />
                </children>
             </VBox>
          </children>

@@ -1,7 +1,8 @@
 module client.core {
 	exports uninsubria.client.centralmanagement;
-	exports uninsubria.client.comm;
 	exports uninsubria.client.settings;
+	exports uninsubria.client.monitors;
+	exports uninsubria.client.comm;
 
 	requires transitive java.prefs;
 	requires transitive javafx.base;

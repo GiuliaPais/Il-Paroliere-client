@@ -1,8 +1,6 @@
 package uninsubria.client.roomserver;
 
-import javafx.application.Platform;
-import uninsubria.client.guicontrollers.HomeController;
-import uninsubria.client.guicontrollers.MatchController;
+import uninsubria.client.monitors.*;
 import uninsubria.utils.business.GameScore;
 import uninsubria.utils.connection.CommProtocolCommands;
 import uninsubria.utils.managersAPI.ProxySkeletonInterface;
@@ -10,6 +8,7 @@ import uninsubria.utils.managersAPI.ProxySkeletonInterface;
 import java.io.*;
 import java.net.Socket;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -17,23 +16,31 @@ import java.util.Objects;
  * A thread that serves as Skeleton for the lobby.
  *
  * @author Giulia Pais
- * @version 0.9.10
+ * @version 0.9.11
  */
 public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
     /*---Fields---*/
     private Socket roomClient;
     private ObjectOutputStream out;
     private ObjectInputStream in;
-    private HomeController homeController;
-    private MatchController matchController;
     private Instant timerStartingTime;
+
+    //++ Monitors ++//
+    private GameStartMonitor gameStartMonitor;
+    private MatchGridMonitor matchGridMonitor;
     private TimeoutMonitor timeoutMonitor;
+    private InterruptMonitor interruptMonitor;
+    private SendWordsMonitor sendWordsMonitor;
+    private GameScoresMonitor gameScoresMonitor;
+    private EndGameMonitor endGameMonitor;
 
     /*---Constructors---*/
-    public RoomSkeleton(Socket roomClient, HomeController homeController) {
+    public RoomSkeleton(Socket roomClient, GameStartMonitor startMonitor, MatchGridMonitor matchGridMonitor, InterruptMonitor interruptMonitor) {
         this.roomClient = roomClient;
-        this.homeController = homeController;
-        this.timeoutMonitor = new TimeoutMonitor();
+        this.gameStartMonitor = startMonitor;
+        this.matchGridMonitor = matchGridMonitor;
+        this.interruptMonitor = interruptMonitor;
+        this.setDaemon(true);
         start();
     }
 
@@ -49,7 +56,7 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                 command = in.readUTF();
             }
             terminate();
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException | InterruptedException e) {
             terminate();
             RoomCentralManager.stopRoom();
         }
@@ -70,7 +77,7 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
     }
 
     @Override
-    public void readCommand(String command) throws IOException, ClassNotFoundException {
+    public void readCommand(String command) throws IOException, ClassNotFoundException, InterruptedException {
         if (in == null) {
             this.in = new ObjectInputStream(new BufferedInputStream(roomClient.getInputStream()));
         }
@@ -81,52 +88,39 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
             }
             case SET_SYNC -> {
                 timerStartingTime = (Instant) in.readObject();
-                Platform.runLater(() -> homeController.gameStarting(timerStartingTime));
+                long delay = Instant.now().until(timerStartingTime, ChronoUnit.MILLIS);
+                gameStartMonitor.signalStart(delay);
             }
             case INTERRUPT_GAME -> {
-                if (matchController != null) {
-                    Platform.runLater(() -> matchController.interruptGame());
-                }
+                interruptMonitor.setInterrupted();
             }
             case NEW_MATCH -> {
                 String[] gameF = (String[]) in.readObject();
                 Integer[] gameN = (Integer[]) in.readObject();
-                if (this.matchController == null) {
-                    matchController = new MatchController();
-                    matchController.setActiveRoom(homeController.getActiveLobby());
-                    matchController.setFirstMatchGrid(gameF, gameN);
-                    matchController.setMonitor(timeoutMonitor);
-                    matchController.setHomeReference(homeController);
-                    homeController.setNewGameController(matchController);
-                } else{
-                    Platform.runLater(() -> matchController.setMatchGrid(gameF, gameN));
-                    timeoutMonitor.reset();
-                }
+                matchGridMonitor.signalMatchAvailable(gameF, gameN);
+                matchGridMonitor.awaitAck();
                 writeCommand(CommProtocolCommands.NEW_MATCH);
             }
             case SEND_WORDS -> {
-                ArrayList<String> words = matchController.getFoundWords();
+                sendWordsMonitor.sendRequest();
+                ArrayList<String> words = sendWordsMonitor.getProposedWords();
                 writeCommand(CommProtocolCommands.SEND_WORDS, words);
             }
             case SEND_SCORE -> {
                 GameScore scores = (GameScore) in.readObject();
-                Platform.runLater(() -> matchController.setMatchScores(scores));
+                gameScoresMonitor.publishScores(scores);
             }
             case TIMEOUT_MATCH -> {
-                Platform.runLater(() -> matchController.setTimerMatchTimeout());
+                timeoutMonitor.setTimeOut();
                 try {
-                    timeoutMonitor.isReady(matchController.getTimeoutDuration().minusSeconds(2));
+                    timeoutMonitor.isReady();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 writeCommand(CommProtocolCommands.TIMEOUT_MATCH);
             }
-            case END_GAME -> Platform.runLater(() -> matchController.setEndGame());
+            case END_GAME -> endGameMonitor.setGameEnded();
         }
-    }
-
-    public void setMatchController(MatchController matchController) {
-        this.matchController = matchController;
     }
 
     public void terminate() {
@@ -146,5 +140,21 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void setTimeoutMonitor(TimeoutMonitor timeoutMonitor) {
+        this.timeoutMonitor = timeoutMonitor;
+    }
+
+    public void setSendWordsMonitor(SendWordsMonitor sendWordsMonitor) {
+        this.sendWordsMonitor = sendWordsMonitor;
+    }
+
+    public void setGameScoresMonitor(GameScoresMonitor gameScoresMonitor) {
+        this.gameScoresMonitor = gameScoresMonitor;
+    }
+
+    public void setEndGameMonitor(EndGameMonitor endGameMonitor) {
+        this.endGameMonitor = endGameMonitor;
     }
 }

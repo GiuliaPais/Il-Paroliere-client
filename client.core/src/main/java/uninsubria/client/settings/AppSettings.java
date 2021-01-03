@@ -9,7 +9,7 @@ import java.util.prefs.Preferences;
  * Represents a predefined set of user preferences for the application.
  *
  * @author Giulia Pais
- * @version 0.9.2
+ * @version 0.9.3
  */
 public class AppSettings {
 	/*---Fields---*/
@@ -352,7 +352,9 @@ public class AppSettings {
 		prefs.put("THEME", getTheme());
 		prefs.put("LANGUAGE", getLanguage());
 		prefs.putBoolean("REMEMBER_ME", isRememberMe());
-		prefs.put("USERNAME", getUserName());
+		if (getUserName() != null) {
+			prefs.put("USERNAME", getUserName());
+		}
 		prefs.put("SERVER_ADDRESSES", this.connectionPrefs.addressesAsString());
 		prefs.flush();
 	}
