@@ -131,7 +131,6 @@ public class MatchController extends AbstractMainController {
         this.interrupted = new SimpleBooleanProperty(false);
         this.leaving = new SimpleBooleanProperty(false);
         this.leavingOrInterrupting = interrupted.or(leaving);
-        this.timeoutMonitor = new TimeoutMonitor(activeRoom.getRuleset().getTimeToWaitFromMatchToMatch().toMillis());
         this.sendWordsMonitor = new SendWordsMonitor();
         this.gameScoresMonitor = new GameScoresMonitor();
         this.endGameMonitor = new EndGameMonitor();
@@ -148,6 +147,7 @@ public class MatchController extends AbstractMainController {
     @Override
     public void initialize() {
         super.initialize();
+        timeoutMonitor = new TimeoutMonitor(activeRoom.getRuleset().getTimeToWaitFromMatchToMatch().toMillis());
         Launcher.manager.setMatchMonitors(sendWordsMonitor, timeoutMonitor, gameScoresMonitor, endGameMonitor);
         leavingOrInterrupting.addListener((observable, oldValue, newValue) -> {
             if (newValue) {
