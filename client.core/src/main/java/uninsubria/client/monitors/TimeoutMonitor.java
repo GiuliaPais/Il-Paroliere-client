@@ -22,6 +22,7 @@ public class TimeoutMonitor {
         while (!inTimeOut) {
             wait();
         }
+        inTimeOut = false;
         return true;
     }
 
@@ -29,13 +30,13 @@ public class TimeoutMonitor {
         if (!ready) {
             wait(timeToWait);
         }
-        return ready;
+        ready = false;
+        return true;
     }
 
     public synchronized void signalReady() {
         ready = true;
         notify();
-        ready = false;
     }
 
     public synchronized void setTimeOut() {

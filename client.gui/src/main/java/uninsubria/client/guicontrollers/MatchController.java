@@ -2,6 +2,7 @@ package uninsubria.client.guicontrollers;
 
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXListView;
+import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
@@ -30,6 +31,7 @@ import uninsubria.utils.business.Word;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -76,7 +78,8 @@ public class MatchController extends AbstractMainController {
 
     //++ Thread Pools ++//
     private ScheduledExecutorService backgroundExecutorService = Executors.newSingleThreadScheduledExecutor();
-    private ScheduledExecutorService parallelExecutorService = Executors.newScheduledThreadPool(5);
+//    private ScheduledExecutorService parallelExecutorService = Executors.newScheduledThreadPool(5);
+    private ExecutorService parallelExecutorService = Executors.newCachedThreadPool();
 
     //++ Internals for keeping scores ++//
     private MapProperty<StringProperty, IntegerProperty> gameScores;
@@ -580,12 +583,21 @@ public class MatchController extends AbstractMainController {
                 duration = activeRoom.getRuleset().getTimeToWaitFromMatchToMatch();
                 return true;
             }
+
+            @Override
+            public void restart() {
+                super.restart();
+                System.out.println("Timer timeout service restarted");
+            }
         };
         service.setPeriod(javafx.util.Duration.seconds(1));
         service.setDelay(javafx.util.Duration.seconds(0));
         service.setExecutor(backgroundExecutorService);
         timerTimeout = service;
-        timerTimeout.lastValueProperty().addListener((observable, oldValue, newValue) -> timeoutTimerDuration.set(newValue));
+        timerTimeout.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null)
+                timeoutTimerDuration.set(newValue);
+        });
     }
 
     //Service for the initial countdown (before match)
@@ -761,6 +773,7 @@ public class MatchController extends AbstractMainController {
             matchGrid.clearSelection();
             matchTimerDuration.set(activeRoom.getRuleset().getTimeToMatch());
             isInTimeout.set(false);
+            System.out.println("isInTimeout set to false");
         });
         newMatchListener.start();
     }
@@ -842,9 +855,13 @@ public class MatchController extends AbstractMainController {
                     @Override
                     protected Boolean call() throws Exception {
                         if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
+                            System.out.println("Timeout listener is running, waiting");
                             timeoutMonitor.isInTimeOut();
+                            System.out.println("Timeout listener waked");
                             if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
                                 updateValue(true);
+                                Platform.runLater(() -> isInTimeout.set(true));
+                                System.out.println("Timeout listener set timeout");
                                 return true;
                             }
                         }
@@ -855,24 +872,29 @@ public class MatchController extends AbstractMainController {
         };
         service.setExecutor(parallelExecutorService);
         timeoutListener = service;
-        timeoutListener.lastValueProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                isInTimeout.set(newValue);
-            }
-        });
+//        timeoutListener.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+//            System.out.println("Value of lastValue timeoutlistener " + newValue);
+//            if (newValue != null) {
+//                isInTimeout.set(newValue);
+//                System.out.println("isInTimeout set to true");
+//            }
+//        });
         isInTimeout.addListener((observable, oldValue, newValue) -> {
             if (newValue) {
                 timeoutTimerDuration.set(activeRoom.getRuleset().getTimeToWaitFromMatchToMatch());
+                preCountDownCycle.set(5);
                 loadingScoresOverlay.setVisible(false);
+                System.out.println("Called loading scores overlay visible false");
                 scoresOverlay.setVisible(true);
                 timerTimeout.restart();
             } else {
+                preCountDownCycle.set(5);
                 scoresOverlay.setVisible(false);
                 startingOverlay.setVisible(true);
                 if (timerTimeout.isRunning()) {
                     timerTimeout.cancel();
-                    startingCountDownService.restart();
                 }
+                startingCountDownService.restart();
             }
         });
         timeoutListener.start();
