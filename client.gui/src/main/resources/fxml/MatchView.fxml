@@ -124,7 +124,7 @@
                   <Label fx:id="scoresTitle" text="%scores_title" />
                   <HBox alignment="CENTER" spacing="30.0">
                      <children>
-                        <JFXButton fx:id="requestBtn" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="150.0" text="%request_def_btn" />
+                        <JFXButton fx:id="requestBtn" maxWidth="-Infinity" minWidth="-Infinity" onAction="#requestDefinitions" prefWidth="150.0" text="%request_def_btn" />
                         <HBox alignment="CENTER" spacing="5.0">
                            <children>
                               <Label fx:id="scoresMinLbl" text="Label" />

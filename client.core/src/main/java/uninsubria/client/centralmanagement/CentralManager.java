@@ -11,6 +11,7 @@ import uninsubria.utils.business.Lobby;
 import uninsubria.utils.business.Player;
 import uninsubria.utils.connection.CommHolder;
 import uninsubria.utils.connection.CommProtocolCommands;
+import uninsubria.utils.languages.Language;
 import uninsubria.utils.security.PasswordEncryptor;
 import uninsubria.utils.serviceResults.ErrorMsgType;
 import uninsubria.utils.serviceResults.Result;
@@ -34,7 +35,7 @@ import java.util.prefs.Preferences;
  * Class responsible for central communication between client and server. Also manages preferences at start up.
  *
  * @author Giulia Pais
- * @version 0.9.9
+ * @version 0.9.11
  */
 public class CentralManager {
 	/*---Fields---*/
@@ -623,5 +624,17 @@ public class CentralManager {
 		RoomCentralManager.setTimeoutMonitor(timeoutMonitor);
 		RoomCentralManager.setGameScoresMonitor(gameScoresMonitor);
 		RoomCentralManager.setEndGameMonitor(endGameMonitor);
+	}
+
+	/**
+	 * Request definitions of the words passed as parameter.
+	 *
+	 * @param words    the words
+	 * @param language the language
+	 * @return the service result interface
+	 * @throws IOException the io exception
+	 */
+	public ServiceResultInterface requestDefinitions(String[] words, Language language) throws IOException {
+		return proxy.get().requestWordsDefinitions(words, language);
 	}
 }

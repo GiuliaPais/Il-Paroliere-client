@@ -4,6 +4,7 @@ import uninsubria.utils.business.Lobby;
 import uninsubria.utils.business.Player;
 import uninsubria.utils.connection.CommHolder;
 import uninsubria.utils.connection.CommProtocolCommands;
+import uninsubria.utils.languages.Language;
 import uninsubria.utils.managersAPI.PlayerManagerInterface;
 import uninsubria.utils.managersAPI.ProxySkeletonInterface;
 import uninsubria.utils.serviceResults.ServiceResultInterface;
@@ -20,7 +21,7 @@ import java.util.UUID;
  * The class is mainly responsible for writing on or reading from the socket.
  *
  * @author Giulia Pais
- * @version 0.9.10
+ * @version 0.9.11
  *
  */
 public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterface {
@@ -281,6 +282,22 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
     }
 
     @Override
+    public ServiceResultInterface requestWordsDefinitions(String[] words, Language language) throws IOException {
+        writeCommand(CommProtocolCommands.WORD_REQUEST, words, language);
+        try {
+            if (in == null) {
+                this.in = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+            }
+            readCommand(in.readUTF());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        ServiceResultInterface res = serviceResultList.get(serviceResultList.size()-1);
+        serviceResultList.remove(res);
+        return res;
+    }
+
+    @Override
     public void writeCommand(CommProtocolCommands command, Object... params) throws IOException {
         out.writeUTF(command.getCommand());
         for (Object p : params) {
@@ -304,7 +321,7 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
             case ACTIVATION_CODE, CONFIRM_ACTIVATION_CODE, RESEND_CODE, LOGIN,
                     CHANGE_USER_ID, CHANGE_PW, RESET_PW,
                     DELETE_PROFILE, JOIN_ROOM, FETCH_STATS,
-                    WORD_STATS -> serviceResultList.add((ServiceResultInterface) in.readObject());
+                    WORD_STATS, WORD_REQUEST -> serviceResultList.add((ServiceResultInterface) in.readObject());
             case CREATE_ROOM -> {}
         }
     }
