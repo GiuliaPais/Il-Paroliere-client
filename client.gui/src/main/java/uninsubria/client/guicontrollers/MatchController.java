@@ -39,7 +39,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Controller for the match view.
  *
  * @author Giulia Pais
- * @version 0.9.11
+ * @version 0.9.12
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
@@ -67,18 +67,17 @@ public class MatchController extends AbstractMainController {
 
     private IntegerProperty preCountDownCycle;
     private BooleanProperty gameEnded;
+    private BooleanBinding loadingScoresVisible;
 
     //++ Services and Tasks ++//
     private ScheduledService<Integer> startingCountDownService;
     private ScheduledService<Duration> timerCountDownService, timerTimeout;
     private ScheduledService<MatchGridMonitor.GridWrapper> newMatchListener;
     private ScheduledService<GameScore> scoresListener;
-    private ScheduledService<Void> wordRequestListener;
-    private ScheduledService<Boolean> timeoutListener;
+    private ScheduledService<Void> wordRequestListener, timeoutListener;
 
     //++ Thread Pools ++//
     private ScheduledExecutorService backgroundExecutorService = Executors.newSingleThreadScheduledExecutor();
-//    private ScheduledExecutorService parallelExecutorService = Executors.newScheduledThreadPool(5);
     private ExecutorService parallelExecutorService = Executors.newCachedThreadPool();
 
     //++ Internals for keeping scores ++//
@@ -101,7 +100,6 @@ public class MatchController extends AbstractMainController {
     //++ For interrupt ++//
     private BooleanProperty interrupted;
     private BooleanProperty leaving;
-    private BooleanBinding leavingOrInterrupting;
     private ObjectProperty<MatchGridMonitor.GridWrapper> newGrid;
     private BooleanProperty isInTimeout;
 
@@ -133,7 +131,6 @@ public class MatchController extends AbstractMainController {
         this.requestedWords = Collections.synchronizedSet(new HashSet<>());
         this.interrupted = new SimpleBooleanProperty(false);
         this.leaving = new SimpleBooleanProperty(false);
-        this.leavingOrInterrupting = interrupted.or(leaving);
         this.sendWordsMonitor = new SendWordsMonitor();
         this.gameScoresMonitor = new GameScoresMonitor();
         this.endGameMonitor = new EndGameMonitor();
@@ -165,6 +162,14 @@ public class MatchController extends AbstractMainController {
         startingOverlay.setVisible(true);
         winnerOverlay.setVisible(false);
         loadingScoresOverlay.setVisible(false);
+        loadingScoresVisible = matchTimerDuration.isEqualTo(Duration.ZERO).and(isInTimeout.not());
+        loadingScoresVisible.addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                loadingScoresOverlay.setVisible(true);
+            } else{
+                loadingScoresOverlay.setVisible(false);
+            }
+        });
         initZeroScores();
         initTable();
         initNewMatchListener();
@@ -527,11 +532,6 @@ public class MatchController extends AbstractMainController {
                 matchTimerDuration.set(newValue);
             }
         });
-        matchTimerDuration.addListener((observable, oldValue, newValue) -> {
-            if (newValue.equals(Duration.ZERO) & !leavingOrInterrupting.get()) {
-                loadingScoresOverlay.setVisible(true);
-            }
-        });
     }
 
     //Service for the timeout timer
@@ -582,12 +582,6 @@ public class MatchController extends AbstractMainController {
                 super.cancel();
                 duration = activeRoom.getRuleset().getTimeToWaitFromMatchToMatch();
                 return true;
-            }
-
-            @Override
-            public void restart() {
-                super.restart();
-                System.out.println("Timer timeout service restarted");
             }
         };
         service.setPeriod(javafx.util.Duration.seconds(1));
@@ -773,7 +767,6 @@ public class MatchController extends AbstractMainController {
             matchGrid.clearSelection();
             matchTimerDuration.set(activeRoom.getRuleset().getTimeToMatch());
             isInTimeout.set(false);
-            System.out.println("isInTimeout set to false");
         });
         newMatchListener.start();
     }
@@ -848,43 +841,38 @@ public class MatchController extends AbstractMainController {
     }
 
     private void initTimeoutListener() {
-        ScheduledService<Boolean> service = new ScheduledService<>() {
+        ScheduledService<Void> service = new ScheduledService<>() {
             @Override
-            protected Task<Boolean> createTask() {
+            protected void succeeded() {
+                super.succeeded();
+            }
+
+            @Override
+            protected Task<Void> createTask() {
                 return new Task<>() {
                     @Override
-                    protected Boolean call() throws Exception {
+                    protected Void call() throws Exception {
                         if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
-                            System.out.println("Timeout listener is running, waiting");
                             timeoutMonitor.isInTimeOut();
-                            System.out.println("Timeout listener waked");
                             if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
-                                updateValue(true);
                                 Platform.runLater(() -> isInTimeout.set(true));
-                                System.out.println("Timeout listener set timeout");
-                                return true;
                             }
                         }
                         return null;
                     }
                 };
+
+
             }
         };
         service.setExecutor(parallelExecutorService);
         timeoutListener = service;
-//        timeoutListener.lastValueProperty().addListener((observable, oldValue, newValue) -> {
-//            System.out.println("Value of lastValue timeoutlistener " + newValue);
-//            if (newValue != null) {
-//                isInTimeout.set(newValue);
-//                System.out.println("isInTimeout set to true");
-//            }
-//        });
         isInTimeout.addListener((observable, oldValue, newValue) -> {
             if (newValue) {
+                readyBtn.setDisable(false);
+                requestBtn.setDisable(false);
                 timeoutTimerDuration.set(activeRoom.getRuleset().getTimeToWaitFromMatchToMatch());
                 preCountDownCycle.set(5);
-                loadingScoresOverlay.setVisible(false);
-                System.out.println("Called loading scores overlay visible false");
                 scoresOverlay.setVisible(true);
                 timerTimeout.restart();
             } else {
