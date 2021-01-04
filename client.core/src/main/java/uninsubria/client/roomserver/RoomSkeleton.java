@@ -2,6 +2,7 @@ package uninsubria.client.roomserver;
 
 import uninsubria.client.monitors.*;
 import uninsubria.utils.business.GameScore;
+import uninsubria.utils.business.Word;
 import uninsubria.utils.connection.CommProtocolCommands;
 import uninsubria.utils.managersAPI.ProxySkeletonInterface;
 
@@ -10,6 +11,7 @@ import java.net.Socket;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.Objects;
 
 /**
@@ -57,8 +59,9 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
             }
             terminate();
         } catch (IOException | ClassNotFoundException | InterruptedException e) {
-            terminate();
-            RoomCentralManager.stopRoom();
+            e.printStackTrace();
+//            terminate();
+//            RoomCentralManager.stopRoom();
         }
     }
 
@@ -107,7 +110,14 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                 writeCommand(CommProtocolCommands.SEND_WORDS, words);
             }
             case SEND_SCORE -> {
-                GameScore scores = (GameScore) in.readObject();
+//                GameScore scores = (GameScore) in.readObject();
+                Hashtable<String, Word[]> mWords = (Hashtable<String, Word[]>) in.readObject();
+                Hashtable<String, Integer[]> score = (Hashtable<String, Integer[]>) in.readObject();
+                String w = in.readUTF();
+                GameScore scores = new GameScore();
+                scores.setScores(score);
+                scores.setMatchWords(mWords);
+                scores.setWinner(w);
                 gameScoresMonitor.publishScores(scores);
             }
             case TIMEOUT_MATCH -> {
