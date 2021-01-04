@@ -20,7 +20,7 @@ import java.util.UUID;
  * The class is mainly responsible for writing on or reading from the socket.
  *
  * @author Giulia Pais
- * @version 0.9.9
+ * @version 0.9.10
  *
  */
 public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterface {
@@ -273,6 +273,11 @@ public class ProxyServer implements PlayerManagerInterface, ProxySkeletonInterfa
     @Override
     public void leaveGame(UUID roomID) throws IOException {
         writeCommand(CommProtocolCommands.LEAVE_GAME, roomID);
+    }
+
+    @Override
+    public void signalWasKicked() throws IOException {
+        writeCommand(CommProtocolCommands.KICKED);
     }
 
     @Override

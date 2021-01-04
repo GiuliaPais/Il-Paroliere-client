@@ -33,7 +33,9 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.controlsfx.glyphfont.Glyph;
 import uninsubria.client.gui.*;
-import uninsubria.client.roomserver.RoomCentralManager;
+import uninsubria.client.monitors.GameStartMonitor;
+import uninsubria.client.monitors.InterruptMonitor;
+import uninsubria.client.monitors.MatchGridMonitor;
 import uninsubria.utils.business.Lobby;
 import uninsubria.utils.business.PlayerStatResult;
 import uninsubria.utils.business.TurnsResult;
@@ -47,28 +49,25 @@ import uninsubria.utils.serviceResults.ServiceResultInterface;
 
 import java.io.IOException;
 import java.net.SocketException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
  * Controller for the home view.
  *
  * @author Giulia Pais
- * @version 0.9.11
+ * @version 0.9.12
  */
 public class HomeController extends AbstractMainController {
     /*---Fields---*/
-    @FXML StackPane profImage;
+    @FXML StackPane profImage, gameLoadingOverlay;
     @FXML VBox profInfo;
     @FXML Label userLabel, emailLabel, lobbyPlayer_cont, lobbyLang_cont,
             lobbyRule_cont, titleCard1p, titleCard2p, titleCard3p, titleCard4p, titleCard5p,
             titleCard6p, titleCard7p, titleCard1g, titleCard2g, titleCard3g, gListTitle, titleCard1w, titleCard2w,
-            titleCard3w;
+            titleCard3w, gameLoadingLabel;
     @FXML JFXTabPane tabPane;
     @FXML Tab roomTab, playerStatsTab, gameStatsTab, wordStatsTab;
     @FXML Glyph tutorialIcon, settingsIcon, hamburger, leaveIcon, refreshIcon, infoCard1, infoCard2, infoCard3,
@@ -101,6 +100,7 @@ public class HomeController extends AbstractMainController {
     @FXML TableColumn<WGPTuple, String> wCol3;
     @FXML TableColumn<WGPTuple, Integer> scoreColw1;
     @FXML TableColumn<WGPTuple, UUID> gameCol1;
+    @FXML JFXProgressBar progressBar;
 
     private final StringProperty roomTab_txt, playerStatsTab_txt, gameStatsTab_txt, wordStatsTab_txt,
             menu_exit_txt, menu_info_txt, menu_logout_txt, name_col_txt, players_col_txt, lang_col_text, rule_col_text,
@@ -110,7 +110,7 @@ public class HomeController extends AbstractMainController {
             descCard1, descCard2, descCard3, descCard4, descCard5, descCard6, descCard7, descCard8, descCard9, descCard10,
             descCard11, descCard12, descCard13,
             playersCol, maxTurnsCol, minTurnsCol, avgTurnsCol, letters_text, avgOccurr_text, gameCol, occurCol, wordCol,
-            titleWCard1, titleWCard2, titleWCard3;
+            titleWCard1, titleWCard2, titleWCard3, gameLoadingMsg, notificationKick;
     private SVGGlyph img;
     private DoubleBinding imgSidelength;
     private ObjectProperty<Background> imgBackground;
@@ -126,16 +126,21 @@ public class HomeController extends AbstractMainController {
     private ObservableList<WGPTuple> wordGamePointsList;
     private XYChart.Series<String, Number> turnSeries1, turnSeries2, turnSeries3;
 
-    private MatchController nextGameController;
-
     //+++ Services, tasks, loading +++//
-    //only one task at time
     private ScheduledService<ArrayList<String>> roomPlayersUpdater;
     private ScheduledService<Map<UUID, Lobby>> lobbiesRefresher;
+    /* Background tasks (always active until change of scene) */
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    /* Other tasks */
+    private ScheduledExecutorService parallelExecutor = Executors.newScheduledThreadPool(5);
     private LoadingAnimationOverlay generalLoadingOverlay;
     private Service<ObservableLobby> activeLobbyService;
-    private Task<Void> gameLoadingService;
+
+    //+++ For synch +++//
+    private BooleanProperty gameStarting;
+    private GameStartMonitor gameStartMonitor;
+    private MatchGridMonitor matchGridMonitor;
+    private InterruptMonitor interruptMonitor;
 
     /*---Constructors---*/
     /**
@@ -216,18 +221,24 @@ public class HomeController extends AbstractMainController {
         this.titleWCard3 = new SimpleStringProperty();
         this.wordGamePointsList = FXCollections.observableArrayList();
         this.observableGlist = FXCollections.observableArrayList();
+        this.gameLoadingMsg = new SimpleStringProperty();
+        this.gameStarting = new SimpleBooleanProperty(false);
+        this.notificationKick = new SimpleStringProperty();
     }
 
     /*---Methods---*/
     @Override
     public void initialize() {
         super.initialize();
-        try {
-            RoomCentralManager.startRoomServer(this);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        this.gameStartMonitor = new GameStartMonitor();
+        this.matchGridMonitor = new MatchGridMonitor();
+        this.interruptMonitor = new InterruptMonitor();
+        Launcher.manager.setupRoomServer(gameStartMonitor, matchGridMonitor, interruptMonitor);
+        gameLoadingLabel.textProperty().bind(gameLoadingMsg);
+        gameLoadingOverlay.setVisible(false);
         imgSidelength = (profImage.prefWidthProperty().divide(2)).multiply(Math.sqrt(2));
+        Task<Boolean> waitForGame = initWaitForGameTask();
+        parallelExecutor.execute(waitForGame);
         initServicesAndTasks();
         initIcons();
         loadImagePreset();
@@ -242,8 +253,14 @@ public class HomeController extends AbstractMainController {
         lobbyView.setVisible(false);
         loadStatistics();
         if (activeLobby.get() == null) {
+            System.out.println("Room is null");
+            roomPlayersUpdater.cancel();
+            System.out.println(roomPlayersUpdater.getState());
             lobbiesRefresher.start();
+            System.out.println(roomPlayersUpdater.getState());
+            System.out.println(lobbiesRefresher.getState());
         } else {
+            System.out.println("Room is set");
             lobbyView.setText(activeLobby.get().getRoomName());
             lobbyPlayer_cont.setText(String.valueOf(activeLobby.get().getNumPlayers()));
             lobbyLang_cont.setText(activeLobby.get().getLanguage().name());
@@ -252,7 +269,7 @@ public class HomeController extends AbstractMainController {
             join_room_btn.setDisable(true);
             roomList.setDisable(true);
             lobbyView.setVisible(true);
-            lobbiesRefresher.cancel();
+//            lobbiesRefresher.cancel();
             roomPlayersUpdater.start();
         }
     }
@@ -314,6 +331,8 @@ public class HomeController extends AbstractMainController {
         descCard12.set(resBundle.getString("desc_rank_req"));
         titleWCard3.set(resBundle.getString("stats_w_points"));
         descCard13.set(resBundle.getString("desc_word_points"));
+        gameLoadingMsg.set(resBundle.getString("game_loading_lbl"));
+        notificationKick.set(resBundle.getString("player_kicked_msg"));
     }
 
     @FXML void showSettings() throws IOException {
@@ -341,6 +360,7 @@ public class HomeController extends AbstractMainController {
 
     @FXML void leaveRoom() throws IOException {
         Launcher.manager.leaveRoom(activeLobby.get().getRoomId());
+        roomList.getSelectionModel().clearSelection();
         if (activeLobby.get() != null) {
             activeLobby.set(null);
         }
@@ -516,31 +536,6 @@ public class HomeController extends AbstractMainController {
 
     public void setActiveLobby(ObservableLobby lobby) {
         this.activeLobby.set(lobby);
-    }
-
-    public void gameStarting(Instant startingTime) {
-        lobbiesRefresher.cancel();
-        gameLoadingService.progressProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue.intValue() == 1) {
-                List<String> participants = observablePlayerList.stream()
-                        .map(l -> l.getText())
-                        .collect(Collectors.toList());
-                nextGameController.setParticipants(participants);
-                Parent parent;
-                try {
-                    parent = requestParent(ControllerType.MATCH, nextGameController);
-                    sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        long delay = Instant.now().until(startingTime, ChronoUnit.MILLIS);
-        executorService.schedule(gameLoadingService, delay, TimeUnit.MILLISECONDS);
-    }
-
-    public void setNewGameController(MatchController matchController) {
-        this.nextGameController = matchController;
     }
 
     public ObservableLobby getActiveLobby() {
@@ -852,7 +847,6 @@ public class HomeController extends AbstractMainController {
                         Launcher.manager.leaveRoom(activeLobby.get().getRoomId());
                     }
                     Launcher.manager.quit();
-                    RoomCentralManager.stopRoomServer();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -875,7 +869,6 @@ public class HomeController extends AbstractMainController {
                 }
                 try {
                     Launcher.manager.logout();
-                    RoomCentralManager.stopRoomServer();
                     Parent mainMenu = requestParent(ControllerType.MAIN_MENU);
                     Timeline anim = sceneTransitionAnimation(mainMenu, SlideDirection.TO_RIGHT);
                     anim.play();
@@ -1012,7 +1005,6 @@ public class HomeController extends AbstractMainController {
         playersList.setItems(observablePlayerList.get());
         playersList.itemsProperty().bind(observablePlayerList);
         activeLobby.addListener((observable, oldValue, newValue) -> {
-            Platform.runLater(() -> {
                 if (newValue == null) {
                     /* Means the player is not in a room */
                     lobbyView.setVisible(false);
@@ -1033,7 +1025,6 @@ public class HomeController extends AbstractMainController {
                 lobbyView.setVisible(true);
                 lobbiesRefresher.cancel();
                 roomPlayersUpdater.restart();
-            });
         });
     }
 
@@ -1239,6 +1230,38 @@ public class HomeController extends AbstractMainController {
         infoCard13.setOnMouseClicked(e -> popOver13.show(infoCard13));
     }
 
+    private void loadGame() {
+        progressBar.setProgress(0);
+        java.time.Duration preGameTimer = activeLobby.get().getRuleset().getTimeToStart();
+        Timeline tl = new Timeline(
+                new KeyFrame(Duration.seconds(preGameTimer.getSeconds()),
+                        new KeyValue(progressBar.progressProperty(), 1))
+        );
+        tl.setCycleCount(1);
+        MatchController matchController = new MatchController();
+        matchController.setActiveRoom(getActiveLobby());
+        List<String> currentPlayers = new ArrayList<>();
+        for (Label l : observablePlayerList) {
+            currentPlayers.add(l.getText());
+        }
+        matchController.setParticipants(currentPlayers);
+        matchController.setMatchGridMonitor(matchGridMonitor);
+        matchController.setInterruptMonitor(interruptMonitor);
+        tl.setOnFinished(e -> {
+            try {
+                Parent parent = requestParent(ControllerType.MATCH, matchController);
+                sceneTransitionAnimation(parent, SlideDirection.TO_BOTTOM).play();
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            } finally {
+//                executorService.shutdownNow();
+//                parallelExecutor.shutdownNow();
+            }
+        });
+        gameLoadingOverlay.setVisible(true);
+        tl.play();
+    }
+
     //++ Services initialization ++//
     private void initLoadingAnim() {
         generalLoadingOverlay = new LoadingAnimationOverlay(root, "");
@@ -1249,7 +1272,6 @@ public class HomeController extends AbstractMainController {
         initRoomRefresherService();
         initRoomPlayersService();
         initActiveLobbyService();
-        initGameLoadingService();
     }
 
     private void initActiveLobbyService() {
@@ -1334,6 +1356,7 @@ public class HomeController extends AbstractMainController {
         activeLobbyService.valueProperty().addListener((observable, oldValue, newValue) -> activeLobby.set(newValue));
     }
 
+    /* Periodic service that refreshes lobby every x seconds */
     private void initRoomRefresherService() {
         ScheduledService<Map<UUID, Lobby>> service = new ScheduledService<>() {
             @Override
@@ -1341,17 +1364,22 @@ public class HomeController extends AbstractMainController {
                 return new Task<>() {
                     @Override
                     protected Map<UUID, Lobby> call() throws Exception {
-                        Map<UUID, Lobby> map = Launcher.manager.requestRoomUpdate();
-                        updateValue(map);
-                        return map;
+                        if (!isCancelled() & !Thread.currentThread().isInterrupted()) {
+                            Map<UUID, Lobby> map = Launcher.manager.requestRoomUpdate();
+                            updateValue(map);
+                            return map;
+                        }
+                        return null;
                     }
                 };
             }
         };
         service.setExecutor(executorService);
-        service.setPeriod(Duration.seconds(5));
+        service.setPeriod(Duration.seconds(3));
         service.setRestartOnFailure(true);
-        service.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+        lobbiesRefresher = service;
+        lobbiesRefresher.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+            System.out.println("lobbies refreshed");
             if (newValue == null) {
                 return;
             }
@@ -1381,9 +1409,9 @@ public class HomeController extends AbstractMainController {
                 lobbyMap.put(k, ObservableLobby.toObservableLobby(newValue.get(k)));
             }
         });
-        lobbiesRefresher = service;
     }
 
+    /* Periodic service that refreshes the players list of a room */
     private void initRoomPlayersService() {
         ScheduledService<ArrayList<String>> service = new ScheduledService<>() {
             @Override
@@ -1391,9 +1419,12 @@ public class HomeController extends AbstractMainController {
                 return new Task<>() {
                     @Override
                     protected ArrayList<String> call() throws Exception {
-                        ArrayList<String> received = Launcher.manager.requestPlayerList(activeLobby.get().getRoomId());
-                        updateValue(received);
-                        return received;
+                        if (!isCancelled() & !Thread.currentThread().isInterrupted()) {
+                            ArrayList<String> received = Launcher.manager.requestPlayerList(activeLobby.get().getRoomId());
+                            updateValue(received);
+                            return received;
+                        }
+                        return null;
                     }
                 };
             }
@@ -1402,6 +1433,20 @@ public class HomeController extends AbstractMainController {
         service.setPeriod(Duration.seconds(1));
         roomPlayersUpdater = service;
         roomPlayersUpdater.lastValueProperty().addListener((observable, oldValue, newValue) -> {
+            System.out.println("Players refreshed");
+            if (newValue == null || newValue.isEmpty()) {
+                return;
+            }
+            /* Check if the username is in the list */
+            String user = newValue.stream()
+                    .filter(name -> name.equals(Launcher.manager.getProfile().getPlayerID()))
+                    .collect(Collectors.joining());
+            if (user == null) {
+                Launcher.manager.iWasKicked();
+                notification(notificationKick.get(), Duration.seconds(5));
+                activeLobby.set(null);
+                return;
+            }
             List<Label> labels = new ArrayList<>();
             newValue.forEach(s -> labels.add(new Label(s)));
             observablePlayerList.clear();
@@ -1409,40 +1454,38 @@ public class HomeController extends AbstractMainController {
         });
     }
 
-    private void initGameLoadingService() {
-        gameLoadingService = new Task<>() {
+    /* One-time task that listens for game start: if notified sleeps for the specified delay and then loads the match */
+    private Task<Boolean> initWaitForGameTask() {
+        Task<Boolean> task = new Task<>() {
             @Override
-            protected Void call() {
-                StackPane over = new StackPane();
-                over.setId("bg-loading");
-                over.setAlignment(Pos.CENTER);
-                VBox vBox = new VBox();
-                vBox.setSpacing(60);
-                vBox.setAlignment(Pos.CENTER);
-                JFXProgressBar progressBar = new JFXProgressBar();
-                Label msg = new Label(Launcher.contrManager.getBundleValue().getString("game_loading_lbl"));
-                msg.getStyleClass().add("game-loading-msg");
-                vBox.getChildren().addAll(progressBar, msg);
-                over.getChildren().add(vBox);
-                progressBar.progressProperty().setValue(0);
-                java.time.Duration preGameTimer = activeLobby.get().getRuleset().getTimeToStart();
-                Timeline tl = new Timeline(
-                        new KeyFrame(Duration.seconds(preGameTimer.getSeconds()),
-                                new KeyValue(progressBar.progressProperty(), 1))
-                );
-                tl.setCycleCount(1);
-                tl.setOnFinished(e -> updateProgress(1, 1));
-                Platform.runLater(() -> root.getChildren().add(over));
-                tl.play();
+            protected Boolean call() {
+                if (!isCancelled() && !Thread.currentThread().isInterrupted()) {
+                    long delay;
+                    synchronized (gameStartMonitor) {
+                        try {
+                            delay = gameStartMonitor.isStarting();
+                            Thread.sleep(delay);
+                            updateValue(true);
+                            return true;
+                        } catch (InterruptedException e) {
+                            return false;
+                        }
+                    }
+                }
                 return null;
             }
-
-            @Override
-            protected void scheduled() {
-                super.scheduled();
-                Platform.runLater(() -> roomPlayersUpdater.cancel());
-            }
         };
+        task.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                gameStarting.set(newValue);
+            }
+        });
+        gameStarting.addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                loadGame();
+            }
+        });
+        return task;
     }
 
 }

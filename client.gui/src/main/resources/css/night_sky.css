@@ -1021,6 +1021,15 @@
 	-fx-background-color: dark-transparent-2;
 }
 
+.player-score-tile .list-view .cell:filled:selected{
+	-fx-background-color: light3;
+}
+
+.player-score-tile .list-view .cell:filled:selected .label{
+	-fx-text-fill: darkest;
+	-fx-fill: darkest;
+}
+
 .player-score-tile .list-view .cell:empty{
 	-fx-background-color: transparent;
 }

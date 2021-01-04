@@ -3,19 +3,22 @@ package uninsubria.client.guicontrollers;
 import com.jfoenix.controls.JFXListView;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.SelectionMode;
 import uninsubria.client.gui.Controller;
 import uninsubria.utils.business.Word;
 
 import java.util.ResourceBundle;
+import java.util.Set;
 
 /**
  * Custom object that represents a tile for displaying the score of a player.
  *
  * @author Giulia Pais
- * @version 0.9.1
+ * @version 0.9.2
  */
 public class PlayerScoreTile implements Controller {
     /*---Fields---*/
@@ -26,6 +29,7 @@ public class PlayerScoreTile implements Controller {
     private IntegerProperty matchScore, gameScore;
     private StringProperty player;
     private DoubleProperty fontSize;
+    private Set<String> selectedWordsSet;
 
     /*---Constructors---*/
     public PlayerScoreTile() {
@@ -47,10 +51,16 @@ public class PlayerScoreTile implements Controller {
             playerID.setStyle("-fx-font-size: " + (newValue.doubleValue() + 5) + ";");
         });
         wordListView.itemsProperty().bind(wordList);
+        wordListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         wordListView.setCellFactory(param -> {
             ScoreWordsListCell cell = new ScoreWordsListCell();
             cell.fontSizeProperty().bind(fontSize);
             return cell;
+        });
+        wordListView.getSelectionModel().getSelectedItems().addListener((ListChangeListener<Word>) c -> {
+            while (c.next()) {
+
+            }
         });
     }
 
@@ -116,6 +126,10 @@ public class PlayerScoreTile implements Controller {
 
     public JFXListView<Word> getWordListView() {
         return wordListView;
+    }
+
+    public void setSelectedWordsSet(Set<String> selectedWordsSet) {
+        this.selectedWordsSet = selectedWordsSet;
     }
 
     @Override
