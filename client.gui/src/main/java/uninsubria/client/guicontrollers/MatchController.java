@@ -1,6 +1,7 @@
 package uninsubria.client.guicontrollers;
 
 import com.jfoenix.controls.JFXButton;
+import com.jfoenix.controls.JFXDialog;
 import com.jfoenix.controls.JFXListView;
 import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
@@ -12,6 +13,7 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.input.KeyCode;
@@ -27,6 +29,9 @@ import uninsubria.client.gui.ObservableLobby;
 import uninsubria.client.monitors.*;
 import uninsubria.utils.business.GameScore;
 import uninsubria.utils.business.Word;
+import uninsubria.utils.dictionary.Definition;
+import uninsubria.utils.serviceResults.Result;
+import uninsubria.utils.serviceResults.ServiceResultInterface;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -39,7 +44,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Controller for the match view.
  *
  * @author Giulia Pais
- * @version 0.9.12
+ * @version 0.9.13
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
@@ -64,6 +69,7 @@ public class MatchController extends AbstractMainController {
     private StringProperty currScoreTxt, wordListTxt, leaveGameTxt, insertTxt, clearTxt, instr1, instr2, instr3, instr4,
                             loadingScoresTxt, gameInterrBody, leavingHead, leavingBody;
     private ListProperty<String> wordFoundList;
+    private List<PlayerScoreTile> playerTiles;
 
     private IntegerProperty preCountDownCycle;
     private BooleanProperty gameEnded;
@@ -141,6 +147,7 @@ public class MatchController extends AbstractMainController {
         this.gameEnded = new SimpleBooleanProperty(false);
         this.leavingHead = new SimpleStringProperty();
         this.leavingBody = new SimpleStringProperty();
+        this.playerTiles = new ArrayList<>();
     }
 
     /*---Methods---*/
@@ -252,7 +259,76 @@ public class MatchController extends AbstractMainController {
     }
 
     @FXML void requestDefinitions() {
+        Set<String> toRequest = new HashSet<>();
+        for (PlayerScoreTile tile : playerTiles) {
+            List<Word> words = tile.getSelectedWords();
+            for (Word w : words) {
+                if (!w.isWrong()) {
+                    requestedWords.add(w.getWord());
+                    toRequest.add(w.getWord());
+                }
+            }
+        }
+        if (toRequest.isEmpty()) {
+            return;
+        }
+        Task<ServiceResultInterface> task = new Task<>() {
+            @Override
+            protected ServiceResultInterface call() throws Exception {
+                ServiceResultInterface res = Launcher.manager.requestDefinitions(toRequest.toArray(new String[0]), activeRoom.getLanguage());
+                return res;
+            }
 
+            @Override
+            protected void succeeded() {
+                super.succeeded();
+                ScrollPane scrollPane = new ScrollPane();
+                TextFlow textFlow = new TextFlow();
+                textFlow.setPrefWidth(rootContainer.getPrefWidth()*0.7);
+                scrollPane.setContent(textFlow);
+                scrollPane.setPrefWidth(rootContainer.getPrefWidth()*0.7);
+                ServiceResultInterface result = getValue();
+                List<Result<?>> definitions = result.getResultList();
+                List<Text> texts = new ArrayList<>();
+                for (Result<?> res : definitions) {
+                    String word = res.getName();
+                    Definition[] defs = (Definition[]) res.getValue();
+                    Text word_text = new Text(word + "\n");
+                    word_text.setStyle("-fx-underline: true; -fx-font-weight: bold; -fx-stroke: black;");
+                    Text d_title = new Text(Launcher.contrManager.getBundleValue().getString("def_syn") + "\n");
+                    d_title.setStyle("-fx-stroke: black;");
+                    List<Text> defins = new ArrayList<>();
+                    for (Definition d : defs) {
+                        Text df = null;
+                        if (d.getDefinition() != null & !d.getDefinition().equals("")) {
+                            df = new Text("\u2022 " + d.getDefinition() + "\n");
+                            df.setStyle("-fx-stroke: black;");
+                        }
+                        Text syn = new Text("\u0009 \u25b8 " + d.getSynonyms() + "\n");
+                        syn.setStyle("-fx-stroke: black;");
+                        if (df != null) {
+                            defins.add(df);
+                        }
+                        defins.add(syn);
+                    }
+                    texts.add(word_text);
+                    texts.add(d_title);
+                    texts.addAll(defins);
+                    texts.add(new Text("\n"));
+                }
+                textFlow.getChildren().addAll(texts);
+                JFXDialog dialog = generateDialog(scoresOverlay, rootContainer.getPrefWidth()*0.7,
+                        Launcher.contrManager.getBundleValue().getString("def_dialog_heading"), scrollPane);
+                dialog.show();
+            }
+
+            @Override
+            protected void failed() {
+                super.failed();
+                generateDialog((StackPane) root, root.getPrefWidth()/3, "ERROR", Launcher.contrManager.getBundleValue().getString("err_occurr")).show();
+            }
+        };
+        parallelExecutorService.submit(task);
     }
 
     public void setMatchGridMonitor(MatchGridMonitor matchGridMonitor) {
@@ -362,7 +438,6 @@ public class MatchController extends AbstractMainController {
                 tile.setFontSize(newValue.doubleValue());
             });
             tile.setPlayer(player);
-            tile.setSelectedWordsSet(this.requestedWords);
             gameScores.entrySet().stream()
                     .filter(entry -> entry.getKey().get().equals(player))
                     .forEach(entry -> entry.getValue().addListener((observable, oldValue, newValue) -> tile.setGameScore(newValue.intValue())));
@@ -380,6 +455,7 @@ public class MatchController extends AbstractMainController {
                 tileRoot.setPrefWidth(newValue.doubleValue());
             });
             tilePane.getChildren().add(tileRoot);
+            playerTiles.add(tile);
         }
         winnerName.addListener((observable, oldValue, newValue) -> winnerLbl.setText(newValue));
     }

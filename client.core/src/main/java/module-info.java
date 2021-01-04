@@ -11,4 +11,5 @@ module client.core {
 	requires utils.connection;
 	requires utils.business;
     requires utils.security;
+	requires utils.languages;
 }

@@ -14,6 +14,7 @@ module uninsubria.client.gui {
 	requires utils.connection;
 	requires utils.managers.api;
     requires utils.serviceResults;
+    requires utils.dictionary;
 
     opens uninsubria.client.gui to javafx.fxml;
     opens uninsubria.client.guicontrollers to javafx.fxml;

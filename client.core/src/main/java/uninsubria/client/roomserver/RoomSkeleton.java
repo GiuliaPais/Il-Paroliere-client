@@ -18,7 +18,7 @@ import java.util.Objects;
  * A thread that serves as Skeleton for the lobby.
  *
  * @author Giulia Pais
- * @version 0.9.11
+ * @version 0.9.12
  */
 public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
     /*---Fields---*/
@@ -60,8 +60,8 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
             terminate();
         } catch (IOException | ClassNotFoundException | InterruptedException e) {
             e.printStackTrace();
-//            terminate();
-//            RoomCentralManager.stopRoom();
+            terminate();
+            RoomCentralManager.stopRoom();
         }
     }
 
@@ -110,7 +110,6 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                 writeCommand(CommProtocolCommands.SEND_WORDS, words);
             }
             case SEND_SCORE -> {
-//                GameScore scores = (GameScore) in.readObject();
                 Hashtable<String, Word[]> mWords = (Hashtable<String, Word[]>) in.readObject();
                 Hashtable<String, Integer[]> score = (Hashtable<String, Integer[]>) in.readObject();
                 String w = in.readUTF();
