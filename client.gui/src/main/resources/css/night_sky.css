@@ -190,6 +190,19 @@
 	-fx-text-fill: light3;
 }
 
+.home-menu .button{
+	-fx-border-width: 0;
+}
+
+.home-menu .button:hover{
+	-fx-background-color: transparent;
+}
+
+.home-menu .button:hover .glyph-font{
+	-fx-fill: light3;
+	-fx-text-fill: light3;
+}
+
 /* MENUS */
 .menu {
 	-fx-background-color: transparent;

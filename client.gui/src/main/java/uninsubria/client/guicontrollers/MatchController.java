@@ -29,6 +29,7 @@ import uninsubria.client.gui.ObservableLobby;
 import uninsubria.client.monitors.*;
 import uninsubria.utils.business.GameScore;
 import uninsubria.utils.business.Word;
+import uninsubria.utils.business.WordRequest;
 import uninsubria.utils.dictionary.Definition;
 import uninsubria.utils.serviceResults.Result;
 import uninsubria.utils.serviceResults.ServiceResultInterface;
@@ -44,7 +45,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Controller for the match view.
  *
  * @author Giulia Pais
- * @version 0.9.13
+ * @version 0.9.14
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
@@ -92,7 +93,7 @@ public class MatchController extends AbstractMainController {
     private HashMap<String, ListProperty<Word>> proposedMatchWords;
     private StringProperty winnerName;
     private ListProperty<Map.Entry<StringProperty, IntegerProperty>> scoresListTable;
-    private Set<String> requestedWords;
+    private HashSet<WordRequest> requestedWords;
     private ObjectProperty<GameScore> lastGameScore;
 
     //++ For timeout synch ++//
@@ -134,7 +135,7 @@ public class MatchController extends AbstractMainController {
         this.gameScores = new SimpleMapProperty<>();
         this.scoresListTable = new SimpleListProperty<>();
         this.gameInterrBody = new SimpleStringProperty();
-        this.requestedWords = Collections.synchronizedSet(new HashSet<>());
+        this.requestedWords = new HashSet<>();
         this.interrupted = new SimpleBooleanProperty(false);
         this.leaving = new SimpleBooleanProperty(false);
         this.sendWordsMonitor = new SendWordsMonitor();
@@ -264,7 +265,8 @@ public class MatchController extends AbstractMainController {
             List<Word> words = tile.getSelectedWords();
             for (Word w : words) {
                 if (!w.isWrong()) {
-                    requestedWords.add(w.getWord());
+                    WordRequest wr = new WordRequest(w.getWord(), matchNumber.get());
+                    requestedWords.add(wr);
                     toRequest.add(w.getWord());
                 }
             }

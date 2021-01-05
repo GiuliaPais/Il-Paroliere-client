@@ -10,6 +10,7 @@
 <?import javafx.scene.chart.BarChart?>
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.ButtonBar?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Tab?>
@@ -43,14 +44,14 @@
                               <Insets left="60.0" />
                            </padding>
                         </VBox>
-                        <HBox alignment="CENTER" layoutX="1230.0" layoutY="20.0" spacing="15.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0">
-                           <children>
-                              <Glyph fx:id="refreshIcon" alignment="CENTER" contentDisplay="CENTER" layoutX="10.0" layoutY="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#loadStatistics" prefHeight="30.0" prefWidth="30.0" />
-                              <Glyph fx:id="settingsIcon" alignment="CENTER" contentDisplay="CENTER" layoutX="10.0" layoutY="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseClicked="#showSettings" prefHeight="30.0" prefWidth="30.0" />
-                              <Glyph fx:id="tutorialIcon" alignment="CENTER" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="30.0" />
-                              <Glyph fx:id="hamburger" alignment="CENTER" contentDisplay="CENTER" layoutX="55.0" layoutY="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="30.0" />
-                           </children>
-                        </HBox>
+                        <ButtonBar buttonMinWidth="40.0" styleClass="home-menu" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0">
+                           <buttons>
+                              <JFXButton fx:id="refreshBtn" alignment="CENTER" contentDisplay="CENTER" onAction="#loadStatistics" />
+                              <JFXButton fx:id="settingsBtn" alignment="CENTER" contentDisplay="CENTER" onAction="#showSettings" />
+                              <JFXButton fx:id="tutorialBtn" alignment="CENTER" contentDisplay="CENTER" />
+                              <JFXButton fx:id="hamburgerBtn" alignment="CENTER" contentDisplay="CENTER" />
+                           </buttons>
+                        </ButtonBar>
                         <StackPane id="profile-image" fx:id="profImage" layoutX="20.0" layoutY="20.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="100.0" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="25.0">
                            <effect>
                               <DropShadow blurType="ONE_PASS_BOX" offsetX="2.0" offsetY="2.0" />

@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
  * Controller for the home view.
  *
  * @author Giulia Pais
- * @version 0.9.12
+ * @version 0.9.13
  */
 public class HomeController extends AbstractMainController {
     /*---Fields---*/
@@ -70,9 +70,9 @@ public class HomeController extends AbstractMainController {
             titleCard3w, gameLoadingLabel;
     @FXML JFXTabPane tabPane;
     @FXML Tab roomTab, playerStatsTab, gameStatsTab, wordStatsTab;
-    @FXML Glyph tutorialIcon, settingsIcon, hamburger, leaveIcon, refreshIcon, infoCard1, infoCard2, infoCard3,
+    @FXML Glyph leaveIcon, infoCard1, infoCard2, infoCard3,
             infoCard4, infoCard5, infoCard6, infoCard7, infoCard8, infoCard9, infoCard10, infoCard11, infoCard12, infoCard13;
-    @FXML JFXButton searchBtn;
+    @FXML JFXButton searchBtn, refreshBtn, settingsBtn, tutorialBtn, hamburgerBtn;
     @FXML TableView<ObservableLobby> roomList;
     @FXML TableColumn<ObservableLobby, String> name_col;
     @FXML TableColumn<ObservableLobby, Integer> players_col;
@@ -112,6 +112,7 @@ public class HomeController extends AbstractMainController {
             playersCol, maxTurnsCol, minTurnsCol, avgTurnsCol, letters_text, avgOccurr_text, gameCol, occurCol, wordCol,
             titleWCard1, titleWCard2, titleWCard3, gameLoadingMsg, notificationKick;
     private SVGGlyph img;
+    private Glyph tutorialIcon, settingsIcon, refreshIcon, hamburger;
     private DoubleBinding imgSidelength;
     private ObjectProperty<Background> imgBackground;
     private MapProperty<UUID, ObservableLobby> lobbyMap;
@@ -224,6 +225,10 @@ public class HomeController extends AbstractMainController {
         this.gameLoadingMsg = new SimpleStringProperty();
         this.gameStarting = new SimpleBooleanProperty(false);
         this.notificationKick = new SimpleStringProperty();
+        this.tutorialIcon = new Glyph();
+        this.settingsIcon = new Glyph();
+        this.hamburger = new Glyph();
+        this.refreshIcon = new Glyph();
     }
 
     /*---Methods---*/
@@ -558,15 +563,19 @@ public class HomeController extends AbstractMainController {
         tutorialIcon.setFontFamily("FontAwesome");
         tutorialIcon.setIcon(FontAwesome.Glyph.QUESTION);
         tutorialIcon.setFontSize(ref.getReferences().get("HOME_ICONS_SIZE"));
+        tutorialBtn.setGraphic(tutorialIcon);
         settingsIcon.setFontFamily("FontAwesome");
         settingsIcon.setIcon(FontAwesome.Glyph.GEAR);
         settingsIcon.setFontSize(ref.getReferences().get("HOME_ICONS_SIZE"));
+        settingsBtn.setGraphic(settingsIcon);
         hamburger.setFontFamily("FontAwesome");
         hamburger.setIcon(FontAwesome.Glyph.BARS);
         hamburger.setFontSize(ref.getReferences().get("HOME_ICONS_SIZE"));
+        hamburgerBtn.setGraphic(hamburger);
         refreshIcon.setFontFamily("FontAwesome");
         refreshIcon.setIcon(FontAwesome.Glyph.REFRESH);
         refreshIcon.setFontSize(ref.getReferences().get("HOME_ICONS_SIZE"));
+        refreshBtn.setGraphic(refreshIcon);
         infoCard1.setFontFamily("FontAwesome");
         infoCard1.setIcon(FontAwesome.Glyph.INFO);
         infoCard1.setFontSize(currentFontSize.get());
@@ -667,9 +676,6 @@ public class HomeController extends AbstractMainController {
 
     private void rescaleIcons(double after) {
         double dimAfter = (after*ref.getReferences().get("HOME_ICONS_SIZE")) / ref.getReferences().get("REF_RESOLUTION");
-        tutorialIcon.setPrefSize(dimAfter, dimAfter);
-        settingsIcon.setPrefSize(dimAfter, dimAfter);
-        hamburger.setPrefSize(dimAfter, dimAfter);
         tutorialIcon.setFontSize(dimAfter);
         settingsIcon.setFontSize(dimAfter);
         hamburger.setFontSize(dimAfter);
@@ -848,7 +854,7 @@ public class HomeController extends AbstractMainController {
                     }
                     Launcher.manager.quit();
                 } catch (IOException e) {
-                    e.printStackTrace();
+//                    e.printStackTrace();
                 }
                 Platform.exit();
                 System.exit(0);
@@ -878,7 +884,7 @@ public class HomeController extends AbstractMainController {
                 return;
             }
         });
-        hamburger.setOnMouseClicked(e -> menu.show(hamburger, JFXPopup.PopupVPosition.TOP, JFXPopup.PopupHPosition.RIGHT));
+        hamburgerBtn.setOnAction(e -> menu.show(hamburgerBtn, JFXPopup.PopupVPosition.TOP, JFXPopup.PopupHPosition.RIGHT));
     }
 
     private void loadProfileInfo() {
