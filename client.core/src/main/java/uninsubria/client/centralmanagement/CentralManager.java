@@ -35,7 +35,7 @@ import java.util.prefs.Preferences;
  * Class responsible for central communication between client and server. Also manages preferences at start up.
  *
  * @author Giulia Pais
- * @version 0.9.11
+ * @version 0.9.12
  */
 public class CentralManager {
 	/*---Fields---*/
@@ -436,7 +436,9 @@ public class CentralManager {
 	 * @throws IOException the io exception
 	 */
 	public void quit() throws IOException {
-		proxy.get().quit();
+		if (proxy.get() != null) {
+			proxy.get().quit();
+		}
 	}
 
 	/**
@@ -506,7 +508,10 @@ public class CentralManager {
 	 * @throws IOException the io exception
 	 */
 	public boolean createRoom(Lobby lobby) throws IOException {
-		return proxy.get().createRoom(lobby);
+		if (proxy.get() != null) {
+			return proxy.get().createRoom(lobby);
+		}
+		return false;
 	}
 
 	/**
@@ -516,7 +521,9 @@ public class CentralManager {
 	 * @throws IOException the io exception
 	 */
 	public void leaveRoom(UUID roomID) throws IOException {
-		proxy.get().leaveRoom(roomID);
+		if (proxy.get() != null) {
+			proxy.get().leaveRoom(roomID);
+		}
 	}
 
 	/**
@@ -526,7 +533,9 @@ public class CentralManager {
 	 * @throws IOException the io exception
 	 */
 	public void leaveGame(UUID roomID) throws IOException {
-		proxy.get().leaveGame(roomID);
+		if (proxy.get() != null) {
+			proxy.get().leaveGame(roomID);
+		}
 		RoomCentralManager.stopRoom();
 	}
 
@@ -581,7 +590,9 @@ public class CentralManager {
 	 * @throws IOException the io exception
 	 */
 	public void logout() throws IOException {
-		proxy.get().logout(profile.get().getPlayerID());
+		if (proxy.get() != null) {
+			proxy.get().logout(profile.get().getPlayerID());
+		}
 	}
 
 	/**
@@ -605,7 +616,9 @@ public class CentralManager {
 	 */
 	public void iWasKicked() {
 		try {
-			proxy.get().signalWasKicked();
+			if (proxy.get() != null) {
+				proxy.get().signalWasKicked();
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -635,6 +648,9 @@ public class CentralManager {
 	 * @throws IOException the io exception
 	 */
 	public ServiceResultInterface requestDefinitions(String[] words, Language language) throws IOException {
-		return proxy.get().requestWordsDefinitions(words, language);
+		if (proxy.get() != null) {
+			return proxy.get().requestWordsDefinitions(words, language);
+		}
+		return null;
 	}
 }
