@@ -45,7 +45,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Controller for the match view.
  *
  * @author Giulia Pais
- * @version 0.9.14
+ * @version 0.9.15
  */
 public class MatchController extends AbstractMainController {
     /*---Fields---*/
@@ -985,6 +985,7 @@ public class MatchController extends AbstractMainController {
         });
         gameEnded.addListener((observable, oldValue, newValue) -> {
             if (newValue) {
+                endGameMonitor.offerRequests(requestedWords);
                 ScheduledService<Duration> t = leavingGameWaitTask();
                 t.lastValueProperty().addListener((observable1, oldValue1, newValue1) -> {
                     if (newValue1.equals(Duration.ZERO)) {
