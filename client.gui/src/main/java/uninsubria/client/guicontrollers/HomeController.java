@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
  * Controller for the home view.
  *
  * @author Giulia Pais
- * @version 0.9.13
+ * @version 0.9.14
  */
 public class HomeController extends AbstractMainController {
     /*---Fields---*/
@@ -101,6 +101,7 @@ public class HomeController extends AbstractMainController {
     @FXML TableColumn<WGPTuple, Integer> scoreColw1;
     @FXML TableColumn<WGPTuple, UUID> gameCol1;
     @FXML JFXProgressBar progressBar;
+    @FXML Tooltip refreshToolTip, settingsToolTip, tutorialToolTip;
 
     private final StringProperty roomTab_txt, playerStatsTab_txt, gameStatsTab_txt, wordStatsTab_txt,
             menu_exit_txt, menu_info_txt, menu_logout_txt, name_col_txt, players_col_txt, lang_col_text, rule_col_text,
@@ -110,7 +111,7 @@ public class HomeController extends AbstractMainController {
             descCard1, descCard2, descCard3, descCard4, descCard5, descCard6, descCard7, descCard8, descCard9, descCard10,
             descCard11, descCard12, descCard13,
             playersCol, maxTurnsCol, minTurnsCol, avgTurnsCol, letters_text, avgOccurr_text, gameCol, occurCol, wordCol,
-            titleWCard1, titleWCard2, titleWCard3, gameLoadingMsg, notificationKick;
+            titleWCard1, titleWCard2, titleWCard3, gameLoadingMsg, notificationKick, tutorialToolTxt, refreshToolTxt, settingsToolTxt;
     private SVGGlyph img;
     private Glyph tutorialIcon, settingsIcon, refreshIcon, hamburger;
     private DoubleBinding imgSidelength;
@@ -126,6 +127,7 @@ public class HomeController extends AbstractMainController {
     private ObservableList<WordTuple> validWordRankingList, reqWordRankingList;
     private ObservableList<WGPTuple> wordGamePointsList;
     private XYChart.Series<String, Number> turnSeries1, turnSeries2, turnSeries3;
+    private MapProperty<UUID, Lobby> lobbyUpdate;
 
     //+++ Services, tasks, loading +++//
     private ScheduledService<ArrayList<String>> roomPlayersUpdater;
@@ -229,6 +231,9 @@ public class HomeController extends AbstractMainController {
         this.settingsIcon = new Glyph();
         this.hamburger = new Glyph();
         this.refreshIcon = new Glyph();
+        this.refreshToolTxt = new SimpleStringProperty();
+        this.tutorialToolTxt = new SimpleStringProperty();
+        this.settingsToolTxt = new SimpleStringProperty();
     }
 
     /*---Methods---*/
@@ -239,6 +244,7 @@ public class HomeController extends AbstractMainController {
         this.matchGridMonitor = new MatchGridMonitor();
         this.interruptMonitor = new InterruptMonitor();
         Launcher.manager.setupRoomServer(gameStartMonitor, matchGridMonitor, interruptMonitor);
+        this.lobbyUpdate = new SimpleMapProperty<>();
         gameLoadingLabel.textProperty().bind(gameLoadingMsg);
         gameLoadingOverlay.setVisible(false);
         imgSidelength = (profImage.prefWidthProperty().divide(2)).multiply(Math.sqrt(2));
@@ -258,14 +264,8 @@ public class HomeController extends AbstractMainController {
         lobbyView.setVisible(false);
         loadStatistics();
         if (activeLobby.get() == null) {
-            System.out.println("Room is null");
-            roomPlayersUpdater.cancel();
-            System.out.println(roomPlayersUpdater.getState());
             lobbiesRefresher.start();
-            System.out.println(roomPlayersUpdater.getState());
-            System.out.println(lobbiesRefresher.getState());
         } else {
-            System.out.println("Room is set");
             lobbyView.setText(activeLobby.get().getRoomName());
             lobbyPlayer_cont.setText(String.valueOf(activeLobby.get().getNumPlayers()));
             lobbyLang_cont.setText(activeLobby.get().getLanguage().name());
@@ -274,7 +274,6 @@ public class HomeController extends AbstractMainController {
             join_room_btn.setDisable(true);
             roomList.setDisable(true);
             lobbyView.setVisible(true);
-//            lobbiesRefresher.cancel();
             roomPlayersUpdater.start();
         }
     }
@@ -338,6 +337,9 @@ public class HomeController extends AbstractMainController {
         descCard13.set(resBundle.getString("desc_word_points"));
         gameLoadingMsg.set(resBundle.getString("game_loading_lbl"));
         notificationKick.set(resBundle.getString("player_kicked_msg"));
+        tutorialToolTxt.set(resBundle.getString("tool_tutorial"));
+        settingsToolTxt.set(resBundle.getString("tool_settings"));
+        refreshToolTxt.set(resBundle.getString("tool_refresh"));
     }
 
     @FXML void showSettings() throws IOException {
@@ -861,7 +863,23 @@ public class HomeController extends AbstractMainController {
                 return;
             }
             if (newValue.equals(menu_info_txt)) {
-                //do something
+                menu.hide();
+                JFXDialog dialog = new JFXDialog();
+                InfoAlertController controller = new InfoAlertController();
+//                controller.setFontSize(currentFontSize.get() - 5);
+                controller.setDialog(dialog);
+                Parent parent = null;
+                try {
+                    parent = requestParent(ControllerType.INFO_ALERT, controller);
+                    Region content = (Region) parent;
+                    content.setPrefSize(root.getPrefWidth()/2, root.getPrefHeight()/2);
+                    dialog.setContent(content);
+                    dialog.setTransitionType(JFXDialog.DialogTransition.CENTER);
+                    dialog.setDialogContainer((StackPane) root);
+                    dialog.show();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 return;
             }
             if (newValue.equals(menu_logout_txt)) {
@@ -885,6 +903,13 @@ public class HomeController extends AbstractMainController {
             }
         });
         hamburgerBtn.setOnAction(e -> menu.show(hamburgerBtn, JFXPopup.PopupVPosition.TOP, JFXPopup.PopupHPosition.RIGHT));
+        //tooltips
+        refreshToolTip.textProperty().bind(refreshToolTxt);
+        settingsToolTip.textProperty().bind(settingsToolTxt);
+        tutorialToolTip.textProperty().bind(tutorialToolTxt);
+        refreshToolTip.setShowDelay(Duration.seconds(1));
+        settingsToolTip.setShowDelay(Duration.seconds(1));
+        tutorialToolTip.setShowDelay(Duration.seconds(1));
     }
 
     private void loadProfileInfo() {
@@ -1260,8 +1285,9 @@ public class HomeController extends AbstractMainController {
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             } finally {
-//                executorService.shutdownNow();
-//                parallelExecutor.shutdownNow();
+                roomPlayersUpdater.cancel();
+                lobbiesRefresher.cancel();
+                executorService.shutdown();
             }
         });
         gameLoadingOverlay.setVisible(true);
@@ -1371,6 +1397,7 @@ public class HomeController extends AbstractMainController {
                     @Override
                     protected Map<UUID, Lobby> call() throws Exception {
                         if (!isCancelled() & !Thread.currentThread().isInterrupted()) {
+                            System.out.println("Player service executing");
                             Map<UUID, Lobby> map = Launcher.manager.requestRoomUpdate();
                             updateValue(map);
                             return map;
@@ -1385,7 +1412,11 @@ public class HomeController extends AbstractMainController {
         service.setRestartOnFailure(true);
         lobbiesRefresher = service;
         lobbiesRefresher.lastValueProperty().addListener((observable, oldValue, newValue) -> {
-            System.out.println("lobbies refreshed");
+            if (newValue != null) {
+                lobbyUpdate.set(FXCollections.observableMap(newValue));
+            }
+        });
+        lobbyUpdate.addListener((observable, oldValue, newValue) -> {
             if (newValue == null) {
                 return;
             }
@@ -1426,6 +1457,7 @@ public class HomeController extends AbstractMainController {
                     @Override
                     protected ArrayList<String> call() throws Exception {
                         if (!isCancelled() & !Thread.currentThread().isInterrupted()) {
+                            System.out.println("Room service executing");
                             ArrayList<String> received = Launcher.manager.requestPlayerList(activeLobby.get().getRoomId());
                             updateValue(received);
                             return received;

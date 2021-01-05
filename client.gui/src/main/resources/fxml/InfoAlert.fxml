@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXTabPane?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.TextFlow?>
+
+
+<StackPane id="profile-pane" fx:id="stackPaneAlert" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="360.0" prefWidth="640.0" stylesheets="@../css/night_sky.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <VBox alignment="TOP_CENTER" spacing="10.0">
+         <children>
+            <Label id="profile-pane" text="%info" />
+            <JFXTabPane VBox.vgrow="ALWAYS">
+               <tabs>
+                  <Tab closable="false" text="%creators">
+                     <content>
+                        <StackPane>
+                           <children>
+                              <VBox spacing="20.0" StackPane.alignment="CENTER">
+                                 <children>
+                                    <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                       <children>
+                                          <Label id="profile-pane" text="Giulia Pais" />
+                                          <Hyperlink fx:id="github1" text="GitHub" />
+                                       </children>
+                                    </HBox>
+                                    <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0">
+                                       <children>
+                                          <Label id="profile-pane" text="Davide Di Giovanni" />
+                                          <Hyperlink fx:id="github2" text="GitHub" />
+                                       </children>
+                                    </HBox>
+                                    <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="33.0" spacing="10.0">
+                                       <children>
+                                          <Label id="profile-pane" text="Alessandro Lerro" />
+                                          <Hyperlink fx:id="github3" text="GitHub" />
+                                       </children>
+                                    </HBox>
+                                 </children>
+                              </VBox>
+                           </children>
+                           <padding>
+                              <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+                           </padding>
+                        </StackPane>
+                     </content>
+                  </Tab>
+                  <Tab closable="false" text="%attributions">
+                     <content>
+                        <StackPane>
+                           <children>
+                              <ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="200.0" prefWidth="200.0">
+                                 <content>
+                                    <TextFlow fx:id="textflow">
+                                       <padding>
+                                          <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                                       </padding>
+                                    </TextFlow>
+                                 </content>
+                              </ScrollPane>
+                           </children>
+                        </StackPane>
+                     </content>
+                  </Tab>
+               </tabs>
+            </JFXTabPane>
+         </children>
+      </VBox>
+   </children>
+   <padding>
+      <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+   </padding>
+</StackPane>

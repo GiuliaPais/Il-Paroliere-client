@@ -17,6 +17,7 @@
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
@@ -46,9 +47,21 @@
                         </VBox>
                         <ButtonBar buttonMinWidth="40.0" styleClass="home-menu" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0">
                            <buttons>
-                              <JFXButton fx:id="refreshBtn" alignment="CENTER" contentDisplay="CENTER" onAction="#loadStatistics" />
-                              <JFXButton fx:id="settingsBtn" alignment="CENTER" contentDisplay="CENTER" onAction="#showSettings" />
-                              <JFXButton fx:id="tutorialBtn" alignment="CENTER" contentDisplay="CENTER" />
+                              <JFXButton fx:id="refreshBtn" alignment="CENTER" contentDisplay="CENTER" onAction="#loadStatistics">
+                                 <tooltip>
+                                    <Tooltip fx:id="refreshToolTip" text="Empty Tooltip" />
+                                 </tooltip>
+                              </JFXButton>
+                              <JFXButton fx:id="settingsBtn" alignment="CENTER" contentDisplay="CENTER" onAction="#showSettings">
+                                 <tooltip>
+                                    <Tooltip fx:id="settingsToolTip" text="Empty Tooltip" />
+                                 </tooltip>
+                              </JFXButton>
+                              <JFXButton fx:id="tutorialBtn" alignment="CENTER" contentDisplay="CENTER">
+                                 <tooltip>
+                                    <Tooltip fx:id="tutorialToolTip" text="Empty Tooltip" />
+                                 </tooltip>
+                              </JFXButton>
                               <JFXButton fx:id="hamburgerBtn" alignment="CENTER" contentDisplay="CENTER" />
                            </buttons>
                         </ButtonBar>

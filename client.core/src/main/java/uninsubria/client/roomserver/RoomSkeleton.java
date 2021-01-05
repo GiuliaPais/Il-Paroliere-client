@@ -3,6 +3,7 @@ package uninsubria.client.roomserver;
 import uninsubria.client.monitors.*;
 import uninsubria.utils.business.GameScore;
 import uninsubria.utils.business.Word;
+import uninsubria.utils.business.WordRequest;
 import uninsubria.utils.connection.CommProtocolCommands;
 import uninsubria.utils.managersAPI.ProxySkeletonInterface;
 
@@ -11,6 +12,7 @@ import java.net.Socket;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Objects;
 
@@ -18,7 +20,7 @@ import java.util.Objects;
  * A thread that serves as Skeleton for the lobby.
  *
  * @author Giulia Pais
- * @version 0.9.12
+ * @version 0.9.13
  */
 public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
     /*---Fields---*/
@@ -128,7 +130,11 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
                 }
                 writeCommand(CommProtocolCommands.TIMEOUT_MATCH);
             }
-            case END_GAME -> endGameMonitor.setGameEnded();
+            case END_GAME -> {
+                endGameMonitor.setGameEnded();
+                HashSet<WordRequest> req = endGameMonitor.waitRequests();
+                writeCommand(CommProtocolCommands.END_GAME, req);
+            }
         }
     }
 
