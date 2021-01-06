@@ -25,7 +25,6 @@
                      <items>
                         <ToggleButton id="sidebar_opt_btn" fx:id="lang_toggle" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#loadLanguagePanel" prefHeight="80.0" prefWidth="300.0" text="\%lang_toggle" />
                         <ToggleButton id="sidebar_opt_btn" fx:id="graphics_toggle" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#loadGraphicsPanel" prefHeight="80.0" prefWidth="300.0" text="\%graph_toggle" />
-                        <ToggleButton id="sidebar_opt_btn" fx:id="aspect_toggle" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#loadAspectPanel" prefHeight="80.0" prefWidth="300.0" text="\%aspect_toggle" />
                         <ToggleButton id="sidebar_opt_btn" fx:id="server_toggle" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#loadServerPanel" prefHeight="80.0" prefWidth="300.0" text="Server" />
                      </items>
                   </ToolBar>

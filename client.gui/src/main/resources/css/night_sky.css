@@ -1094,3 +1094,24 @@
 	-fx-background-color: transparent;
 	-fx-border-color: transparent;
 }
+
+/* Tutorial dialog */
+.tutorial-dialog{
+	-fx-background-color: darkest;
+}
+
+.tutorial-dialog .jfx-button{
+	-fx-background-color: transparent;
+	-fx-background-radius: 0;
+	-fx-border-radius: 0;
+	-fx-border-width: 0;
+}
+
+.tutorial-dialog .jfx-button:hover{
+	-fx-background-color: white-transparent-1;
+}
+
+.tutorial-dialog .jfx-button:hover .glyph-font{
+	-fx-text-fill: white;
+	-fx-fill: white;
+}

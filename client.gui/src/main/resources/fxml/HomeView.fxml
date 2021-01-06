@@ -57,7 +57,7 @@
                                     <Tooltip fx:id="settingsToolTip" text="Empty Tooltip" />
                                  </tooltip>
                               </JFXButton>
-                              <JFXButton fx:id="tutorialBtn" alignment="CENTER" contentDisplay="CENTER">
+                              <JFXButton fx:id="tutorialBtn" alignment="CENTER" contentDisplay="CENTER" onAction="#tutorialAlert">
                                  <tooltip>
                                     <Tooltip fx:id="tutorialToolTip" text="Empty Tooltip" />
                                  </tooltip>

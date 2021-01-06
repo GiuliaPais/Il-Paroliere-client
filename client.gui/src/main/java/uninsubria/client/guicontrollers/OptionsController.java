@@ -44,7 +44,7 @@ public class OptionsController extends AbstractMainController {
 	@FXML Glyph icon;
 	@FXML AnchorPane central_view;
 	@FXML ToolBar toolbar;
-	@FXML ToggleButton lang_toggle, graphics_toggle, aspect_toggle, server_toggle;
+	@FXML ToggleButton lang_toggle, graphics_toggle, server_toggle;
 	@FXML ButtonBar btn_bar;
 	@FXML Button save_btn, default_btn, undo_btn;
 	@FXML Label title_label;
@@ -54,9 +54,9 @@ public class OptionsController extends AbstractMainController {
 	private AbstractMainController requestOrigin;
 
 	private ToggleGroup tgroup;
-	private StringProperty opt_title_lbl, lt_lbl, gt_lbl, at_lbl, def_btn_lbl, undo_btn_lbl, save_btn_lbl;
+	private StringProperty opt_title_lbl, lt_lbl, gt_lbl, def_btn_lbl, undo_btn_lbl, save_btn_lbl;
 	
-	private Parent languages, graphics, aspect, server;
+	private Parent languages, graphics, server;
 	
 	private DoubleProperty titleSize;
 	
@@ -73,7 +73,6 @@ public class OptionsController extends AbstractMainController {
 		opt_title_lbl = new SimpleStringProperty();
 		lt_lbl = new SimpleStringProperty();
 		gt_lbl = new SimpleStringProperty();
-		at_lbl = new SimpleStringProperty();
 		def_btn_lbl = new SimpleStringProperty();
 		undo_btn_lbl = new SimpleStringProperty();
 		save_btn_lbl = new SimpleStringProperty();
@@ -89,17 +88,9 @@ public class OptionsController extends AbstractMainController {
 		icon.setFontFamily("FontAwesome");
 		icon.setIcon(FontAwesome.Glyph.GEARS);
 		icon.setFontSize(titleSize.get()+10);
-		titleSize.addListener(new ChangeListener<Number>() {
-
-			@Override
-			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				icon.setFontSize(newValue.doubleValue()+10);	
-			}
-			
-		});
+		titleSize.addListener((observable, oldValue, newValue) -> icon.setFontSize(newValue.doubleValue()+10));
 		tgroup.getToggles().add(lang_toggle);
 		tgroup.getToggles().add(graphics_toggle);
-		tgroup.getToggles().add(aspect_toggle);
 		tgroup.getToggles().add(server_toggle);
 		tgroup.selectToggle(lang_toggle);
 		bindLbls();
@@ -109,7 +100,6 @@ public class OptionsController extends AbstractMainController {
 			languages = requestParent(ControllerType.OPTIONS_LANGUAGES, langController);
 			loadLanguagePanel();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		bindToggleWidth();
@@ -137,7 +127,6 @@ public class OptionsController extends AbstractMainController {
 				graphContr.setMainOptionsController(this);
 				graphics = requestParent(ControllerType.OPTIONS_GRAPHICS, graphContr);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -145,26 +134,7 @@ public class OptionsController extends AbstractMainController {
 		central_view.getChildren().add(graphics);
 		setCentralAnchors(graphics);
 	}
-	
-	/**
-	 * Action performed when "Aspect" toggle is selected. Loads the aspect options view in the central area.
-	 */
-	@FXML
-	void loadAspectPanel() {
-		if (aspect == null) {
-			try {
-				OptionAspectController aspContr = new OptionAspectController();
-				aspContr.setMainOptionsController(this);
-				aspect = requestParent(ControllerType.OPTIONS_ASPECT, aspContr);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		central_view.getChildren().clear();
-		central_view.getChildren().add(aspect);
-		setCentralAnchors(aspect);
-	}
+
 
 	@FXML
 	void loadServerPanel() {
@@ -174,7 +144,6 @@ public class OptionsController extends AbstractMainController {
 				serverContr.setMainOptionsController(this);
 				server = requestParent(ControllerType.OPTIONS_SERVER, serverContr);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -245,7 +214,6 @@ public class OptionsController extends AbstractMainController {
 		opt_title_lbl.set(resBundle.getString("opts_title"));
 		lt_lbl.set(resBundle.getString("lang_toggle"));
 		gt_lbl.set(resBundle.getString("graph_toggle"));
-		at_lbl.set(resBundle.getString("aspect_toggle"));
 		def_btn_lbl.set(resBundle.getString("default_opt_btn"));
 		undo_btn_lbl.set(resBundle.getString("undo_opt_btn"));
 		save_btn_lbl.set(resBundle.getString("save_opt_btn"));
@@ -275,7 +243,6 @@ public class OptionsController extends AbstractMainController {
 		title_label.textProperty().bind(opt_title_lbl);
 		lang_toggle.textProperty().bind(lt_lbl);
 		graphics_toggle.textProperty().bind(gt_lbl);
-		aspect_toggle.textProperty().bind(at_lbl);
 		save_btn.textProperty().bind(save_btn_lbl);
 		default_btn.textProperty().bind(def_btn_lbl);
 		undo_btn.textProperty().bind(undo_btn_lbl);
@@ -306,14 +273,12 @@ public class OptionsController extends AbstractMainController {
 		double toggle_h = after*this.ref.getReferences().get("OPT_BTN_H") / this.ref.getReferences().get("REF_RESOLUTION");
 		lang_toggle.setPrefHeight(toggle_h);
 		graphics_toggle.setPrefHeight(toggle_h);
-		aspect_toggle.setPrefHeight(toggle_h);
 		server_toggle.setPrefHeight(toggle_h);
 	}
 	
 	private void bindToggleWidth() {
 		lang_toggle.prefWidthProperty().bind(toolbar.prefWidthProperty());
 		graphics_toggle.prefWidthProperty().bind(toolbar.prefWidthProperty());
-		aspect_toggle.prefWidthProperty().bind(toolbar.prefWidthProperty());
 		server_toggle.prefWidthProperty().bind(toolbar.prefWidthProperty());
 	}
 	
