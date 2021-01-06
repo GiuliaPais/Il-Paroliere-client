@@ -62,6 +62,7 @@ public class CentralManager {
 		this.addressList = new ConnectionPrefs(preferences.get(
 				"SERVER_ADDRESSES", "localhost"));
 		this.proxy = new SimpleObjectProperty<>();
+		this.profile = new SimpleObjectProperty<>();
 	}
 
 	/*---Methods---*/
