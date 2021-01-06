@@ -11,7 +11,6 @@ public enum ControllerType {
 	OPTIONS_MAIN("Options.fxml"),
 	OPTIONS_LANGUAGES("Options_languages.fxml"),
 	OPTIONS_GRAPHICS("Options_graphics.fxml"),
-	OPTIONS_ASPECT("Options_aspect.fxml"),
 	OPTIONS_SERVER("Options_server.fxml"),
 	LOGIN("Login.fxml"),
 	REGISTER("Register.fxml"),
@@ -21,7 +20,8 @@ public enum ControllerType {
 	CREATE_ROOM_ALERT("CreateRoomAlert.fxml"),
 	MATCH("MatchView.fxml"),
 	SCORE_TILE("PlayerScoreTile.fxml"),
-	INFO_ALERT("InfoAlert.fxml");
+	INFO_ALERT("InfoAlert.fxml"),
+	TUTORIAL_ALERT("tutorialAlert.fxml");
 
 	/*---Fields---*/
 	/**

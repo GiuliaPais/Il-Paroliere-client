@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.effect.Reflection?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+
+<StackPane fx:id="stackPaneAlert" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="360.0" prefWidth="640.0" styleClass="tutorial-dialog" stylesheets="@../css/night_sky.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <BorderPane>
+         <center>
+            <AnchorPane fx:id="centralPane" BorderPane.alignment="CENTER">
+               <children>
+                  <StackPane fx:id="view4" styleClass="tutorial-dialog" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                     <children>
+                        <VBox alignment="CENTER" spacing="30.0">
+                           <children>
+                              <Label alignment="CENTER" text="%instructions_delete" wrapText="true" VBox.vgrow="ALWAYS" />
+                              <ImageView fx:id="img4" fitHeight="150.0" fitWidth="400.0" pickOnBounds="true" preserveRatio="true">
+                                 <image>
+                                    <Image url="@../images/word-delete.jpg" />
+                                 </image>
+                                 <effect>
+                                    <Reflection />
+                                 </effect>
+                              </ImageView>
+                           </children>
+                           <padding>
+                              <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+                           </padding>
+                        </VBox>
+                     </children>
+                  </StackPane>
+                  <StackPane fx:id="view3" styleClass="tutorial-dialog" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                     <children>
+                        <VBox alignment="CENTER" spacing="30.0">
+                           <children>
+                              <Label alignment="CENTER" contentDisplay="CENTER" text="%instructions_clear" textAlignment="CENTER" wrapText="true" VBox.vgrow="ALWAYS" />
+                              <ImageView fx:id="img3" fitHeight="150.0" fitWidth="430.0" pickOnBounds="true" preserveRatio="true">
+                                 <image>
+                                    <Image url="@../images/word-bar.jpg" />
+                                 </image>
+                                 <effect>
+                                    <Reflection />
+                                 </effect>
+                              </ImageView>
+                           </children>
+                           <padding>
+                              <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+                           </padding>
+                        </VBox>
+                     </children>
+                  </StackPane>
+                  <StackPane fx:id="view2" styleClass="tutorial-dialog" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                     <children>
+                        <VBox alignment="CENTER" spacing="30.0">
+                           <children>
+                              <Label alignment="CENTER" text="%instructions_insert" textAlignment="CENTER" wrapText="true" VBox.vgrow="ALWAYS" />
+                              <ImageView fx:id="img2" fitWidth="430.0" pickOnBounds="true" preserveRatio="true">
+                                 <image>
+                                    <Image url="@../images/word-bar.jpg" />
+                                 </image>
+                                 <effect>
+                                    <Reflection />
+                                 </effect>
+                              </ImageView>
+                           </children>
+                           <padding>
+                              <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+                           </padding>
+                        </VBox>
+                     </children>
+                  </StackPane>
+                  <StackPane fx:id="view1" styleClass="tutorial-dialog" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                     <children>
+                        <VBox alignment="CENTER" spacing="30.0">
+                           <children>
+                              <Label alignment="CENTER" contentDisplay="CENTER" text="%instructions_select" wrapText="true" VBox.vgrow="ALWAYS" />
+                              <ImageView fx:id="img1" fitHeight="150.0" fitWidth="350.0" pickOnBounds="true" preserveRatio="true">
+                                 <image>
+                                    <Image url="@../images/dices.jpg" />
+                                 </image>
+                                 <effect>
+                                    <Reflection fraction="0.36" topOffset="2.0" topOpacity="0.4" />
+                                 </effect>
+                              </ImageView>
+                           </children>
+                           <padding>
+                              <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+                           </padding>
+                        </VBox>
+                     </children>
+                  </StackPane>
+               </children>
+            </AnchorPane>
+         </center>
+         <left>
+            <AnchorPane BorderPane.alignment="CENTER">
+               <children>
+                  <JFXButton fx:id="backBtn" onAction="#back" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+               </children>
+            </AnchorPane>
+         </left>
+         <right>
+            <AnchorPane BorderPane.alignment="CENTER">
+               <children>
+                  <JFXButton fx:id="nextBtn" onAction="#next" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+               </children>
+            </AnchorPane>
+         </right>
+      </BorderPane>
+   </children>
+</StackPane>

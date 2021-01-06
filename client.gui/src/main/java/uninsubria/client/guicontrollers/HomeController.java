@@ -365,6 +365,18 @@ public class HomeController extends AbstractMainController {
         dialog.show();
     }
 
+    @FXML void tutorialAlert() throws IOException {
+        JFXDialog dialog = new JFXDialog();
+        TutorialAlertController controller = new TutorialAlertController();
+        Parent parent = requestParent(ControllerType.TUTORIAL_ALERT, controller);
+        Region content = (Region) parent;
+        content.setPrefSize(root.getPrefWidth()/2, root.getPrefHeight()/2);
+        dialog.setContent(content);
+        dialog.setTransitionType(JFXDialog.DialogTransition.CENTER);
+        dialog.setDialogContainer((StackPane) root);
+        dialog.show();
+    }
+
     @FXML void leaveRoom() throws IOException {
         Launcher.manager.leaveRoom(activeLobby.get().getRoomId());
         roomList.getSelectionModel().clearSelection();
@@ -949,23 +961,23 @@ public class HomeController extends AbstractMainController {
             }
         });
         name_col.setText("");
-        name_col.setGraphic(generateTableHeaderTxtField(name_col_txt));
+        name_col.setGraphic(generateTableHeader(name_col_txt));
         name_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.3));
         name_col.setCellValueFactory(param -> param.getValue().roomNameProperty());
         players_col.setText("");
-        players_col.setGraphic(generateTableHeaderCombo(players_col_txt, "PLAYERS"));
+        players_col.setGraphic(generateTableHeader(players_col_txt));
         players_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.175));
         players_col.setCellValueFactory(param -> param.getValue().numPlayersProperty().asObject());
         lang_col.setText("");
-        lang_col.setGraphic(generateTableHeaderCombo(lang_col_text, "LANGUAGE"));
+        lang_col.setGraphic(generateTableHeader(lang_col_text));
         lang_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.175));
         lang_col.setCellValueFactory(param -> param.getValue().languageProperty());
         ruleset_col.setText("");
-        ruleset_col.setGraphic(generateTableHeaderCombo(rule_col_text, "RULESET"));
+        ruleset_col.setGraphic(generateTableHeader(rule_col_text));
         ruleset_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.175));
         ruleset_col.setCellValueFactory(param -> param.getValue().rulesetProperty());
         status_col.setText("");
-        status_col.setGraphic(generateTableHeaderCombo(status_col_txt, "STATUS"));
+        status_col.setGraphic(generateTableHeader(status_col_txt));
         status_col.prefWidthProperty().bind(roomList.widthProperty().multiply(0.175));
         status_col.setCellValueFactory(param -> param.getValue().statusProperty());
         roomList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
@@ -977,7 +989,7 @@ public class HomeController extends AbstractMainController {
         });
     }
 
-    private VBox generateTableHeaderTxtField(StringProperty title_txt) {
+    private VBox generateTableHeader(StringProperty title_txt) {
         VBox vBox = new VBox();
         vBox.setAlignment(Pos.TOP_CENTER);
         vBox.setPadding(new Insets(10, 10, 10, 10));
@@ -985,46 +997,7 @@ public class HomeController extends AbstractMainController {
         Label title = new Label();
         title.textProperty().bind(title_txt);
         title.setStyle("-fx-font-size: " + (currentFontSize.get() - 5) + ";");
-        JFXTextField textField = new JFXTextField();
-        textField.setStyle("-fx-font-size: " + (currentFontSize.get() - 7) + ";");
-        vBox.getChildren().addAll(title, textField);
-        return vBox;
-    }
-
-    private VBox generateTableHeaderCombo(StringProperty title_txt, String comboType) {
-        VBox vBox = new VBox();
-        vBox.setAlignment(Pos.TOP_CENTER);
-        vBox.setPadding(new Insets(10, 10, 10, 10));
-        vBox.setSpacing(5);
-        Label title = new Label();
-        title.textProperty().bind(title_txt);
-        title.setStyle("-fx-font-size: " + (currentFontSize.get() - 5) + ";");
-        switch(comboType) {
-            case "PLAYERS" -> {
-                JFXComboBox<Integer> comboBox = new JFXComboBox();
-                comboBox.setStyle("-fx-font-size: " + (currentFontSize.get() - 7) + ";");
-                comboBox.setItems(FXCollections.observableArrayList(2,3,4,5,6));
-                vBox.getChildren().addAll(title, comboBox);
-            }
-            case "LANGUAGE" -> {
-                JFXComboBox<Language> comboBox = new JFXComboBox<>();
-                comboBox.setStyle("-fx-font-size: " + (currentFontSize.get() - 7) + ";");
-                comboBox.setItems(FXCollections.observableArrayList(Language.values()));
-                vBox.getChildren().addAll(title, comboBox);
-            }
-            case "RULESET" -> {
-                JFXComboBox<Ruleset> comboBox = new JFXComboBox<>();
-                comboBox.setStyle("-fx-font-size: " + (currentFontSize.get() - 7) + ";");
-                comboBox.setItems(FXCollections.observableArrayList(Ruleset.values()));
-                vBox.getChildren().addAll(title, comboBox);
-            }
-            case "STATUS" -> {
-                JFXComboBox<Lobby.LobbyStatus> comboBox = new JFXComboBox<>();
-                comboBox.setStyle("-fx-font-size: " + (currentFontSize.get() - 7) + ";");
-                comboBox.setItems(FXCollections.observableArrayList(Lobby.LobbyStatus.values()));
-                vBox.getChildren().addAll(title, comboBox);
-            }
-        }
+        vBox.getChildren().add(title);
         return vBox;
     }
 
@@ -1046,16 +1019,16 @@ public class HomeController extends AbstractMainController {
                     lobbiesRefresher.restart();
                     return;
                 }
-                lobbyView.setText(newValue.getRoomName());
-                lobbyPlayer_cont.setText(String.valueOf(newValue.getNumPlayers()));
-                lobbyLang_cont.setText(newValue.getLanguage().name());
-                lobbyRule_cont.setText(newValue.getRuleset().name());
-                create_room_btn.setDisable(true);
-                join_room_btn.setDisable(true);
-                roomList.setDisable(true);
-                lobbyView.setVisible(true);
-                lobbiesRefresher.cancel();
-                roomPlayersUpdater.restart();
+            lobbyView.setText(newValue.getRoomName());
+            lobbyPlayer_cont.setText(String.valueOf(newValue.getNumPlayers()));
+            lobbyLang_cont.setText(newValue.getLanguage().name());
+            lobbyRule_cont.setText(newValue.getRuleset().name());
+            create_room_btn.setDisable(true);
+            join_room_btn.setDisable(true);
+            roomList.setDisable(true);
+            lobbyView.setVisible(true);
+            lobbiesRefresher.cancel();
+            roomPlayersUpdater.restart();
         });
     }
 
@@ -1287,7 +1260,6 @@ public class HomeController extends AbstractMainController {
             } finally {
                 roomPlayersUpdater.cancel();
                 lobbiesRefresher.cancel();
-                executorService.shutdown();
             }
         });
         gameLoadingOverlay.setVisible(true);
@@ -1397,7 +1369,6 @@ public class HomeController extends AbstractMainController {
                     @Override
                     protected Map<UUID, Lobby> call() throws Exception {
                         if (!isCancelled() & !Thread.currentThread().isInterrupted()) {
-                            System.out.println("Player service executing");
                             Map<UUID, Lobby> map = Launcher.manager.requestRoomUpdate();
                             updateValue(map);
                             return map;
@@ -1457,7 +1428,6 @@ public class HomeController extends AbstractMainController {
                     @Override
                     protected ArrayList<String> call() throws Exception {
                         if (!isCancelled() & !Thread.currentThread().isInterrupted()) {
-                            System.out.println("Room service executing");
                             ArrayList<String> received = Launcher.manager.requestPlayerList(activeLobby.get().getRoomId());
                             updateValue(received);
                             return received;
@@ -1471,15 +1441,11 @@ public class HomeController extends AbstractMainController {
         service.setPeriod(Duration.seconds(1));
         roomPlayersUpdater = service;
         roomPlayersUpdater.lastValueProperty().addListener((observable, oldValue, newValue) -> {
-            System.out.println("Players refreshed");
             if (newValue == null || newValue.isEmpty()) {
                 return;
             }
             /* Check if the username is in the list */
-            String user = newValue.stream()
-                    .filter(name -> name.equals(Launcher.manager.getProfile().getPlayerID()))
-                    .collect(Collectors.joining());
-            if (user == null) {
+            if (newValue.contains(Launcher.manager.getProfile().getPlayerID())) {
                 Launcher.manager.iWasKicked();
                 notification(notificationKick.get(), Duration.seconds(5));
                 activeLobby.set(null);

@@ -411,6 +411,7 @@ public class RegistrationController extends AbstractMainController {
 		dialog.setTransitionType(JFXDialog.DialogTransition.CENTER);
 		dialog.setOnDialogClosed(e -> {
 			if (Launcher.manager.getProfile() != null) {
+				back_btn.setDisable(true);
 				Parent mainMenu;
 				try {
 					mainMenu = requestParent(ControllerType.HOME_VIEW, new HomeController());
