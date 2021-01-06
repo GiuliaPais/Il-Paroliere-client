@@ -878,7 +878,6 @@ public class HomeController extends AbstractMainController {
                 menu.hide();
                 JFXDialog dialog = new JFXDialog();
                 InfoAlertController controller = new InfoAlertController();
-//                controller.setFontSize(currentFontSize.get() - 5);
                 controller.setDialog(dialog);
                 Parent parent = null;
                 try {
@@ -1445,7 +1444,7 @@ public class HomeController extends AbstractMainController {
                 return;
             }
             /* Check if the username is in the list */
-            if (newValue.contains(Launcher.manager.getProfile().getPlayerID())) {
+            if (!newValue.contains(Launcher.manager.getProfile().getPlayerID())) {
                 Launcher.manager.iWasKicked();
                 notification(notificationKick.get(), Duration.seconds(5));
                 activeLobby.set(null);
