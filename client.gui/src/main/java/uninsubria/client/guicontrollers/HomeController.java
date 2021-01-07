@@ -834,7 +834,7 @@ public class HomeController extends AbstractMainController {
             img.setSizeForWidth(imgSidelength.get());
             imgSidelength.addListener((observable, oldValue, newValue) -> img.setSizeForWidth(newValue.doubleValue()));
         }
-        img.setFill(Color.valueOf(Launcher.manager.getProfile().getImgColor()));
+        img.setFill(Color.valueOf(Launcher.manager.getProfile().getImgColor().trim()));
         profImage.getChildren().clear();
         profImage.getChildren().add(img);
         profImage.toFront();

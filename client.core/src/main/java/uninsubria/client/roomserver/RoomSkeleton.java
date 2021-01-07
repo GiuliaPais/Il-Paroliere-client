@@ -53,6 +53,7 @@ public class RoomSkeleton extends Thread implements ProxySkeletonInterface {
     public void run() {
         try {
             this.out = new ObjectOutputStream(new BufferedOutputStream(roomClient.getOutputStream()));
+            out.flush();
             this.in = new ObjectInputStream(new BufferedInputStream(roomClient.getInputStream()));
             String command = in.readUTF();
             while(!command.equals(CommProtocolCommands.QUIT.getCommand())) {
